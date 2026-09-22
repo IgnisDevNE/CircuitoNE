@@ -1,6 +1,6 @@
-# figma-make-app
+# CircuitoNE
 
-React + Vite + Tailwind CSS project running inside Figma Make.
+Protótipo do CircuitoNE em React, Vite e Tailwind CSS. A aplicação fica em `src/`, fora de qualquer pasta de ferramenta de design.
 
 ## Development Rules
 
@@ -26,6 +26,7 @@ All paths below are relative to the repository root:
 - Specifications, technical requirements, and architecture/infrastructure contracts: `docs/specs/` (see its index; approved target architecture is not necessarily implemented)
 - Database migration files: `docs/migrations/`
 - Business rules: `docs/business-rules/`
+- Unapproved project references: `docs/references/`; keep proposals distinct from accepted business rules.
 - Temporary drafts, logs, downloaded reports and disposable workspaces: `temp/` (gitignored). Keep them out of the repository root; do not move tool-managed runtime files or credentials into this folder.
 
 ## Development Server
@@ -44,7 +45,7 @@ This is the canonical project structure. Start with task-relevant files below. O
 - `src/index.css` - Global CSS entrypoint and Tailwind CSS v4 import
 - `index.html` - Vite HTML shell containing the `#root` element and loading `src/main.tsx`
 - `package.json` - Project dependencies and the Vite build, development, preview, and formatting scripts
-- `vite.config.ts` - Vite configuration with React, Tailwind CSS v4, and Figma Make plugins plus the `@` alias for `src`
+- `vite.config.ts` - Vite configuration with React, Tailwind CSS v4, and the `@` alias for `src`
 - `.mise.toml` - Toolchain versions for Node.js and pnpm
 
 ## Dependencies

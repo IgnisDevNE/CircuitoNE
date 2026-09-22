@@ -2,6 +2,8 @@
 
 Hub da cena eletrônica do Nordeste. React 19, Vite 8 e Tailwind 4. A interface atual é um protótipo com dados em memória; login, persistência e autorização reais ainda serão implementados.
 
+O código da aplicação fica em `src/`. O build não depende do Figma Make nem dos arquivos locais do Orbit.
+
 ## Começar
 
 Use Node 22 (mínimo 22.12) e pnpm 10.34.3, conforme `.mise.toml` e `package.json`.
@@ -26,6 +28,7 @@ O preview também está preparado em container Podman. Nesta máquina, o endere�
 - [Fase zero: adaptação da stack e preparação](docs/planning/phases/00-foundation.md)
 - [Revisão do protótipo e lacunas](docs/reviews/prototype-audit.md)
 - [Regras de negócio e pendências](docs/business-rules/mvp.md)
+- [Taxonomia musical proposta](docs/references/criterios.md)
 - [Backend, autenticação e modelo de dados](docs/architecture/backend-and-data.md)
 - [Proposta inicial de arquitetura e histórico](docs/decisions/0001-foundation.md)
 - [TDD, isolamento, revisões e documentação](docs/engineering/delivery.md)

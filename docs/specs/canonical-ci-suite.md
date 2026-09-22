@@ -1,6 +1,6 @@
 # Aceite canônico e atualização da suíte no CI
 
-Data: 22/09/2026. **Estado:** gate de aceite obrigatório instalado; promoção pós-merge em validação. Vinculada à [ADR 0006](../decisions/0006-canonical-ci-suite.md) e à [#31 / F0-T2](https://github.com/IgnisDevNE/CircuitoNE/issues/31).
+Data: 22/09/2026. **Estado:** gate de aceite obrigatório instalado e primeira promoção pós-merge demonstrada; garantias restantes em validação. Vinculada à [ADR 0006](../decisions/0006-canonical-ci-suite.md) e à [#31 / F0-T2](https://github.com/IgnisDevNE/CircuitoNE/issues/31).
 
 ## Objetivo e autoridade
 
@@ -35,7 +35,7 @@ A integridade compara objetos/árvores Git da versão candidata com a referênci
 
 As etapas são responsabilidades lógicas, não obrigação de criar cinco workflows ou um framework. Usar as primitivas de Actions e Git já existentes; nomes acima ainda não correspondem a jobs instalados.
 
-O workflow de aceite e o publicador não são executados a partir do YAML alterável pelo PR. O gatilho automático roda após o CI da origem confiável e o check obrigatório exige o App QA. Um check com o mesmo nome criado pelo candidato não libera merge. A promoção pós-merge e as negativas restantes ainda precisam ser demonstradas antes de declarar o isolamento concluído.
+O workflow de aceite e o publicador não são executados a partir do YAML alterável pelo PR. O gatilho automático roda após o CI da origem confiável e o check obrigatório exige o App QA. Um check com o mesmo nome criado pelo candidato não libera merge. A promoção pós-merge passou nos ensaios das PRs #56 e #57; as negativas restantes ainda precisam ser demonstradas antes de declarar o isolamento concluído.
 
 Build e aplicação candidata rodam em ambiente descartável sem credenciais privilegiadas, socket de containers do host, escrita na suíte ou acesso ao processo/resultados do verificador. O verificador mantém dependências próprias e, quando viável, testa a aplicação externamente por interface/API. Testes que importam código candidato no mesmo processo não são uma fronteira contra adulteração do runner; sua cobertura local continua útil, mas não deve receber essa garantia. Dados, serviços e credenciais de teste são fictícios e descartáveis. A fase de execução restringe acesso à rede ao necessário para o ensaio; downloads de dependências não ampliam o acesso ao QA/publicador.
 

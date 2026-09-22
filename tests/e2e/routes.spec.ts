@@ -94,3 +94,33 @@ test('rota desconhecida permite voltar ao início', async ({ page }) => {
   await page.getByRole('link', { name: 'voltar ao início', exact: true }).click()
   await expect(page).toHaveTitle('Início · CIRCUITO NE')
 })
+
+test('parâmetro com escape inválido apresenta 404 sem quebrar a página', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+  // O preview rejeita a URL HTTP antes de carregar React. O histórico ainda
+  // pode apresentar esse pathname ao roteador, que precisa permanecer funcional.
+  const response = await page.goto('/artistas/%E0%A4%A')
+  expect(response?.status()).toBe(404)
+  await page.goto('/artistas')
+  await page.evaluate(() => {
+    window.history.pushState({}, '', '/artistas/%E0%A4%A')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+  })
+  await expect(page.getByText('404 — página não encontrada.', { exact: false })).toBeVisible()
+  await page.getByRole('link', { name: 'voltar ao início', exact: true }).click()
+  await expect(page).toHaveTitle('Início · CIRCUITO NE')
+  expect(errors).toEqual([])
+})
+
+test('filtros de artistas combinam busca e estilo e recuperam lista vazia', async ({ page }) => {
+  await page.goto('/artistas')
+  await page.getByRole('searchbox', { name: 'Buscar', exact: true }).fill('recifense')
+  await expect(page.getByRole('article')).toHaveCount(1)
+  await expect(page.getByRole('heading', { name: 'ANERIE', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Dub', exact: true }).click()
+  await expect(page.getByText('Nenhum artista encontrado para os filtros atuais.')).toBeVisible()
+  await page.getByRole('button', { name: 'todos', exact: true }).click()
+  await page.getByRole('searchbox', { name: 'Buscar', exact: true }).fill('')
+  await expect(page.getByRole('article')).toHaveCount(4)
+})

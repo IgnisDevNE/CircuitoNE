@@ -172,7 +172,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 **Issues tratadas:** [#30](https://github.com/IgnisDevNE/CircuitoNE/issues/30) e colaboração operacional em [#29](https://github.com/IgnisDevNE/CircuitoNE/issues/29); não fechar upload sem relatório real.
 
-**Estado:** cobertura local e artefatos entregues pelo PR #45 (4,33% de statements); arquivo novo não executado aparece com 0%, e falha controlada de navegação é detectada sem mudar o percentual. Publicação Cloud preparada; comprovação remota por SHA em #30. **Dependência:** F0-T6 para gerar LCOV. **Risco:** médio.
+**Estado:** cobertura e artefatos entregues pelo PR #45; upload Cloud de PR interno e baseline `main` confirmados após #47. Validação específica do Dependabot e limitação de forks continuam em #30. A [ampliação de cobertura](../../reviews/coverage-backlog-2026-09-22.md) registra testes de interação e correções do roteador; não satisfaz aceite canônico. **Dependência:** F0-T6 para gerar LCOV. **Risco:** médio.
 
 - Entrega: relatório LCOV/HTML reproduzível, conjunto de arquivos incluídos explícito, baseline aprovado e política de cobertura de código alterado. Não impor porcentagem arbitrária nem excluir caminhos para esconder ausência de testes.
 - Testar primeiro: código não executado aparece descoberto e arquivo novo entra no relatório; uma regressão controlada na regra exercitada faz o teste falhar mesmo se a cobertura continuar igual. Falha de teste impede tratar relatório como evidência aprovada; cobertura de linhas não prova qualidade do oráculo.
@@ -214,7 +214,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 |---|---|---|
 | Defeitos autônomos de Markdown, dinheiro, estado de rota e semântica (#11/#17/#22/#27) | Corrigir e encerrar com evidência de todos os critérios aplicáveis ao protótipo | Critério ainda não demonstrado, explicitamente atribuído a uma tarefa; não fechar só porque o exemplo deixou de falhar |
 | Dependências (#34–#37), decisões e pré-requisitos (#38–#43) | Resolver antes de estabilizar a base e antes das tarefas dependentes | Incompatibilidade externa demonstrada ou decisão humana pendente, com responsável e impacto exato |
-| Infraestrutura (#29–#32) | Concluir OAuth, cobertura, isolamento e homologação dentro da fase | #29 pode depender de autorização externa, e só a publicação de #30 depende dele; #31/#32 bloqueiam a integração real e a saída correspondente da fase |
+| Infraestrutura (#29–#32) | Concluir cobertura Cloud, isolamento e homologação dentro da fase | #29 é o OAuth da instância própria e não bloqueia Cloud; retomada depende de decisão do mantenedor. #30 mantém validações de identidades; #31/#32 bloqueiam integração real e saída correspondente da fase |
 | Achados que incluem persistência/autorizações e funcionalidades ainda inexistentes | Antecipar na F0 validação, testes, contenção do mock, estados de falha e correções independentes | Manter a issue aberta até o aceite integral nas fases 1–5; não inventar backend provisório ou mover todo o produto para F0 só para zerar a lista |
 | SEO e qualidade integrada (#26/#28 e validação final) | Corrigir metadados estáticos, SSR com fixtures, determinismo e estados já testáveis | Consultas/paginação/dados reais e validação do produto final permanecem nas tarefas de domínio e F6-T3 |
 

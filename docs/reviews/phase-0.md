@@ -1,5 +1,7 @@
 # Fase zero — checkpoint de preparação
 
+**Atualização após PRs #45–#49:** CI, banco descartável, artefatos, Codecov Cloud e CodeQL foram validados no GitHub; a verificação protegida de credenciais dev também passou, sem migrar ou implantar aplicação. O texto abaixo preserva o checkpoint original. Estado atual, ampliação dos testes, correções e pendências por issue: [revisão de cobertura/backlog](coverage-backlog-2026-09-22.md). Homologação integrada e saída da fase continuam bloqueadas por #31/#32/#43.
+
 Data: 22/09/2026. **Resultado: preparação parcial revisável; saída da fase bloqueada, sem homologação concluída.** Branch `codex/phase-zero-foundation`, base `44d1632`. Nenhum schema/dado/configuração remota foi alterado. O preview existente foi preservado.
 
 ## Entrega e verificação

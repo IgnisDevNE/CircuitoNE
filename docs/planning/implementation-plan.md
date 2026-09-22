@@ -31,8 +31,8 @@ São **38 tarefas**, identificadas nos planos. F0-T14 trata dependências e F0-T
 
 - GitHub/App, CI, documentação e preview estático foram integrados pelo [PR #2](https://github.com/IgnisDevNE/CircuitoNE/pull/2) em 22/09/2026. F0-T1/T3 não equivalem a fase zero completa.
 - SSR, backend, Auth, banco de negócio e funcionalidades persistentes continuam pendentes. O preview segue com mocks.
-- F0-T2 está parcial: a identidade por comando foi separada, mas QA/verificador e isolamento de credenciais ainda não estão completos.
-- Codecov: usuário ativo e CircuitoNE habilitado no servidor; descoberta da organização via OAuth e upload real permanecem pendentes conforme [diagnóstico](../reviews/codecov-diagnosis.md).
+- F0-T2 está parcial: o QA independente já executa o aceite obrigatório e promove a suíte após o merge ([controle de mudanças](../controls/change-control.md)); faltam os ensaios negativos, a proteção efetiva do QA e a retirada das credenciais humanas/chaves do ambiente implementador ([#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31)). A retomada automática após aprovação de novos testes fica na [#58](https://github.com/IgnisDevNE/CircuitoNE/issues/58).
+- Codecov Cloud: upload real em `main` e PR validado; ainda faltam os casos Dependabot/fork da [#30](https://github.com/IgnisDevNE/CircuitoNE/issues/30). A descoberta OAuth da organização na instância própria permanece separadamente na [#29](https://github.com/IgnisDevNE/CircuitoNE/issues/29).
 - Próximo trabalho: partir de `main` atualizada e branch nova; priorizar F0-T14/T15, F0-T2 e F0-T6 nas partes independentes. Resolver o máximo de bloqueios na fase zero; preparação com fixtures pode avançar sem tratar pendências como aprovadas. [Parecer por PR do Dependabot](../reviews/dependabot-2026-09-22.md).
 
 ## Contrato comum de cada tarefa

@@ -32,6 +32,8 @@ O preview também está preparado em container Podman. Nesta máquina, o endere�
 - [Backend, autenticação e modelo de dados](docs/architecture/backend-and-data.md)
 - [Proposta inicial de arquitetura e histórico](docs/decisions/0001-foundation.md)
 - [TDD, isolamento, revisões e documentação](docs/engineering/delivery.md)
+- [Controle de mudanças](docs/controls/change-control.md)
+- [Controle de acesso de pessoas e bots](docs/controls/access-control.md)
 - [Infraestrutura e operação](docs/engineering/environment.md)
 - [Revisão de segurança OWASP](docs/reviews/security-baseline.md)
 - [Evidências desta preparação](docs/reviews/foundation-validation.md)

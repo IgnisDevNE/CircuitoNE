@@ -1,14 +1,16 @@
 # Aceite canônico e atualização da suíte no CI
 
-Data: 22/09/2026. **Estado:** direção aprovada pelo responsável; detalhamento técnico para revisão e implementação pendente. Vinculada à [ADR 0006](../decisions/0006-canonical-ci-suite.md) e à [#31 / F0-T2](https://github.com/IgnisDevNE/CircuitoNE/issues/31).
+Data: 22/09/2026. **Estado:** direção aprovada; infraestrutura inicial em implantação, gate ainda não obrigatório. Vinculada à [ADR 0006](../decisions/0006-canonical-ci-suite.md) e à [#31 / F0-T2](https://github.com/IgnisDevNE/CircuitoNE/issues/31).
 
 ## Objetivo e autoridade
 
 Executar o aceite na esteira, poupando recursos do PC, e impedir que alterações nos testes ou no comando do PR substituam os critérios aprovados. Após aprovação, merge e validação, a própria esteira promove os novos testes para a referência dos próximos PRs. CI verde, isoladamente, não aprova uma mudança de contrato.
 
-A suíte, suas propostas, o workflow de aceite e a referência ativa ficam sob autoridade externa à implementação, fora das instalações do App `ignisdevne`. O destino proposto continua `magalz/CircuitoNE-qa`; o mantenedor precisa confirmar/provisionar esse recurso e suas proteções. A consulta com o App em 22/09 retornou HTTP 404: isso não distingue recurso inexistente de privado/inacessível. Não ampliar a instalação do App para dar escrita nesse QA.
+A suíte, suas propostas, o workflow de aceite e a referência ativa ficam sob autoridade externa à implementação. O repositório [IgnisDevNE/CircuitoNE-QA](https://github.com/IgnisDevNE/CircuitoNE-QA) foi criado na mesma organização e o mantenedor retirou-o da instalação do App `ignisdevne`. Não ampliar essa instalação para dar escrita no QA. O `main` do QA contém a primeira suíte de caracterização e o verificador; o CI próprio passou no commit `ff9bf46`. A proteção de `main` exige o check `scripts` e uma aprovação independente.
 
 O processamento pesado usa runners descartáveis hospedados pelo GitHub. Não exige uma VM de desenvolvimento local nem um middleware próprio. O desenho pressupõe que a identidade implementadora não tenha autoridade administrativa sobre o QA, o aprovador ou o publicador; não protege contra uso de credenciais humanas disponíveis por outra ferramenta. Essa limitação de credenciais permanece na #31, sem alegar isolamento do PC ou dispensar os gates existentes.
+
+O QA ainda precisa de uma identidade publicadora própria com apenas `Checks:write` no CircuitoNE. A política da organização rejeitou habilitar criação de PRs pelo `GITHUB_TOKEN` padrão do QA (HTTP 409); não alterá-la. O workflow prepara a branch da proposta, e o responsável abre e aprova o PR no QA antes do aceite. O gatilho do repositório principal precisa de token restrito ao QA com `Actions:write`, guardado somente no environment `QA Dispatch`. O environment `QA Publisher` já foi restringido a branches protegidas, mas ainda não contém as credenciais do App QA. A branch `accepted`, seu estado inicial, o check exigido com origem fixada no App QA e os ensaios de aceitação/negação devem ser concluídos antes de ativar `CANONICAL_QA_ENABLED` ou encerrar a #31.
 
 ## Versões e arquivos protegidos
 
@@ -69,7 +71,7 @@ Todos os itens tratam a **#31**, responsável mantenedor + QA, alvo F0-T2. A iss
 
 | Entrega | Pré-requisito para iniciar a parte dependente | Evidência de conclusão |
 |---|---|---|
-| Confirmar/provisionar QA e autoridade de publicação | Nenhum para preparar contratos; configuração externa pelo mantenedor | App implementador não escreve QA, não troca a referência e não imita a identidade do aceite; controles independentes dos arquivos do PR |
+| Confirmar/provisionar QA e autoridade de publicação | Repositório QA e proteção inicial de `main` criados; App QA e credenciais restritas ainda pendentes | App implementador não escreve QA, não troca a referência e não imita a identidade do aceite; controles independentes dos arquivos do PR |
 | Fixar primeira suíte e W | Autoridade externa disponível | Manifesto, commits e aprovação; testes existentes caracterizados, nenhuma falha inventada |
 | Integridade e execução obrigatória em PR | S/W aprovados e gatilho confiável | Erro conhecido rejeitado; correção aceita; alteração de teste, comando, fixture, skip, workflow e resultado não falsifica o aceite |
 | Promoção pós-merge | Aceite anterior e autoridade de promoção operacionais | Novo teste revisado passa em M e entra na próxima suíte; conteúdo não aprovado, SHA errado, origem falsa e merge não validado não promovem |

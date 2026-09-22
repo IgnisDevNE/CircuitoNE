@@ -1,6 +1,6 @@
 # ADR 0006 — Aceite canônico e promoção da suíte na esteira
 
-Data: 22/09/2026. **Estado:** direção aprovada pelo responsável; contrato detalhado em revisão, implementação pendente na #31 / F0-T2.
+Data: 22/09/2026. **Estado:** direção aprovada; implementação parcial no [CircuitoNE-QA](https://github.com/IgnisDevNE/CircuitoNE-QA), gate pendente na #31 / F0-T2.
 
 ## Contexto
 
@@ -21,7 +21,7 @@ Usar Git e Actions, sem criar middleware ou framework próprio. O contrato de ve
 - Reduzir processamento local de aceite; manter testes rápidos locais para TDD e diagnóstico.
 - Separar aprovação de testes, execução do candidato e publicação/promoção. O implementador pode propor testes, mas não aprovar sua referência ou atestar a própria entrega.
 - Invalidar aceite antes do merge quando a suíte/base avançar; coordenar a integração e a promoção anterior para impedir entrada com resultado desatualizado. Tratar promoção como operação auditável e condicionada ao estado atual, com retentativa e histórico; um merge não pode apagar testes aceitos por outro PR.
-- A provisão do QA, a origem confiável do check e o promotor ainda estão pendentes. Esta decisão não instala workflows nem dispensa homologação, revisão ou gates.
+- O repositório QA e seus workflows foram preparados; a identidade publicadora, o check obrigatório com origem fixada e a promoção validada ainda estão pendentes. Esta decisão não dispensa homologação, revisão ou gates.
 - Não alegar proteção contra credenciais administrativas disponíveis ao agente por outro caminho. O isolamento de credenciais permanece pendência da [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31); a escolha de CI não exige VM local nem encerra automaticamente essa issue.
 
 ## Alternativas consideradas

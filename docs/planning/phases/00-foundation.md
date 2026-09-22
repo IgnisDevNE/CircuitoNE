@@ -51,6 +51,8 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 **Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) antes de operações com credenciais; [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) na parte de região/destino antes de conectar ambiente compartilhado.
 
+**Manutenção pontual autorizada em 22/09/2026:** validar somente as credenciais dev por job manual em `main`, após review/merge e aprovação do environment, sem aplicação, migração ou dados reais. Essa verificação está preparada no PR #45 e delimitada na ADR 0003; não encerra #31 nem libera as demais operações bloqueadas. Registrar o resultado remoto em #32 antes de afirmar que token/senha funcionam.
+
 **Issues tratadas:** [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32), preparação de migrações e banco descartável; a parte de promoção continua em F0-T5.
 
 **Dependência:** F0-T2; pode ser preparada em banco descartável antes do runtime SSR. **Risco:** alto.

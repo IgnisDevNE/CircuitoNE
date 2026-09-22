@@ -55,7 +55,21 @@ O [workflow](../../.github/workflows/ci.yml) inclui E2E Chromium, cobertura e pu
 
 Em 22/09/2026, o responsável autorizou explicitamente sua credencial para publicar esta alteração de CI. A exceção se limita a essa operação; o App continua sem Workflows e segue como identidade padrão. A proteção `require_last_push_approval` permanece: um push autenticado como `magalz` exige aprovação de outra pessoa. Não retirar a regra nem simular um push do bot para contorná-la. Essa manutenção não resolve o isolamento de [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31).
 
-O workflow de CI não publica imagens, não acessa secrets e não migra bancos remotos. A automação de homologação e promoção é F0-T4/T5, depois da separação de identidade e das credenciais apropriadas. Até lá, não promover o protótipo por estar com CI verde.
+Os jobs automáticos de CI não publicam imagens, não acessam secrets e não migram bancos remotos. A opção manual descrita abaixo verifica somente credenciais de homologação em outro job. A automação de homologação e promoção é F0-T4/T5, depois da separação de identidade e das credenciais apropriadas. Até lá, não promover o protótipo por estar com CI verde.
+
+### Verificar credenciais de homologação
+
+O CI inclui a opção `validate_homologation`, desativada por padrão. Publicar/revisar o workflow e integrá-lo em `main` antes de disparar:
+
+```powershell
+node scripts/github-app.mjs gh workflow run ci.yml --ref main -f validate_homologation=true
+```
+
+O bot precisa de `Actions: write` para o disparo (permissão temporária informada pelo responsável em 22/09/2026); publicar alterações no YAML requer `Workflows: write` separadamente. O job `homologation-credentials` só roda em `main`, pede aprovação do environment `Homologação` e usa runner Ubuntu 24.04 descartável, sem checkout/código da aplicação. O mantenedor deve conferir ator, SHA e workflow antes de liberar o environment; `prevent_self_review` permanece habilitado. A permissão de Actions pode ser retirada ao concluir a operação temporária.
+
+Entradas verificadas: variáveis `SUPABASE_PROJECT_REF`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`; secrets `SUPABASE_ACCESS_TOKEN` e `SUPABASE_DB_PASSWORD`, cada um em sua própria etapa. O destino é fixo em `CircuitoNE-dev` (`odphoxozclrshqjgwbqk`). Token valida leitura da configuração do projeto; senha valida sessão PostgreSQL pela porta 5432 com TLS `verify-full` e consulta literal em transação de leitura. Nenhum reset, migração, seed ou deploy. Não há opção de produção.
+
+Testes offline em `tests/homologation-workflow.test.mjs` executam os scripts do próprio YAML com respostas/processos simulados: destino errado/credencial ausente, erros HTTP, limite de resposta, host inesperado, isolamento do token, TLS/leitura e falhas sem vazamento. Foram escritos antes do job (seis falhas esperadas), depois passaram. Isso não comprova a validade dos secrets reais: o resultado remoto, SHA, ator e aprovação ficam na [issue #32](https://github.com/IgnisDevNE/CircuitoNE/issues/32). A [ADR 0003](../decisions/0003-phase-zero-toolchain.md) registra escopo e limites; #31 continua aberto.
 
 ## GitHub e ambientes
 

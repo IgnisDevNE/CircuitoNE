@@ -26,7 +26,10 @@ export function prepareLocalDatabase(root = repo) {
       return { file: entry.name, bytes: readFileSync(join(source, entry.name)) }
     })
   const config = readFileSync(join(root, 'supabase/config.toml'))
-  const workdir = mkdtempSync(join(resolve(root), '.tmp-supabase-run-'))
+  const temp = join(resolve(root), 'temp')
+  mkdirSync(temp, { recursive: true })
+  if (lstatSync(temp).isSymbolicLink()) throw new Error('Link não permitido: temp')
+  const workdir = mkdtempSync(join(temp, 'supabase-run-'))
   mkdirSync(join(workdir, 'supabase/migrations'), { recursive: true })
   writeFileSync(join(workdir, 'supabase/config.toml'), config, { flag: 'wx' })
   for (const { file, bytes } of migrations) {

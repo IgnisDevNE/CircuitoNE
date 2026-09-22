@@ -25,6 +25,7 @@ All paths below are relative to the repository root:
 - Specifications, technical requirements, and architecture/infrastructure contracts: `docs/specs/` (see its index; approved target architecture is not necessarily implemented)
 - Database migration files: `docs/migrations/`
 - Business rules: `docs/business-rules/`
+- Temporary drafts, logs, downloaded reports and disposable workspaces: `temp/` (gitignored). Keep them out of the repository root; do not move tool-managed runtime files or credentials into this folder.
 
 ## Development Server
 

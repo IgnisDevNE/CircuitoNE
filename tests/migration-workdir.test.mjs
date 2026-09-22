@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync, symlinkSync } from 'node:fs'
 import { join, resolve, dirname, basename } from 'node:path'
 import { tmpdir } from 'node:os'
 import { createHash } from 'node:crypto'
@@ -25,7 +25,9 @@ test('migrações preservam bytes, ordem e checksum em cópia descartável, sem 
     writeFileSync(join(source, first), sql)
     writeFileSync(join(source, 'README.md'), 'não copiar')
     const workdir = prepareLocalDatabase(root)
-    assert.equal(dirname(workdir), root)
+    assert.equal(dirname(workdir), join(root, 'temp'))
+    assert.ok(basename(workdir).startsWith('supabase-run-'))
+    assert.deepEqual(readdirSync(root).sort(), ['docs', 'supabase', 'temp'])
     assert.deepEqual(readdirSync(join(workdir, 'supabase/migrations')), [first, second])
     assert.deepEqual(readFileSync(join(workdir, 'supabase/migrations', first)), sql)
     assert.deepEqual(readFileSync(join(source, first)), sql)
@@ -42,6 +44,24 @@ test('migrações preservam bytes, ordem e checksum em cópia descartável, sem 
     rmSync(join(source, '20260922052133_duplicate.sql'))
     writeFileSync(join(source, 'bad.SQL'), 'select 4;')
     assert.throws(() => prepareLocalDatabase(root), /nome inválido/)
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test('preparo local recusa temp redirecionado por link, sem escrever no destino', () => {
+  const root = mkdtempSync(join(tmpdir(), 'circuitone-migrations-'))
+  assert.equal(dirname(resolve(root)), resolve(tmpdir()))
+  assert.ok(basename(root).startsWith('circuitone-migrations-'))
+  try {
+    mkdirSync(join(root, 'docs/migrations'), { recursive: true })
+    mkdirSync(join(root, 'supabase'))
+    writeFileSync(join(root, 'supabase/config.toml'), readFileSync('supabase/config.toml'))
+    const destination = join(root, 'other-directory')
+    mkdirSync(destination)
+    symlinkSync(destination, join(root, 'temp'), 'junction')
+    assert.throws(() => prepareLocalDatabase(root), /Link não permitido: temp/)
+    assert.deepEqual(readdirSync(destination), [])
   } finally {
     rmSync(root, { recursive: true, force: true })
   }

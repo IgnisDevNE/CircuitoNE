@@ -26,8 +26,8 @@ test(
       try {
         if (started) run("stop", "--no-backup")
       } finally {
-        assert.equal(dirname(realpathSync(workdir)), realpathSync(process.cwd()))
-        assert.ok(basename(workdir).startsWith(".tmp-supabase-run-"))
+        assert.equal(dirname(realpathSync(workdir)), realpathSync(resolve("temp")))
+        assert.ok(basename(workdir).startsWith("supabase-run-"))
         rmSync(workdir, { recursive: true, force: true })
       }
     })

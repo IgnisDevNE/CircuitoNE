@@ -76,6 +76,8 @@ Specs descrevem o resultado esperado; ADRs registram contexto, alternativas e co
 
 ## Limitação atual
 
+Em 22/09/2026, o responsável informou concessão temporária de `Actions: write` para o bot disparar a validação protegida e somente leitura de credenciais de homologação. Essa manutenção é delimitada na ADR 0003 e em `environment.md`: execução em `main`, após PR revisado e aprovação do environment, sem código da aplicação no job que recebe secrets. Não muda a autoridade sobre QA/aceite nem aprova migrações ou releases. Publicação de workflows requer outra permissão; a concessão de Actions não a implica.
+
 O GitHub App está autenticado pelo helper descrito em `environment.md`. A API confirmou que o token emitido só enxerga CircuitoNE; consultas às proteções de branch e aos secrets foram negadas com HTTP 403. Não foram tentadas mutações reais em regras/secrets para simular negações.
 
 **Ainda não há isolamento forte** ([issue #31](https://github.com/IgnisDevNE/CircuitoNE/issues/31)): o QA/verificador externo não estão conectados, a chave do App ainda está em `secrets/` no ambiente local e as credenciais humanas continuam disponíveis nas ferramentas da máquina. O helper separa a identidade de cada comando, mas não impede um processo com esse acesso de usar outra credencial ou emitir token mais amplo. F0-T2 só termina ao separar o emissor e o ambiente implementador, retirar acesso humano/admin e demonstrar os demais testes negativos de QA, aprovação e promoção.

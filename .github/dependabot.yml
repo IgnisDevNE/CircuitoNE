@@ -10,6 +10,10 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 3
+    groups:
+      tailwind:
+        patterns: ['tailwindcss', '@tailwindcss/vite']
+        update-types: ['minor', 'patch']
   - package-ecosystem: github-actions
     directory: /
     schedule:

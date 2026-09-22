@@ -4,9 +4,15 @@
 /AGENTS.md @magalz
 /package.json @magalz
 /pnpm-lock.yaml @magalz
+/pnpm-workspace.yaml @magalz
+/vitest.config.ts @magalz
+/playwright.config.ts @magalz
+/tsconfig.json @magalz
+/vite.config.ts @magalz
 /docs/business-rules/ @magalz
 /docs/decisions/ @magalz
 /docs/specs/ @magalz
+/docs/engineering/ @magalz
 /docs/planning/ @magalz
 /docs/migrations/ @magalz
 /supabase/ @magalz
@@ -14,3 +20,4 @@
 /.dockerignore @magalz
 /deploy/ @magalz
 /scripts/github-app.mjs @magalz
+/scripts/prepare-local-db.mjs @magalz

@@ -2,9 +2,15 @@
 
 Nenhum SQL de negócio foi criado ou aplicado na preparação. Este é o diretório canônico solicitado pelo AGENTS.md.
 
-O Supabase CLI procura `supabase/migrations`, portanto a fase 0 deve validar um adaptador simples: gerar uma árvore temporária de trabalho contendo `supabase/config.toml` e cópia somente de execução dos SQL de `docs/migrations/`. Essa árvore não é versionada nem editada manualmente. O CLI recebe `--workdir` apontando para ela. Não presumir que o CLI lê `docs/migrations/` diretamente.
+O Supabase CLI procura `supabase/migrations`. `pnpm db:prepare` gera uma árvore temporária `.tmp-supabase-run-*` contendo `supabase/config.toml` e cópia somente de execução dos SQL de `docs/migrations/`. Essa árvore não é versionada nem editada manualmente. O CLI recebe `--workdir` apontando para ela. O CLI não lê `docs/migrations/` diretamente.
 
-Antes da primeira migração: instalar versão fixa do CLI; conferir `--help` e os comandos disponíveis; gerar o nome via `supabase migration new`; guardar o SQL final aqui; testar reconstrução em banco local descartável e aplicar no `CircuitoNE-dev` pelo GitHub. A configuração e o adaptador precisam de teste antes de serem usados com segredos.
+O adaptador preserva bytes, ordena nomes, rejeita versões duplicadas/nomes inválidos/links e grava checksums SHA-256 do config e de cada SQL em `manifest.json`. Cada execução recebe uma pasta nova; nenhum destino remoto ou argumento adicional é aceito. Não lê credenciais, chama o CLI ou executa reset. Os testes estão em `tests/migration-workdir.test.mjs`. Isso evita erros de preparo, mas não constitui isolamento contra um implementador capaz de alterar o script.
+
+`supabase/config.toml` é apenas configuração de banco descartável (Postgres 17, porta 55432, Auth/API/Storage desligados). Não representa os projetos hospedados. Não copiar sua configuração para homologação/produção.
+
+Antes da primeira migração: CLI fixado em 2.117.0; conferir `--help` e os comandos disponíveis; gerar o nome via `supabase migration new` na árvore temporária e mover o SQL final para este diretório; gerar novamente a cópia de execução; testar reconstrução em banco descartável e aplicar no `CircuitoNE-dev` pelo GitHub. A validação de arquivos e um ensaio sintético de reconstrução em Linux estão concluídos; schema/tipos/seeds reais e pipeline compartilhado ainda dependem de [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32) e do isolamento [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31).
+
+Em 22/09/2026, a tentativa de banco local no Podman/Windows esbarrou no wrapper `docker.cmd` e depois no encaminhamento de rede WSL. O ensaio alternativo em container Linux passou com `pnpm test:database`: usa `supabase db start` e `supabase db reset --local` em pasta recém-criada, sem projeto vinculado nem credenciais remotas. A migração sintética `pipeline_probe` e o ID único do projeto existem apenas nessa cópia; o manifesto original descreve as entradas canônicas, não essas alterações exclusivas do teste. Confirmar comandos com `--help` na versão fixada. Não usar `--linked`, `--db-url` ou `--project-ref` para reset de testes. O helper não impede executar o CLI diretamente: a separação de credenciais continua obrigatória.
 
 Cada migração deve incluir constraints, índices, grants, RLS, políticas e revogações necessárias. Acrescentar testes positivos e negativos e atualizar os tipos gerados. Após aplicada em ambiente compartilhado, não editar migração antiga: criar outra.
 

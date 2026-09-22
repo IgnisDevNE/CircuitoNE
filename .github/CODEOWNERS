@@ -6,6 +6,7 @@
 /pnpm-lock.yaml @magalz
 /docs/business-rules/ @magalz
 /docs/decisions/ @magalz
+/docs/specs/ @magalz
 /docs/migrations/ @magalz
 /supabase/ @magalz
 /Dockerfile @magalz

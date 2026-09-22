@@ -1,6 +1,6 @@
 # Plano de execução
 
-Plano baseado no protótipo e nas decisões do responsável de 21/09/2026. A preparação está em andamento; backend e funcionalidades reais não estão implementados. Execução incremental, uma tarefa revisável por PR. IDs abaixo são o backlog canônico inicial; não foram criadas dezenas de issues vazias.
+Plano baseado no protótipo e nas decisões do responsável de 21–22/09/2026, incluindo a [arquitetura aprovada](../specs/architecture-mvp.md). A preparação está em andamento; SSR, backend e funcionalidades reais não estão implementados. Execução incremental, uma tarefa revisável por PR. IDs abaixo são o backlog canônico inicial; não foram criadas dezenas de issues vazias.
 
 ## Escopo e ordem
 
@@ -41,8 +41,10 @@ flowchart LR
 | F1-T3 | Extrair validações do cadastro e eventos; corrigir dinheiro/datas | Testes de CPF, CNPJ alfanumérico, e-mail, URL, moeda já formatada, fim anterior ao início e fuso. Não transformar máscara em validador. |
 | F1-T4 | Centralizar distinção membro/visitante e escopos de mensagens no mock | N0/N1/N2 e não membro têm diferenças testadas; trocar coletivo não mantém conversa anterior; nada vaza pela central pessoal/dashboard. |
 | F1-T5 | Corrigir campos ausentes e estados compartilhados de UX | Formulários reinicializam ao mudar perfil/ID; rótulos, erro focável, loading/erro/vazio; `lang=pt-BR`; 390 px, teclado, zoom e movimento reduzido. |
+| F1-T6 | Migrar roteador para React Router Framework e preparar SSR público | Preservar jornadas caracterizadas; HTML inicial e metadados com dados fictícios, HTTP 404 correto, navegação/hidratação sem regressão e código de navegador separado do servidor. |
+| F1-T7 | Adaptar container e verificações para Node + Caddy | SSR e assets servidos pelo runtime correto, saúde e desligamento controlado, sem privilégios ou segredos no bundle; testes HTTP no CI. |
 
-**Saída:** sem vulnerabilidade conhecida de conteúdo no caminho de publicação; regras isoladas do JSX quando beneficia teste; nenhuma reescrita geral ou troca automática do roteador. Refatoração só nas áreas que o teste demonstra frágeis.
+**Saída:** sem vulnerabilidade conhecida de conteúdo no caminho de publicação; regras isoladas do JSX quando beneficia teste; SSR público e runtime Node/Caddy preparados preservando componentes úteis. A troca do roteador foi aprovada para atender renderização pública e carregamento por rota. Autorização real depende da integração nas fases seguintes; mocks não comprovam segurança.
 
 ## Fase 2 — Identidade, conta e autenticação
 
@@ -50,7 +52,7 @@ flowchart LR
 |---|---|---|
 | F2-T1 | Schema de identidade privado, CPF único, nascimento obrigatório, estado de conta | RLS/grants negam leitura de terceiros; normalização e concorrência impedem CPF duplicado; nenhuma informação pessoal nos logs/erros públicos. RN-01/03/04. |
 | F2-T2 | Cadastro/Auth/onboarding transacional e confirmação | Senha, e-mail duplicado, CPF duplicado, falha parcial, reenvio e retomada testados; primeira atuação coerente, sem login demo. |
-| F2-T3 | Login, sessão, logout e recuperação | Recarga mantém sessão real; expiração/refresh/links inválidos; callback só em URL permitida; logout e erro não mostram painel anterior. |
+| F2-T3 | Login, sessão SSR, logout e recuperação | Recarga mantém sessão real; expiração/refresh/links inválidos; callback só em URL permitida; logout e erro não mostram painel anterior; validar identidade no servidor, CSRF e duas sessões sem vazamento por memória/cache. |
 | F2-T4 | Editar dados e segurança | E-mail muda via Auth confirmado; reautenticação; política de CPF/nascimento; recuperação de titular e exclusão/suspensão planejadas. |
 
 **Pré-requisitos:** D-02 e D-03 resolvidas, SMTP operacional em homologação. **Saída:** jornada completa com duas contas reais de teste e testes REST negativos. Documentar ameaça de CPF de terceiro sem confundir unicidade com prova de identidade.
@@ -60,7 +62,7 @@ flowchart LR
 | Tarefa | Entrega | Aceite adicional |
 |---|---|---|
 | F3-T1 | Múltiplas atuações e edição de artista/serviços/audiovisual | Perfil novo persiste e aparece no local certo; proprietário B não edita A; nomes não colidem por imposição artificial. RN-02/06/09–12. |
-| F3-T2 | Vitrine pública, busca e detalhes sem dados privados | Resposta anônima não contém contatos, cachê, CPF ou nascimento; paginação, perfil ausente e fotos quebradas. |
+| F3-T2 | Vitrine pública, busca e detalhes sem dados privados | HTML inicial e metadados com dados persistentes; resposta anônima não contém contatos, cachê, CPF ou nascimento; paginação, perfil ausente/404 e fotos quebradas. |
 | F3-T3 | Upload, galeria e substituição de imagens | Limite/tipo/autoria validados no servidor, arquivo malicioso negado, órfãos tratados, falhas de rede recuperáveis. |
 
 **Saída:** perfis editáveis com upload e privacidade comprovada; documentação do contrato público/profissional/privado. Nesta fase, dados profissionais são acessíveis somente ao titular. A liberação do diretório para N2 pertence a F4-T4, depois dos vínculos e permissões, evitando dependência circular entre fases.
@@ -72,7 +74,7 @@ flowchart LR
 | F4-T1 | Criar coletivo/produtora pendente, cargos básicos e primeiro admin | Operação atômica; produtora sem CNPJ falha; CNPJ alfanumérico aceito; RN-30 bloqueia dashboard/funções até aprovação, inclusive para o criador. Tela de acompanhamento do pedido. |
 | F4-T2 | Vínculos, cargos customizados e RLS | Matriz N0/N1/N2, outsider, usuário removido e admin de outro coletivo; cargo de A não é usado em B; último N2 protegido em concorrência. |
 | F4-T3 | Solicitação, aprovação, recusa, retirada e histórico | Duplicata/retry/decisão simultânea; aprovação usa N0 obrigatório; solicitante vê estado sem acesso aos demais pedidos. |
-| F4-T4 | Gestão, perfil público e diretório profissional integrado | Todos os campos persistem, membros públicos não expõem dados privados, troca de coletivo reinicia estado; RN-07/RN-30 comprovadas. N2 de coletivo pendente/recusado não obtém diretório; considerar outros vínculos aprovados. |
+| F4-T4 | Gestão, perfil público e diretório profissional integrado | Todos os campos persistem; HTML/metadados públicos só de coletivo aprovado e sem dados privados; troca de coletivo reinicia estado; RN-07/RN-30 comprovadas. N2 de coletivo pendente/recusado não obtém diretório; considerar outros vínculos aprovados. |
 | F4-T5 | Administração do site: fila de verificação, aprovação e recusa | Papel separado de N2, provisionamento controlado, MFA, decisão auditada e concorrência; critérios de verificação/reapresentação definidos. Criador não se autoaprova; aprovado libera funções sem nova sessão. |
 
 **Saída:** teste de permissões por operação direto na API, auditoria das mutações sensíveis, revisão completa de isolamento. Sem órfãos administrativos.
@@ -83,7 +85,7 @@ flowchart LR
 |---|---|---|
 | F5-T1 | Evento + lineup transacionais, tempo e ingresso | Fuso explícito, validações do tipo, relação de datas e ingresso XOR gratuito; idempotência e autoria N2 do coletivo. |
 | F5-T2 | Criar/editar/publicar/cancelar | D-04/D-05 resolvidas; rascunhos privados; alteração concorrente detectada; cancelamento comunicado na página. |
-| F5-T3 | Agenda, páginas públicas e dashboard coerentes | Futuro/em andamento/passado, ordem estável, paginação, evento de artista sem vínculo no coletivo organizador e link profundo. |
+| F5-T3 | Agenda, páginas públicas e dashboard coerentes | Futuro/em andamento/passado, ordem estável, paginação, evento de artista sem vínculo no coletivo organizador e link profundo; HTML/metadados públicos, HTTP 404 e rascunhos fora de respostas públicas. |
 
 **Saída:** cenário de ponta a ponta de produtor criar → artista aparecer no lineup → visitante consultar → evento alterar/cancelar, com conteúdo hostil e acessos cruzados testados.
 
@@ -101,7 +103,7 @@ flowchart LR
 
 | Tarefa | Entrega | Aceite adicional |
 |---|---|---|
-| F7-T1 | Debian/Podman, DNS/TLS, ambientes e release | Domínios próprios, imagem/artefato imutável, segredo por ambiente, rollback ensaiado; PRs não executam no host de produção. |
+| F7-T1 | Node/Caddy no Debian/Podman, DNS/TLS, ambientes e release | Domínios próprios, imagem/artefato imutável, segredo por ambiente, rollback ensaiado; PRs não executam no host de produção. |
 | F7-T2 | Privacidade, moderação, suporte e ciclo de vida da conta | Política de retenção/exclusão/exportação, responsável e canal de suporte; sem dados reais em seeds ou logs. |
 | F7-T3 | Qualidade pública | Acessibilidade automatizada + manual, mobile, busca/SEO/social cards, performance com volume representativo e conexão lenta. |
 | F7-T4 | Segurança e recuperação final | OWASP completo, RLS/Storage/Auth, teste de restauração DB+arquivos, logs sem PII, alertas e responsável por incidentes. |
@@ -124,7 +126,7 @@ flowchart LR
 
 | Item | Entrega |
 |---|---|
-| 1 Backend | ADR + arquitetura/backend-and-data.md |
+| 1 Backend | specs/architecture-mvp.md + architecture/backend-and-data.md; proposta histórica no ADR |
 | 2 GitHub/CI/infra | Workflows, CODEOWNERS, environment.md e F0/F7 |
 | 3 Telas faltantes | reviews/prototype-audit.md e F1–F6 |
 | 4 Regras decididas | business-rules/mvp.md, com fontes e estados |

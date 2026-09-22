@@ -1,24 +1,28 @@
 # Backend, dados e autenticação
 
-Proposta técnica para o MVP. Supabase é decisão confirmada; este modelo ainda não foi aplicado. O projeto `CircuitoNE-dev` não tinha tabelas em `public` nem migrações na inspeção. Produção não foi modificada.
+Detalhamento do MVP conforme a [arquitetura aprovada em 22/09/2026](../specs/architecture-mvp.md). O modelo relacional abaixo continua proposto e ainda não foi aplicado. O projeto `CircuitoNE-dev` não tinha tabelas em `public` nem migrações na inspeção. Produção não foi modificada.
 
 ## Componentes
 
 ```mermaid
 flowchart LR
-  Browser[React / Vite] --> Auth[Supabase Auth]
-  Browser --> API[Data API + RLS]
+  Browser[React] --> Proxy[Caddy / HTTPS]
+  Proxy --> App[React Router Framework / Node]
+  App --> Auth[Supabase Auth]
+  App --> API[Data API / RPC + identidade do usuário]
   API --> DB[(Postgres)]
   Browser --> Files[Storage + políticas]
   Browser --> RT[Realtime autorizado]
-  Browser --> Edge[Edge Functions específicas]
-  Edge --> DB
-  Edge --> Mail[Provedor SMTP / integrações]
+  App --> Files
+  App --> External[Integrações com segredo]
+  Auth --> Mail[Provedor SMTP]
 ```
 
 Postgres é a fonte da verdade. React mantém estado de formulário e cache de leitura, sem replicar decisões de autorização. Interfaces públicas recebem somente projeções públicas; ocultar um campo no JSX não o protege.
 
 Usar o SDK Supabase com tipos gerados. Preferir módulos pequenos por caso de uso (perfis, coletivos, eventos, mensagens), sem repositório genérico, fábrica de serviços ou abstração para múltiplos bancos. Só adicionar biblioteca de cache quando a primeira integração mostrar necessidade; não converter o projeto inteiro antecipadamente.
+
+O Node atende SSR, loaders/actions, validação com Zod e integrações que exigem segredo. Acesso comum ao Supabase preserva a identidade do usuário e RLS; não usa `service_role`. Invariantes atômicas ficam no Postgres/RPC. Edge Functions só entram quando houver necessidade de execução independente, sem duplicar regras. Páginas públicas entregam conteúdo/metadados no HTML inicial; respostas autenticadas não entram em cache compartilhado.
 
 ## Modelo relacional proposto
 
@@ -86,11 +90,11 @@ Preferir RPC `SECURITY INVOKER` quando as políticas bastarem. Operações que p
 
 - Proposta: e-mail/senha no Supabase Auth; cadastro inclui senha e confirmação (hoje ausentes), confirmação de e-mail, reenvio com limite e estados de cadastro incompleto.
 - Criar jornadas de esqueci senha, retorno de recuperação, link expirado, troca de e-mail confirmada, reautenticação sensível e saída. Não alterar e-mail apenas na tabela de perfil.
-- Gerenciar sessão com SDK e estado de carregamento inicial. Não fazer redirecionamento antes de resolver a sessão. Sem login demo no build conectado a dados reais.
+- Gerenciar sessão pela integração oficial Supabase para SSR, com cliente por requisição e validação de identidade no servidor; não autorizar apenas com `getSession()`. Tratar cookies, refresh, CSRF nas mutações e isolamento de cache/memória entre usuários. Não fazer redirecionamento antes de resolver a sessão. Sem login demo no build conectado a dados reais.
 - CAPTCHA e limites nas rotas de cadastro/recuperação conforme risco; SMTP próprio com remetente e domínio verificados antes do beta externo. O SMTP padrão não será critério de prontidão de produção.
 - URL de retorno permitida por ambiente; sem wildcard aberto em produção. Testar link usado/expirado e redirect malicioso.
 - Revogação de participação tem efeito no banco imediatamente. Logout/exclusão não deve depender de supor que todo access token expira instantaneamente. Para operação especialmente sensível, validar sessão atual conforme necessidade.
-- MFA recomendado para contas operacionais e administradores de infraestrutura; política de MFA de usuários N2 é decisão pendente, não requisito inventado do MVP.
+- MFA obrigatório para administração do site, conforme arquitetura aprovada, e recomendado para administradores de infraestrutura. A política de MFA de usuários N2 continua pendente.
 
 ## Storage e consultas
 

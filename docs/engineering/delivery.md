@@ -61,13 +61,14 @@ Para testes de caracterização de código já existente, é honesto registrar q
 |---|---|---|
 | Cada tarefa | Issue/PR + `docs/tasks/Fx-Ty.md` se a evidência não couber no PR | Problema, RN, critérios, escopo, teste vermelho/verde, SHA, homologação, review, risco e recuperação |
 | Quando regra muda | `docs/business-rules/mvp.md` | Decisão, fonte, data, critério de aceite e divergência resolvida |
+| Quando contrato técnico muda | `docs/specs/*.md` | Estado, data, escopo, requisitos, critérios de aceite e pendências; atualizar o índice |
 | Quando decisão técnica muda | `docs/decisions/NNNN-*.md` | Contexto, decisão, alternativas descartadas relevantes e consequências |
 | Quando schema muda | `docs/migrations/*.sql` + nota da migração | Ordem, integridade/RLS, backfill, compatibilidade e rollback/roll-forward |
 | Cada fase | `docs/reviews/phase-N.md` | Tarefas concluídas, review completo, matriz OWASP, evidências, pendências com dono e gate final |
 | Quando operação muda | `docs/engineering/environment.md` | Comandos operacionais verificados, acessos, backup, restauração e incidentes |
 | Release | Nota de release | SHA, regras entregues, migrations, URLs, smoke test e plano de recuperação |
 
-Não gerar ADR para cada função nem repetir todo o modelo em cada tarefa. Para documentos, revisar consistência, links, evidências e decisões; não inventar testes de prosa para cumprir TDD mecanicamente.
+Specs descrevem o resultado esperado; ADRs registram contexto, alternativas e consequências relevantes. Não gerar ADR para cada função nem repetir a spec ou todo o modelo em cada tarefa. Para documentos, revisar consistência, links, evidências e decisões; não inventar testes de prosa para cumprir TDD mecanicamente.
 
 ## Limitação atual
 

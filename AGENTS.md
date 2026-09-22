@@ -20,6 +20,7 @@ React + Vite + Tailwind CSS project running inside Figma Make.
 All paths below are relative to the repository root:
 
 - Architecture Decision Records (ADRs): `docs/decisions/`
+- Specifications, technical requirements, and architecture/infrastructure contracts: `docs/specs/` (see its index; approved target architecture is not necessarily implemented)
 - Database migration files: `docs/migrations/`
 - Business rules: `docs/business-rules/`
 

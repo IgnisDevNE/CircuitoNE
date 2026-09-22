@@ -20,11 +20,13 @@ O preview também está preparado em container Podman. Nesta máquina, o endere�
 
 ## Plano e decisões
 
+- [Especificações e requisitos técnicos](docs/specs/README.md)
+- [Arquitetura aprovada do MVP](docs/specs/architecture-mvp.md)
 - [Plano de execução e tarefas](docs/planning/implementation-plan.md)
 - [Revisão do protótipo e lacunas](docs/reviews/prototype-audit.md)
 - [Regras de negócio e pendências](docs/business-rules/mvp.md)
 - [Backend, autenticação e modelo de dados](docs/architecture/backend-and-data.md)
-- [Decisões de arquitetura](docs/decisions/0001-foundation.md)
+- [Proposta inicial de arquitetura e histórico](docs/decisions/0001-foundation.md)
 - [TDD, isolamento, revisões e documentação](docs/engineering/delivery.md)
 - [Infraestrutura e operação](docs/engineering/environment.md)
 - [Revisão de segurança OWASP](docs/reviews/security-baseline.md)

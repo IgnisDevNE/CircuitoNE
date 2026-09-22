@@ -2,7 +2,7 @@
 
 ## Escolha de hospedagem
 
-O responsável escolheu usar **Podman neste Windows por enquanto**, com possibilidade de levar o container ao Debian próprio. O frontend é estático: build Node/Vite e execução com Caddy. Supabase gerenciado continua responsável pelo banco, Auth e Storage. Não instalar Kubernetes, painel de hospedagem ou servidor Node de produção para servir arquivos estáticos.
+O responsável escolheu usar **Podman neste Windows por enquanto**, com possibilidade de levar a aplicação ao Debian próprio. O preview atual é estático: build Node/Vite e execução com Caddy. A [arquitetura aprovada em 22/09/2026](../specs/architecture-mvp.md) prevê React Router Framework com SSR, runtime Node e Caddy como proxy HTTPS. Essa migração está planejada na fase 1; os comandos abaixo ainda descrevem o protótipo estático. Supabase gerenciado continua responsável pelo banco, Auth e Storage.
 
 O container local é preview do protótipo. Não equivale à homologação integrada com banco e não oferece disponibilidade de produção: depende deste computador e da VM ligada.
 
@@ -33,7 +33,7 @@ pnpm test:hosting
 
 O teste verifica home, acesso direto a rota React, bundle JavaScript, bloqueio de caminhos internos e 404 de asset ausente. `--format docker` preserva o HEALTHCHECK na imagem construída pelo Podman. Processo usa UID 1000, raiz somente leitura, capabilities removidas e proibição de novos privilégios. Diretórios de runtime do Caddy são graváveis; arquivos da aplicação não são. O Caddy perde a capability gravada no binário durante o build, pois escuta em 8080 e não precisa dela.
 
-Imagens base são fixadas por digest; Dependabot propõe atualizações revisáveis. `.dockerignore` permite somente entradas necessárias ao build. Nenhum `.env`, histórico Git ou arquivo de credenciais entra no contexto. O frontend ainda não usa Supabase; ao integrar, configurar URL e chave **publicável** por ambiente no build, com teste de seleção do projeto. Variável em runtime não altera JavaScript já compilado. Nunca incluir chave secreta no bundle.
+Imagens base são fixadas por digest; Dependabot propõe atualizações revisáveis. `.dockerignore` permite somente entradas necessárias ao build. Nenhum `.env`, histórico Git ou arquivo de credenciais entra no contexto. O frontend ainda não usa Supabase. No build estático, variável em runtime não altera JavaScript já compilado. Na migração SSR, definir configuração por ambiente no servidor e expor ao cliente somente URL e chave **publicável**, com teste de seleção do projeto. Nunca incluir chave secreta no bundle.
 
 ## Ferramentas e CI
 
@@ -43,7 +43,7 @@ O workflow de CI não publica imagens, não acessa secrets e não migra banco. A
 
 ## GitHub e ambientes
 
-Repositório existente: [IgnisDevNE/CircuitoNE](https://github.com/IgnisDevNE/CircuitoNE), público na inspeção inicial; a visibilidade foi preservada. Baseline importado em `main`; preparação em `codex/project-foundation` e PR em rascunho. O estado verificado das proteções e do CI está no [relatório](../reviews/foundation-validation.md).
+Repositório existente: [IgnisDevNE/CircuitoNE](https://github.com/IgnisDevNE/CircuitoNE), público na inspeção inicial; a visibilidade foi preservada. Baseline importado em `main`; preparação em `codex/project-foundation` e [PR #2](https://github.com/IgnisDevNE/CircuitoNE/pull/2). O estado verificado das proteções e do CI está no [relatório](../reviews/foundation-validation.md).
 
 - `main`: exigir PR, revisão independente, CODEOWNERS nos contratos/testes/infra, CI e resolução de comentários; sem force push ou exclusão. Administradores também sujeitos à proteção de branch. A conta administrativa ainda pode alterar a configuração: por isso deve sair do ambiente do implementador.
 - Ambiente **Homologação**: projeto `CircuitoNE-dev` (`odphoxozclrshqjgwbqk`, São Paulo), revisão de `magalz` e prevenção de autoaprovação. Variável `SUPABASE_PROJECT_REF` definida; sem secrets nesta preparação.
@@ -79,7 +79,7 @@ As regiões diferentes exigem decisão antes de dados reais. Banco e arquivos t�
 ## Caminho para Debian
 
 1. Confirmar recursos, arquitetura, serviços existentes, acesso administrativo e política de atualização do servidor.
-2. Executar a imagem revisada por digest com Podman rootless; serviço systemd/Quadlet para reinício e logs. Não fazer build de PR no host de produção.
+2. Após a migração SSR, executar o runtime Node e o proxy Caddy revisados por digest com Podman rootless; serviço systemd/Quadlet para reinício e logs. Não fazer build de PR no host de produção. O container estático atual não entrega SSR.
 3. Configurar proxy HTTPS e DNS, por exemplo `circuito.magalz.space` e subdomínio distinto de homologação (nomes apenas propostos). O domínio final ainda não foi criado/configurado. Certificados automáticos dependem de DNS e conectividade corretos.
 4. Restringir portas, proteger o acesso administrativo, monitorar disponibilidade e espaço, registrar rotação de logs e alertas. Servir a aplicação atrás de HTTPS; HTTP do preview local não é configuração de produção.
 5. Promover artefato homologado, testar home/deep link/Auth, e manter digest anterior para rollback. Migrações precisam de plano próprio; voltar o container não desfaz SQL.

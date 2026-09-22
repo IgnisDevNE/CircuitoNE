@@ -170,7 +170,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 **Issues tratadas:** [#30](https://github.com/IgnisDevNE/CircuitoNE/issues/30) e colaboração operacional em [#29](https://github.com/IgnisDevNE/CircuitoNE/issues/29); não fechar upload sem relatório real.
 
-**Estado:** cobertura local disponível (4,33% de statements); arquivo novo não executado aparece com 0%, e falha controlada de navegação é detectada sem mudar o percentual. Publicação externa deferida por DEF-01 e artefatos CI dependem do patch do mantenedor. **Dependência:** F0-T6, e F0-T2 para credenciais de CI. **Risco:** médio.
+**Estado:** cobertura local disponível (4,33% de statements); arquivo novo não executado aparece com 0%, e falha controlada de navegação é detectada sem mudar o percentual. Publicação externa deferida por DEF-01; artefatos CI incluídos no workflow do PR #45, com execução/aceite registrados no PR. **Dependência:** F0-T6, e F0-T2 para credenciais de CI. **Risco:** médio.
 
 - Entrega: relatório LCOV/HTML reproduzível, conjunto de arquivos incluídos explícito, baseline aprovado e política de cobertura de código alterado. Não impor porcentagem arbitrária nem excluir caminhos para esconder ausência de testes.
 - Testar primeiro: código não executado aparece descoberto e arquivo novo entra no relatório; uma regressão controlada na regra exercitada faz o teste falhar mesmo se a cobertura continuar igual. Falha de teste impede tratar relatório como evidência aprovada; cobertura de linhas não prova qualidade do oráculo.
@@ -180,7 +180,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 ## F0-T14 — Resolver upgrades e estabilizar a toolchain
 
-**Bloqueios por issue:** Nenhum para iniciar revisão/correção de dependências em CI sem secrets. Escrita de workflows requer atuação do mantenedor, registrada em [#34](https://github.com/IgnisDevNE/CircuitoNE/issues/34).
+**Bloqueios por issue:** Nenhum para iniciar revisão/correção de dependências em CI sem secrets. Escrita de workflows requer atuação do mantenedor, registrada em [#34](https://github.com/IgnisDevNE/CircuitoNE/issues/34). Para publicar o CI do PR #45, ele autorizou explicitamente sua credencial em 22/09/2026; as proteções de revisão permanecem.
 
 **Issues tratadas:** [#34](https://github.com/IgnisDevNE/CircuitoNE/issues/34)/[#35](https://github.com/IgnisDevNE/CircuitoNE/issues/35)/[#36](https://github.com/IgnisDevNE/CircuitoNE/issues/36)/[#37](https://github.com/IgnisDevNE/CircuitoNE/issues/37); cada incremento tem seu próprio review e evidência.
 

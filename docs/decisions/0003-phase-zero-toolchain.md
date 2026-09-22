@@ -14,6 +14,6 @@ Reutilizar `node:test` para infraestrutura; Vitest/Testing Library para unidades
 
 ## Limites
 
-As suítes deste repositório são mutáveis pelo implementador e não substituem o QA canônico independente ([#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31)). CI sem credenciais continua obrigatório, mas sua extensão para E2E/artefatos depende de aplicar o [patch de workflow](../engineering/ci-phase-zero.patch) pelo mantenedor ([#34](https://github.com/IgnisDevNE/CircuitoNE/issues/34)). Não contornar a permissão ausente do App.
+As suítes deste repositório são mutáveis pelo implementador e não substituem o QA canônico independente ([#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31)). O [workflow](../../.github/workflows/ci.yml) sem secrets inclui E2E, cobertura/artefatos e banco descartável ([#34](https://github.com/IgnisDevNE/CircuitoNE/issues/34)). Sua publicação com credencial humana foi explicitamente autorizada pelo responsável em 22/09/2026, somente para essa operação; as permissões do App e as proteções de revisão permanecem. Evidência e aceite no [PR #45](https://github.com/IgnisDevNE/CircuitoNE/pull/45).
 
 Supabase CLI 2.117.0 prepara cópias descartáveis dos SQL canônicos com checksum. O helper não executa comandos de banco, não lê credenciais e não fornece proteção contra um agente com acesso administrativo ao host. Auth/local completo, tipos gerados e homologação integrada serão acrescentados quando houver schema e os pré-requisitos correspondentes.

@@ -1,14 +1,16 @@
 # Aceite canônico e atualização da suíte no CI
 
-Data: 22/09/2026. **Estado:** direção aprovada pelo responsável; detalhamento técnico para revisão e implementação pendente. Vinculada à [ADR 0006](../decisions/0006-canonical-ci-suite.md) e à [#31 / F0-T2](https://github.com/IgnisDevNE/CircuitoNE/issues/31).
+Data: 22/09/2026. **Estado:** direção aprovada; infraestrutura inicial em implantação, gate ainda não obrigatório. Vinculada à [ADR 0006](../decisions/0006-canonical-ci-suite.md) e à [#31 / F0-T2](https://github.com/IgnisDevNE/CircuitoNE/issues/31).
 
 ## Objetivo e autoridade
 
 Executar o aceite na esteira, poupando recursos do PC, e impedir que alterações nos testes ou no comando do PR substituam os critérios aprovados. Após aprovação, merge e validação, a própria esteira promove os novos testes para a referência dos próximos PRs. CI verde, isoladamente, não aprova uma mudança de contrato.
 
-A suíte, suas propostas, o workflow de aceite e a referência ativa ficam sob autoridade externa à implementação, fora das instalações do App `ignisdevne`. O destino proposto continua `magalz/CircuitoNE-qa`; o mantenedor precisa confirmar/provisionar esse recurso e suas proteções. A consulta com o App em 22/09 retornou HTTP 404: isso não distingue recurso inexistente de privado/inacessível. Não ampliar a instalação do App para dar escrita nesse QA.
+A suíte, suas propostas, o workflow de aceite e a referência ativa ficam sob autoridade externa à implementação. O repositório privado [IgnisDevNE/CircuitoNE-QA](https://github.com/IgnisDevNE/CircuitoNE-QA) foi criado na mesma organização e o mantenedor retirou-o da instalação do App `ignisdevne`; a tentativa de emitir um token desse App para o QA retornou HTTP 422 e a leitura autenticada retornou 404. Não ampliar essa instalação. O `main` do QA contém a primeira suíte de caracterização e o verificador; o CI próprio passou no commit `cd15b96`. O plano GitHub atual recusa proteção de branches em repositórios privados (HTTP 403), portanto revisão de PRs no QA ainda é uma exigência operacional, não um bloqueio nativo. A branch `accepted` começou em `4f095a7` e registra a árvore Git dos testes para falhar diante de alterações acidentais sem promoção; esse registro não autoriza mudanças feitas por quem já possa escrever no QA.
 
 O processamento pesado usa runners descartáveis hospedados pelo GitHub. Não exige uma VM de desenvolvimento local nem um middleware próprio. O desenho pressupõe que a identidade implementadora não tenha autoridade administrativa sobre o QA, o aprovador ou o publicador; não protege contra uso de credenciais humanas disponíveis por outra ferramenta. Essa limitação de credenciais permanece na #31, sem alegar isolamento do PC ou dispensar os gates existentes.
+
+O App `CircuitoNE QA Publisher` foi instalado apenas no CircuitoNE e no CircuitoNE-QA, com `Checks:write`, `Pull requests:write` e `Contents:read`. Cada token de execução limita separadamente repositório e permissão: publicação do check no CircuitoNE ou criação de PR de testes no QA. A chave está no environment `QA Publisher` do QA, limitado à branch `main`; uma execução em branch temporária foi recusada antes do job ([evidência](https://github.com/IgnisDevNE/CircuitoNE-QA/actions/runs/35782632492)). Essa restrição do environment funciona no ensaio observado, mas não equivale à proteção das branches `main` ou `accepted` do QA, indisponível no plano atual. Uma cópia local da chave permanece em `secrets/` até a limpeza de credenciais ao fim do housekeeping. A política da organização rejeitou habilitar criação de PRs pelo `GITHUB_TOKEN` padrão do QA (HTTP 409); o workflow usa esse token para preparar a branch e o App QA para abrir o PR, que o responsável aprova. O token de disparo, restrito ao QA com `Actions:write`, está no environment `QA Dispatch` do repositório principal e expira em 23/09/2027. O check exigido com origem fixada no App QA e os ensaios de aceitação/negação devem ser concluídos antes de ativar `CANONICAL_QA_ENABLED` ou encerrar a #31.
 
 ## Versões e arquivos protegidos
 
@@ -69,7 +71,7 @@ Todos os itens tratam a **#31**, responsável mantenedor + QA, alvo F0-T2. A iss
 
 | Entrega | Pré-requisito para iniciar a parte dependente | Evidência de conclusão |
 |---|---|---|
-| Confirmar/provisionar QA e autoridade de publicação | Nenhum para preparar contratos; configuração externa pelo mantenedor | App implementador não escreve QA, não troca a referência e não imita a identidade do aceite; controles independentes dos arquivos do PR |
+| Confirmar/provisionar QA e autoridade de publicação | Repositório QA privado, App QA e primeira referência criados; proteção nativa de branches indisponível no plano atual e revogação das credenciais locais pendente | App implementador não lê nem escreve QA, não troca a referência e não imita a identidade do aceite; desvio acidental de `accepted` falha antes dos testes; revisão manual de QA documentada até haver proteção nativa |
 | Fixar primeira suíte e W | Autoridade externa disponível | Manifesto, commits e aprovação; testes existentes caracterizados, nenhuma falha inventada |
 | Integridade e execução obrigatória em PR | S/W aprovados e gatilho confiável | Erro conhecido rejeitado; correção aceita; alteração de teste, comando, fixture, skip, workflow e resultado não falsifica o aceite |
 | Promoção pós-merge | Aceite anterior e autoridade de promoção operacionais | Novo teste revisado passa em M e entra na próxima suíte; conteúdo não aprovado, SHA errado, origem falsa e merge não validado não promovem |

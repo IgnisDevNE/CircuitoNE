@@ -15,7 +15,7 @@ React + Vite + Tailwind CSS project running inside Figma Make.
 - Use `node scripts/github-app.mjs gh <args>` for GitHub operations and `node scripts/github-app.mjs git <args>` for authenticated Git operations and commits. These commands use the `ignisdevne` App with a temporary token scoped to this repository.
 - Do not fall back to the saved human GitHub credentials when App access is denied. Report the missing permission; keep review and branch protections intact.
 - Never commit or print files from `secrets/`, private keys, or tokens. The helper also accepts `GITHUB_APP_PRIVATE_KEY_FILE` for an external key path.
-- The App is installed across the IgnisDevNE organization. Canonical acceptance tests must be controlled outside this App's installations. Local helpers/instructions do not replace credential and execution isolation; see `docs/engineering/delivery.md`.
+- The App installation currently selects the application repository; `IgnisDevNE/CircuitoNE-QA` must remain excluded. Canonical acceptance tests must be controlled outside this App's installation. Local helpers/instructions do not replace credential and execution isolation; see `docs/engineering/delivery.md`.
 
 ## Documentation Locations
 

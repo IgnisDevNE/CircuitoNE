@@ -2,7 +2,7 @@
 
 ## Escolha de hospedagem
 
-O responsável escolheu usar **Podman neste Windows por enquanto**, com possibilidade de levar a aplicação ao Debian próprio. O preview atual é estático: build Node/Vite e execução com Caddy. A [arquitetura aprovada em 22/09/2026](../specs/architecture-mvp.md) prevê React Router Framework com SSR, runtime Node e Caddy como proxy HTTPS. Essa migração está planejada na fase 1; os comandos abaixo ainda descrevem o protótipo estático. Supabase gerenciado continua responsável pelo banco, Auth e Storage.
+O responsável escolheu usar **Podman neste Windows por enquanto**, com possibilidade de levar a aplicação ao Debian próprio. O preview atual é estático: build Node/Vite e execução com Caddy. A [arquitetura aprovada em 22/09/2026](../specs/architecture-mvp.md) prevê React Router Framework com SSR, runtime Node e Caddy como proxy HTTPS. Essa migração está planejada na fase 0; os comandos abaixo ainda descrevem o protótipo estático. Supabase gerenciado continua responsável pelo banco, Auth e Storage.
 
 O container local é preview do protótipo. Não equivale à homologação integrada com banco e não oferece disponibilidade de produção: depende deste computador e da VM ligada.
 
@@ -75,6 +75,10 @@ Na inspeção, `CircuitoNE-dev` estava saudável, sem tabelas públicas e sem mi
 Testes destrutivos e `reset` usam banco descartável local/CI. Homologação compartilhada recebe migrações revisadas, em sequência, com bloqueio de concorrência e registro de SHA/checksum. Preview usa somente dados fictícios. Produção nunca é destino de teste de schema.
 
 As regiões diferentes exigem decisão antes de dados reais. Banco e arquivos têm estratégias próprias de backup; registrar retenção, responsáveis, perda aceitável e tempo de recuperação. Testar restauração de ambos antes do beta; não presumir que backup de Postgres recupera objetos de Storage.
+
+## Codecov
+
+A instância própria em [pipeline.magalz.space](https://pipeline.magalz.space) foi inspecionada em 22/09/2026. `magalz` está ativo e `IgnisDevNE/CircuitoNE` habilitado para cobertura. A associação de organizações pelo login OAuth ainda depende de autorização no GitHub; upload real no CI não foi configurado. Causa, ações e encerramento da pendência em [diagnóstico Codecov](../reviews/codecov-diagnosis.md). F0-T13 prevê cobertura local como artefato enquanto a integração externa estiver deferida.
 
 ## Caminho para Debian
 

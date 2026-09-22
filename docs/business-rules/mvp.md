@@ -44,7 +44,7 @@ O CPF deve ter validação de dígitos e restrição `UNIQUE` no servidor; não 
 | RN-22 | Dashboard do coletivo ordena futuros por proximidade e passados por último; mostra cargo, última atividade e mensagens conforme permissão. | Confirmada; brief. Mock ordena passados do mais recente para o mais antigo; confirmar esse detalhe. |
 | RN-30 | Coletivos/produtoras criados ficam pendentes de verificação/aprovação pela administração do site. Dashboard e demais funções internas só são liberados após aprovação; criar o coletivo não libera o diretório profissional. | Confirmada pelo responsável nesta tarefa. Falta no protótipo. |
 
-RN-30 se aplica também ao criador N2. Ser administrador de um coletivo pendente não libera funções de um aprovado. Proposta de UX: o criador vê uma tela de acompanhamento do pedido, com pendência/recusa e orientação de correção. Administração do site é uma função operacional distinta de N2; não atribui acesso automático a CPF ou mensagens pessoais. Motivo de recusa, reapresentação e suspensão posterior precisam de critérios operacionais na fase 4.
+RN-30 se aplica também ao criador N2. Ser administrador de um coletivo pendente não libera funções de um aprovado. Proposta de UX: o criador vê uma tela de acompanhamento do pedido, com pendência/recusa e orientação de correção. Administração do site é uma função operacional distinta de N2; não atribui acesso automático a CPF ou mensagens pessoais. Motivo de recusa, reapresentação e suspensão posterior precisam de critérios operacionais na fase 3.
 
 ## Eventos e mensagens
 
@@ -62,15 +62,15 @@ RN-30 se aplica também ao criador N2. Ser administrador de um coletivo pendente
 
 | Decisão | Proposta inicial | Resolver antes de |
 |---|---|---|
-| D-01 Aprovação de coletivos | **Resolvida:** administração do site verifica/aprova antes de liberar dashboard e funções internas (RN-30). Critérios de verificação, recusa/reapresentação e suspensão ainda devem ser definidos, sem presumir KYC. | Fase 4. |
-| D-02 Idade mínima e tratamento de menores | Definir público, política de privacidade e responsáveis; não inferir 18 anos. | Fase 2, abertura do cadastro. |
-| D-03 Recuperação de conta com CPF já usado; edição de CPF; exclusão e novo cadastro | CPF não editável livremente; recuperação autenticada; retenção a definir. | Fase 2. |
-| D-04 Fim do evento e fuso | Fim opcional como `NULL`; se preenchido, maior que início; fuso explícito America/Fortaleza. | Fase 5. |
-| D-05 Publicação e cancelamento | Estados rascunho/publicado/cancelado; cancelamento preserva página e aviso. | Fase 5. |
-| D-06 Quem inicia conversa, destinatário e representação do coletivo | Usuário autenticado inicia contato permitido; remetente pessoal ou representante explícito. | Fase 6. |
-| D-07 Moderação e bloqueio | Canal de denúncia e fluxo de suspensão antes do beta público; operação manual inicial. | Fase 6/7. |
-| D-08 Galeria, cotas e tipos de arquivo | Imagens JPG/PNG/WebP até 5 MB; presskit por URL no MVP; confirmar limites. | Fase 3. |
-| D-09 Permissão de diretório para administrador sem e-mail confirmado ou coletivo suspenso | Negar; checar estado atual no banco. | Fase 4. |
-| D-10 Dados sociais pessoais versus projeto | Cada atuação mantém seus links; dados pessoais privados não são publicados por herança implícita. | Fase 3. |
+| D-01 Aprovação de coletivos | **Resolvida:** administração do site verifica/aprova antes de liberar dashboard e funções internas (RN-30). Critérios de verificação, recusa/reapresentação e suspensão ainda devem ser definidos, sem presumir KYC. | Fase 3. |
+| D-02 Idade mínima e tratamento de menores | Definir público, política de privacidade e responsáveis; não inferir 18 anos. | Fase 1, abertura do cadastro. |
+| D-03 Recuperação de conta com CPF já usado; edição de CPF; exclusão e novo cadastro | CPF não editável livremente; recuperação autenticada; retenção a definir. | Fase 1. |
+| D-04 Fim do evento e fuso | Fim opcional como `NULL`; se preenchido, maior que início; fuso explícito America/Fortaleza. | Fase 4. |
+| D-05 Publicação e cancelamento | Estados rascunho/publicado/cancelado; cancelamento preserva página e aviso. | Fase 4. |
+| D-06 Quem inicia conversa, destinatário e representação do coletivo | Usuário autenticado inicia contato permitido; remetente pessoal ou representante explícito. | Fase 5. |
+| D-07 Moderação e bloqueio | Canal de denúncia e fluxo de suspensão antes do beta público; operação manual inicial. | Fase 5/6. |
+| D-08 Galeria, cotas e tipos de arquivo | Imagens JPG/PNG/WebP até 5 MB; presskit por URL no MVP; confirmar limites. | Fase 2. |
+| D-09 Permissão de diretório para administrador sem e-mail confirmado ou coletivo suspenso | Negar; checar estado atual no banco. | Fase 3. |
+| D-10 Dados sociais pessoais versus projeto | Cada atuação mantém seus links; dados pessoais privados não são publicados por herança implícita. | Fase 2. |
 
 Mudança de regra exige atualizar este documento, os critérios de aceite e os testes por revisão separada. Não resolver divergência enfraquecendo teste existente.

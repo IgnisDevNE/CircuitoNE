@@ -1,6 +1,6 @@
 # Especificação — Arquitetura do MVP CircuitoNE
 
-**Estado:** arquitetura aprovada pelo responsável em 22/09/2026. **Revisão:** 1.
+**Estado:** arquitetura aprovada pelo responsável em 22/09/2026. **Revisão:** 2, com adaptação da stack incorporada à fase zero conforme o plano detalhado.
 
 Este documento registra a arquitetura acordada para implementação posterior. O sistema atual continua sendo um protótipo React/Vite com dados em memória, roteador próprio e container estático Caddy. A aprovação desta spec não significa que SSR, backend, autenticação ou persistência já estejam implementados.
 
@@ -97,11 +97,11 @@ As tarefas e gates permanecem no [plano de execução](../planning/implementatio
 
 | Etapa | Resultado esperado |
 |---|---|
-| Fase 1 | Caracterização do protótipo; migração para React Router Framework e SSR público ainda com dados fictícios; runtime Node/Caddy validado no container |
-| Fase 2 | Auth real com SSR, onboarding e dados privados; testes de sessão e isolamento entre requisições |
-| Fases 3–5 | Perfis, coletivos e eventos persistentes; HTML/metadados públicos corretos e autorização testada diretamente no banco/API |
-| Fase 6 | Mensagens persistentes, Realtime autorizado, reconexão e controles de abuso |
-| Fase 7 | Operação Debian, SEO/acessibilidade/performance final, recuperação e piloto homologado |
+| Fase 0 | Caracterização do protótipo; migração para React Router Framework e SSR público ainda com dados fictícios; runtime Node/Caddy validado no container |
+| Fase 1 | Auth real com SSR, onboarding e dados privados; testes de sessão e isolamento entre requisições |
+| Fases 2–4 | Perfis, coletivos e eventos persistentes; HTML/metadados públicos corretos e autorização testada diretamente no banco/API |
+| Fase 5 | Mensagens persistentes, Realtime autorizado, reconexão e controles de abuso |
+| Fase 6 | Operação Debian, SEO/acessibilidade/performance final, recuperação e piloto homologado |
 
 Aceite mínimo da migração: testes de rotas e navegação; inspeção do HTML inicial sem depender de JavaScript; status HTTP e metadados corretos; duas sessões sem vazamento por memória/cache; nenhum segredo no bundle; build e runtime do container saudáveis. Autorização real só é atestada após integração com Supabase, nunca pelos mocks.
 

@@ -35,7 +35,7 @@ UUIDs em entidades, `timestamptz` para instantes, `date` para nascimento, `creat
 | `profiles` | id, `owner_id`, tipo de atuação, nome, redes | Conta 1:N atuações; sem unicidade por proprietário para artista. Tipo entre artista/serviços/audiovisual/integrante. Proprietário imutável via cliente. |
 | `artist_profiles` | `profile_id`, bio, estilos, cor, foto, status público | 1:1 atuação artista; leitura pública apenas de perfil publicado. Não contém contatos profissionais/CPF. |
 | `professional_details` | `profile_id`, booking, contato, presskit URL, `fee_cents`, CNPJ, tipo serviço, portfólio | 1:1 perfil profissional; titular mantém, administradores habilitados consultam. `fee_cents >= 0`; tipo coerente com atuação. CNPJ fica privado. |
-| `profile_images` | id, `profile_id`, caminho Storage, ordem, texto alternativo | 1:N; índice `(profile_id, position)`; limite por perfil definido na fase 3. |
+| `profile_images` | id, `profile_id`, caminho Storage, ordem, texto alternativo | 1:N; índice `(profile_id, position)`; limite por perfil definido na fase 2. |
 | `collectives` | id, nome, tipo, bio, cidade/UF, atuação, cor, imagem, redes, estado | Dados públicos; conta criadora não é fonte exclusiva de autorização. |
 | `private.collective_reviews` | coletivo, decisão, motivo, decisor, data | Histórico de verificação editorial; somente administração do site decide. Criador recebe somente o estado/motivo apropriado da própria solicitação. |
 | `private.site_admins` | `user_id`, concedido por/em | Papel operacional separado de N2; provisionado por procedimento administrativo controlado. Cliente não se promove nem altera a lista. |
@@ -71,7 +71,7 @@ Administrar A jamais autoriza editar B. O diretório profissional é a exceção
 
 **Pré-condição RN-30:** toda permissão interna de coletivo na matriz exige coletivo aprovado. Criação gera estado pendente; dashboard, mensagens, gestão de membros/cargos, eventos e acesso ao diretório por esse vínculo permanecem bloqueados, inclusive para o criador N2. Acompanhamento do pedido de criação é uma operação distinta, limitada ao criador e administração do site. Perfis públicos/listagens não publicam coletivos pendentes. Estado de aprovação não é editável por N2 nem confiado a metadados de sessão.
 
-Administração do site pode listar pedidos, examinar dados necessários à verificação e aprovar/recusar com trilha de auditoria. Não herda acesso geral a CPF, conversas privadas ou dados profissionais. Prever MFA e provisionamento inicial fora do cadastro público. Estados iniciais: pendente/aprovado/recusado; suspensão e reapresentação terão regras definidas em F4-T5. Não criar um “nível 3” dentro dos cargos customizáveis dos coletivos.
+Administração do site pode listar pedidos, examinar dados necessários à verificação e aprovar/recusar com trilha de auditoria. Não herda acesso geral a CPF, conversas privadas ou dados profissionais. Prever MFA e provisionamento inicial fora do cadastro público. Estados iniciais: pendente/aprovado/recusado; suspensão e reapresentação terão regras definidas em F3-T5. Não criar um “nível 3” dentro dos cargos customizáveis dos coletivos.
 
 Políticas verificam relações atuais no banco, conta ativa e e-mail confirmado quando requerido. Não confiar em `user_metadata` editável pelo usuário. Não atribuir nível 0 a ausência de vínculo. `UPDATE` precisa de `USING` e `WITH CHECK`, com proprietário/coletivo protegidos contra troca. Grants explícitos e RLS entram juntos na migração; testes incluem a chamada REST direta.
 

@@ -1,138 +1,106 @@
-# Plano de execução
+# Plano de implementação
 
-Plano baseado no protótipo e nas decisões do responsável de 21–22/09/2026, incluindo a [arquitetura aprovada](../specs/architecture-mvp.md). A preparação está em andamento; SSR, backend e funcionalidades reais não estão implementados. Execução incremental, uma tarefa revisável por PR. IDs abaixo são o backlog canônico inicial; não foram criadas dezenas de issues vazias.
+**Revisão 2 — 22/09/2026.** Planos executáveis para a [arquitetura aprovada](../specs/architecture-mvp.md). A pedido do responsável, a fase zero agora inclui a adaptação de código à stack, limpeza necessária e setups anteriores às funcionalidades reais. Os documentos detalham trabalho futuro; não declaram a implementação concluída.
 
-## Escopo e ordem
+## Fases e dependências
 
-Manter o design e os componentes aproveitáveis. Primeiro estabilizar entrega/testes, depois corrigir os riscos que contaminariam a integração. Implementar fatias completas com banco, RLS, UI, erros, teste e documentação na mesma tarefa. Não construir todas as tabelas e só depois testar jornadas.
+| Fase | Plano detalhado | Entrega e gate principal |
+|---|---|---|
+| 0 | [Base, testes, limpeza e stack](phases/00-foundation.md) | React Router Framework/SSR, Node/Caddy, CI/homologação e autoridade independente de testes |
+| 1 | [Identidade e autenticação](phases/01-identity.md) | Conta privada, CPF único, onboarding, sessão SSR e recuperação |
+| 2 | [Atuações, perfis e arquivos](phases/02-profiles.md) | Edição por titular, catálogo SSR e Storage com políticas |
+| 3 | [Coletivos e aprovação](phases/03-collectives.md) | Aprovação pelo site, cargos/vínculos, gestão e diretório restrito |
+| 4 | [Eventos](phases/04-events.md) | Evento/lineup atômicos, publicação/cancelamento e agenda SSR |
+| 5 | [Mensagens e abuso](phases/05-messaging.md) | Histórico persistente, leitura individual, Realtime e moderação |
+| 6 | [Beta e operação](phases/06-beta.md) | Debian, privacidade, qualidade final, restauração e liberação controlada |
 
 ```mermaid
 flowchart LR
-  F0[0 Base e isolamento] --> F1[1 Qualidade do protótipo]
-  F1 --> F2[2 Conta e autenticação]
-  F2 --> F3[3 Atuações e perfis]
-  F3 --> F4[4 Coletivos e permissões]
-  F4 --> F5[5 Eventos]
-  F4 --> F6[6 Mensagens]
-  F5 --> F7[7 Beta e operação]
-  F6 --> F7
+  F0[0 Base e adaptação da stack] --> F1[1 Identidade]
+  F1 --> F2[2 Perfis e arquivos]
+  F2 --> F3[3 Coletivos e aprovação]
+  F3 --> F4[4 Eventos]
+  F3 --> F5[5 Mensagens]
+  F4 --> F6[6 Beta e operação]
+  F5 --> F6
 ```
 
-**Todos os itens têm review normal independente**, com teste definido antes, evidência de falha esperada e sucesso, homologação no SHA final e documentação pertinente. **Toda fase termina com review completo + OWASP Top 10:2025**, inclusive quando a conclusão é “não aplicável” com justificativa. As colunas de aceite abaixo complementam esse gate comum.
+São **36 tarefas**, identificadas nos planos. Eventos e mensagens podem avançar independentemente depois dos respectivos pré-requisitos de coletivos; isso não dispensa os reviews de fase. Se uma tarefa não couber em um diff revisável, dividir em subtarefas com sufixos, mantendo o vínculo ao contrato original.
 
-## Fase 0 — Base de trabalho e limites de confiança
+## Estado real e próximo passo
 
-| Tarefa | Entrega | Aceite adicional |
-|---|---|---|
-| F0-T1 | Importar baseline, conectar GitHub, branch de trabalho, CI, lockfile e proteção de main | Instalação reproduzível com Node 22/pnpm 10; teste/typecheck/build/audit verdes; push direto/force push impedidos pelas regras. |
-| F0-T2 | GitHub App implementador separado e suíte de aceite sob outra autoridade | Agente não consegue editar QA, settings, secrets, aprovar próprio PR nem promover produção. Testar tentativas negativas. |
-| F0-T3 | Container estático no Podman Windows; preparar caminho Debian | Home, assets e deep links funcionam; arquivos internos negados; teste executável no CI; nenhuma interferência em containers existentes. |
-| F0-T4 | Integrar homologação e ferramentas Supabase | CLI fixado, configuração versionada, adaptador de migrações testado, secrets mínimos no ambiente correto; migration experimental só em banco descartável, depois fluxo revisado em CircuitoNE-dev. |
-| F0-T5 | Homologação/release no GitHub | Job registra SHA, project ref, checksum, URL e smoke test; produção bloqueada sem homologação. Não aceitar uma aprovação de checklist como prova de teste. |
+- GitHub/App, CI, documentação e preview estático estão preparados no [PR #2](https://github.com/IgnisDevNE/CircuitoNE/pull/2), sujeitos a revisão/conclusão. F0-T1/T3 não equivalem a fase zero completa.
+- SSR, backend, Auth, banco de negócio e funcionalidades persistentes continuam pendentes. O preview segue com mocks.
+- F0-T2 está parcial: a identidade por comando foi separada, mas QA/verificador e isolamento de credenciais ainda não estão completos.
+- Codecov: usuário ativo e CircuitoNE habilitado no servidor; descoberta da organização via OAuth e upload real permanecem pendentes conforme [diagnóstico](../reviews/codecov-diagnosis.md).
+- Primeiro trabalho de implementação: concluir a revisão da fundação; atualizar `main`; abrir branch nova; executar F0-T2 e F0-T6 antes das regras reais. Preparação independente com fixtures pode avançar sem tratar pendências como aprovadas.
 
-**Saída:** pipeline real e autoridade de testes demonstrados, review F0, riscos residuais explicitados. Nesta tarefa, F0-T1 e F0-T3 são preparados/validados conforme relatório; os demais dependem de identidade, credenciais e configurações externas, não são marcados prontos.
+## Contrato comum de cada tarefa
 
-## Fase 1 — Organização dirigida por problemas reais
+1. Vincular RN/decisão, definir critérios e negações, escopo, dependências, risco e responsável por revisão. Pendência de produto bloqueia apenas o trabalho que depende dela; não inventar resposta.
+2. Escrever teste primeiro e registrar falha pelo comportamento ausente. O contrato de aceite é revisado e fixado fora da autoridade do implementador. Caracterização já correta pode começar verde; documentação recebe revisão de consistência, links e evidências.
+3. Implementar o menor incremento completo: UI/servidor/banco/políticas quando necessários, com falhas, autorização e documentação. Não construir todo o schema antes de testar a primeira jornada.
+4. Rodar verificações pertinentes: unidade/interação, TypeScript/build, API/RLS/Storage/concorrência, jornada e acessibilidade afetadas. Registrar SHA final e versão do oráculo; cobertura é evidência auxiliar.
+5. Review normal independente do diff e dos contratos/testes. Resolver P0/P1; risco residual aceito precisa de responsável e prazo. O implementador não é seu único aprovador.
+6. Homologar alterações executáveis pelo GitHub no `CircuitoNE-dev`, com migrations/checksums, artefato e smoke. Nenhum teste de schema em produção. Documentar aplicabilidade quando o PR só altera documentos.
+7. Após aprovação e conclusão, limpar a branch e iniciar o próximo trabalho a partir de `main` atualizada.
 
-| Tarefa | Entrega | Aceite adicional |
-|---|---|---|
-| F1-T1 | Caracterizar rotas/jornadas existentes e componentes comuns | Rotas públicas, protegidas, 404, voltar/avançar, links externos/modificadores, mudança de ID e teclado; mocks explicitamente separados. |
-| F1-T2 | Remover interpolação HTML insegura no Markdown; validar links | Conteúdo com aspas, atributos/eventos, HTML e esquemas perigosos não cria markup executável. Manter recursos de formatação úteis; biblioteca mantida se necessário. |
-| F1-T3 | Extrair validações do cadastro e eventos; corrigir dinheiro/datas | Testes de CPF, CNPJ alfanumérico, e-mail, URL, moeda já formatada, fim anterior ao início e fuso. Não transformar máscara em validador. |
-| F1-T4 | Centralizar distinção membro/visitante e escopos de mensagens no mock | N0/N1/N2 e não membro têm diferenças testadas; trocar coletivo não mantém conversa anterior; nada vaza pela central pessoal/dashboard. |
-| F1-T5 | Corrigir campos ausentes e estados compartilhados de UX | Formulários reinicializam ao mudar perfil/ID; rótulos, erro focável, loading/erro/vazio; `lang=pt-BR`; 390 px, teclado, zoom e movimento reduzido. |
-| F1-T6 | Migrar roteador para React Router Framework e preparar SSR público | Preservar jornadas caracterizadas; HTML inicial e metadados com dados fictícios, HTTP 404 correto, navegação/hidratação sem regressão e código de navegador separado do servidor. |
-| F1-T7 | Adaptar container e verificações para Node + Caddy | SSR e assets servidos pelo runtime correto, saúde e desligamento controlado, sem privilégios ou segredos no bundle; testes HTTP no CI. |
+Detalhes de credenciais, TDD e autoridade do verificador em [delivery.md](../engineering/delivery.md). Workflows e configurações administrativas que excedam as permissões do App passam pelo mantenedor; não usar a credencial humana como fallback do agente.
 
-**Saída:** sem vulnerabilidade conhecida de conteúdo no caminho de publicação; regras isoladas do JSX quando beneficia teste; SSR público e runtime Node/Caddy preparados preservando componentes úteis. A troca do roteador foi aprovada para atender renderização pública e carregamento por rota. Autorização real depende da integração nas fases seguintes; mocks não comprovam segurança.
+## Gate de cada fase
 
-## Fase 2 — Identidade, conta e autenticação
+Produzir `docs/reviews/phase-N.md` com review completo: jornadas e erros, arquitetura, dados/RLS, acessibilidade, desempenho, operação e documentação. Acrescentar **as dez categorias OWASP Top 10:2025**, com evidência, severidade/tratamento ou justificativa concreta de não aplicabilidade. Usar a [matriz de segurança](../reviews/security-baseline.md).
 
-| Tarefa | Entrega | Aceite adicional |
-|---|---|---|
-| F2-T1 | Schema de identidade privado, CPF único, nascimento obrigatório, estado de conta | RLS/grants negam leitura de terceiros; normalização e concorrência impedem CPF duplicado; nenhuma informação pessoal nos logs/erros públicos. RN-01/03/04. |
-| F2-T2 | Cadastro/Auth/onboarding transacional e confirmação | Senha, e-mail duplicado, CPF duplicado, falha parcial, reenvio e retomada testados; primeira atuação coerente, sem login demo. |
-| F2-T3 | Login, sessão SSR, logout e recuperação | Recarga mantém sessão real; expiração/refresh/links inválidos; callback só em URL permitida; logout e erro não mostram painel anterior; validar identidade no servidor, CSRF e duas sessões sem vazamento por memória/cache. |
-| F2-T4 | Editar dados e segurança | E-mail muda via Auth confirmado; reautenticação; política de CPF/nascimento; recuperação de titular e exclusão/suspensão planejadas. |
+O resultado é aprovado ou bloqueado no SHA exato. Autoavaliação e scanners não substituem revisão independente. Não iniciar a parte de uma fase que depende de gate reprovado. O relatório final registra pendências com dono, escopo afetado e condição de encerramento.
 
-**Pré-requisitos:** D-02 e D-03 resolvidas, SMTP operacional em homologação. **Saída:** jornada completa com duas contas reais de teste e testes REST negativos. Documentar ameaça de CPF de terceiro sem confundir unicidade com prova de identidade.
+## Documentação por tarefa e fase
 
-## Fase 3 — Atuações, perfis e arquivos
-
-| Tarefa | Entrega | Aceite adicional |
-|---|---|---|
-| F3-T1 | Múltiplas atuações e edição de artista/serviços/audiovisual | Perfil novo persiste e aparece no local certo; proprietário B não edita A; nomes não colidem por imposição artificial. RN-02/06/09–12. |
-| F3-T2 | Vitrine pública, busca e detalhes sem dados privados | HTML inicial e metadados com dados persistentes; resposta anônima não contém contatos, cachê, CPF ou nascimento; paginação, perfil ausente/404 e fotos quebradas. |
-| F3-T3 | Upload, galeria e substituição de imagens | Limite/tipo/autoria validados no servidor, arquivo malicioso negado, órfãos tratados, falhas de rede recuperáveis. |
-
-**Saída:** perfis editáveis com upload e privacidade comprovada; documentação do contrato público/profissional/privado. Nesta fase, dados profissionais são acessíveis somente ao titular. A liberação do diretório para N2 pertence a F4-T4, depois dos vínculos e permissões, evitando dependência circular entre fases.
-
-## Fase 4 — Coletivos e autorização
-
-| Tarefa | Entrega | Aceite adicional |
-|---|---|---|
-| F4-T1 | Criar coletivo/produtora pendente, cargos básicos e primeiro admin | Operação atômica; produtora sem CNPJ falha; CNPJ alfanumérico aceito; RN-30 bloqueia dashboard/funções até aprovação, inclusive para o criador. Tela de acompanhamento do pedido. |
-| F4-T2 | Vínculos, cargos customizados e RLS | Matriz N0/N1/N2, outsider, usuário removido e admin de outro coletivo; cargo de A não é usado em B; último N2 protegido em concorrência. |
-| F4-T3 | Solicitação, aprovação, recusa, retirada e histórico | Duplicata/retry/decisão simultânea; aprovação usa N0 obrigatório; solicitante vê estado sem acesso aos demais pedidos. |
-| F4-T4 | Gestão, perfil público e diretório profissional integrado | Todos os campos persistem; HTML/metadados públicos só de coletivo aprovado e sem dados privados; troca de coletivo reinicia estado; RN-07/RN-30 comprovadas. N2 de coletivo pendente/recusado não obtém diretório; considerar outros vínculos aprovados. |
-| F4-T5 | Administração do site: fila de verificação, aprovação e recusa | Papel separado de N2, provisionamento controlado, MFA, decisão auditada e concorrência; critérios de verificação/reapresentação definidos. Criador não se autoaprova; aprovado libera funções sem nova sessão. |
-
-**Saída:** teste de permissões por operação direto na API, auditoria das mutações sensíveis, revisão completa de isolamento. Sem órfãos administrativos.
-
-## Fase 5 — Eventos completos
-
-| Tarefa | Entrega | Aceite adicional |
-|---|---|---|
-| F5-T1 | Evento + lineup transacionais, tempo e ingresso | Fuso explícito, validações do tipo, relação de datas e ingresso XOR gratuito; idempotência e autoria N2 do coletivo. |
-| F5-T2 | Criar/editar/publicar/cancelar | D-04/D-05 resolvidas; rascunhos privados; alteração concorrente detectada; cancelamento comunicado na página. |
-| F5-T3 | Agenda, páginas públicas e dashboard coerentes | Futuro/em andamento/passado, ordem estável, paginação, evento de artista sem vínculo no coletivo organizador e link profundo; HTML/metadados públicos, HTTP 404 e rascunhos fora de respostas públicas. |
-
-**Saída:** cenário de ponta a ponta de produtor criar → artista aparecer no lineup → visitante consultar → evento alterar/cancelar, com conteúdo hostil e acessos cruzados testados.
-
-## Fase 6 — Mensagens e abuso
-
-| Tarefa | Entrega | Aceite adicional |
-|---|---|---|
-| F6-T1 | Criar conversas e enviar mensagens persistentes | D-06 resolvida; destinatário e remetente explícitos; participante errado/admin de outro coletivo não lê; retry não duplica. |
-| F6-T2 | Leituras por usuário, histórico paginado e Realtime | Reconexão recompõe histórico; duas sessões não compartilham contador indevido; ordem estável; revogação de cargo remove acesso. |
-| F6-T3 | Anti-spam, denúncia, bloqueio e operação de moderação | Limites no servidor, suspensão auditada e fluxo de denúncia definido; mensagem/cadastro em excesso falha de forma controlada. |
-
-**Saída:** duas contas e dois coletivos em sessões distintas; nenhuma leitura cruzada; limite/indisponibilidade/reconexão testados. Contador de mensagem é derivado, não estado global do mock.
-
-## Fase 7 — Beta e operação
-
-| Tarefa | Entrega | Aceite adicional |
-|---|---|---|
-| F7-T1 | Node/Caddy no Debian/Podman, DNS/TLS, ambientes e release | Domínios próprios, imagem/artefato imutável, segredo por ambiente, rollback ensaiado; PRs não executam no host de produção. |
-| F7-T2 | Privacidade, moderação, suporte e ciclo de vida da conta | Política de retenção/exclusão/exportação, responsável e canal de suporte; sem dados reais em seeds ou logs. |
-| F7-T3 | Qualidade pública | Acessibilidade automatizada + manual, mobile, busca/SEO/social cards, performance com volume representativo e conexão lenta. |
-| F7-T4 | Segurança e recuperação final | OWASP completo, RLS/Storage/Auth, teste de restauração DB+arquivos, logs sem PII, alertas e responsável por incidentes. |
-| F7-T5 | Piloto controlado e promoção | Critérios de sucesso e grupo piloto definidos, smoke no SHA homologado, aprovação humana, acompanhamento e rollback disponível. |
-
-**Saída:** liberação consciente do MVP, sem P0/P1, sem pendência de privacidade/controle de acesso ou restauração. Não declarar pronto com base apenas no build.
-
-## Revisão crítica deste plano
-
-- CPF obrigatório aumenta a responsabilidade operacional; resolver recuperação, titularidade alegada, retenção e conta duplicada antes de abrir cadastro.
-- D-01 foi resolvida: criar coletivo não libera dashboard/funções; aprovação da administração do site é obrigatória (RN-30). F4 inclui um papel operacional e uma fila que não existiam no protótipo. Os critérios de verificação precisam ser executáveis por quem operará o site.
-- Apenas duas instâncias Supabase existem; homologação compartilhada não serve para `reset` de cada PR. Usar banco descartável local/CI para testes destrutivos, serializar migrations compartilhadas.
-- Região da homologação é São Paulo e produção é US West. Verificar latência, residência pretendida e eventual reprovisionamento antes dos primeiros dados reais; não migrar automaticamente.
-- Supabase gerenciado continua dependência externa mesmo com frontend em Debian próprio. Fazer self-host do Supabase não está incluído.
-- O GitHub App está conectado e foi destinado a toda a organização. Tokens de cada execução são limitados ao projeto; a suíte externa deve ficar em outra conta/organização sem esse App. A chave e a credencial humana precisam sair do alcance do implementador para haver isolamento forte. O aceite verifica a aplicação, sem confiar no runner do candidato.
-- SMTP, backup de Storage, DNS/TLS, perda do host, moderação, acessibilidade e SEO não estavam cobertos pelo mock; agora têm tarefas e gates.
-- Não estimar calendário antes de fechar decisões de produto e disponibilidade do responsável. Avançar por aceite, com tarefas pequenas; dividir item que não caiba em um diff revisável.
-
-## Cobertura do pedido original
-
-| Item | Entrega |
+| Momento | Registro necessário |
 |---|---|
-| 1 Backend | specs/architecture-mvp.md + architecture/backend-and-data.md; proposta histórica no ADR |
-| 2 GitHub/CI/infra | Workflows, CODEOWNERS, environment.md e F0/F7 |
-| 3 Telas faltantes | reviews/prototype-audit.md e F1–F6 |
-| 4 Regras decididas | business-rules/mvp.md, com fontes e estados |
-| 5 Banco/Auth | Modelo, matriz RLS, transações e F2–F6 |
-| 6 Fases e revisões | Este backlog + engineering/delivery.md |
-| 7 TDD isolado | Autoridades, suíte canônica externa e testes negativos de permissão |
-| 8 Documentação | Matriz por tarefa/fase em delivery.md |
-| 9 Ambiente | Node/pnpm, CI, container local e relatório de validação |
-| 10 Revisão do plano | Riscos acima, decisões abertas e segurança-baseline.md |
+| Antes da implementação | Contrato/critério no PR ou tarefa, RNs, SHA dos testes de aceite e decisões pendentes |
+| Cada tarefa | Escopo, vermelho/verde, validações, revisão, SHA, homologação, riscos e recuperação; `docs/tasks/Fx-Ty.md` somente se a evidência não couber no PR |
+| Mudança de contrato técnico | Atualizar `docs/specs/` e seu índice; ADR apenas quando houver contexto/alternativas/consequências relevantes a registrar |
+| Regra ou banco | Atualizar regra canônica, contratos/políticas e migração correspondente; não duplicar SQL editável |
+| Cada fase | `docs/reviews/phase-N.md`, review completo, OWASP, evidências e gate final |
+| Operação/release | Comandos verificados, responsáveis, SHA/artefato, migrations e plano de recuperação |
+
+## Pendências e condições de encerramento
+
+| ID | Pendência / responsável | Efeito e aceite |
+|---|---|---|
+| DEF-01 | Autorizar OAuth CodeCov na IgnisDevNE / proprietário da organização | Sincronizar associação sem 403 e confirmar organização na conta. Deferido; não bloqueia testes locais, planejamento ou demais tarefas |
+| DEF-02 | Publicar cobertura no Codecov / mantenedor + implementação F0-T13 | Relatório real no SHA correto, token restrito e publicação isolada. Até lá, artefato local/CI; sem declarar cobertura remota validada |
+| F0-T2 | Isolamento do QA/emissor/implementador / mantenedor | Barreira obrigatória antes de agentes implementarem regras reais; demonstrar testes negativos, incluindo ausência de credenciais administrativas locais |
+| F0-T4/T5 | Credenciais e fluxo real de homologação / mantenedor + implementação | Testar o fluxo no projeto correto; não promover só por CI verde |
+| D-02/D-03 | Idade, CPF, recuperação e retenção / responsável pelo produto | Resolver antes de contratos afetados da fase 1 e abertura de cadastro |
+| D-08/D-10 | Arquivos/cotas e dados sociais / responsável pelo produto | Resolver antes de tarefas afetadas da fase 2 |
+| D-01/D-09, RN-21 | Critérios de verificação/suspensão, diretório e invariantes propostas / responsável pelo produto | Resolver antes de tarefas afetadas da fase 3; aprovação prévia de coletivos já é obrigatória |
+| D-04/D-05 | Tempo e estados do evento / responsável pelo produto | Resolver antes da fase 4 |
+| D-06/D-07, RN-29 | Iniciação/moderação de mensagens e integridade proposta / responsável pelo produto | Resolver antes da fase 5; operação de privacidade completa antes do beta |
+| Região, domínio, recuperação | Região Supabase, DNS, SMTP, RPO/RTO / responsável operacional | Definir nas tarefas correspondentes, antes de dados reais/liberação |
+
+## Revisão crítica do plano
+
+Preservar componentes úteis; limpar os riscos identificados, sem reescrita geral ou exclusão automática por métricas de código morto. O roteador precisa mudar por SSR, enquanto detalhes de formulários são extraídos conforme seus testes. Não tocar arquivos locais de outros trabalhos sem revisão própria.
+
+Supabase gerenciado permanece dependência externa. Homologação compartilhada não recebe reset de PR; testes destrutivos usam banco descartável. Região dev/produção diverge e precisa de decisão. Backup de Postgres não recupera automaticamente objetos do Storage. Runtime em um host exige plano de recuperação.
+
+CPF obrigatório exige tratamento de titularidade alegada, recuperação e retenção. Criação de coletivo não libera privilégios: a fila de aprovação e o papel operacional são funcionalidades novas, com telas e testes próprios. Limites de abuso precisam proteger a operação acessível diretamente, inclusive Supabase, e não só o proxy do frontend.
+
+Não estimar calendário sem fechar dependências e disponibilidade de revisão. Avançar por evidência. Codecov não substitui TDD, QA independente ou homologação; sua pendência externa não deve paralisar trabalho seguro já autorizado.
+
+## Migração dos IDs da revisão anterior
+
+| Identificação anterior | Identificação atual |
+|---|---|
+| F0-T1–T5 | Mantidas |
+| F1-T1–T7 (organização do protótipo) | F0-T6–T12, respectivamente |
+| F2-T1–T4 | F1-T1–T4 |
+| F3-T1–T3 | F2-T1–T3 |
+| F4-T1–T5 | F3-T1–T5 |
+| F5-T1–T3 | F4-T1–T3 |
+| F6-T1–T3 | F5-T1–T3 |
+| F7-T1–T5 | F6-T1–T5 |
+| Cobertura/Codecov | Nova F0-T13 |
+
+O conteúdo histórico de relatórios antigos continua sendo evidência do momento da inspeção. Os vínculos ativos do plano, da spec, das regras e da auditoria foram ajustados; nenhuma tarefa foi considerada concluída por renumeração.

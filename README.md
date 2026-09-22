@@ -23,6 +23,7 @@ O preview também está preparado em container Podman. Nesta máquina, o endere�
 - [Especificações e requisitos técnicos](docs/specs/README.md)
 - [Arquitetura aprovada do MVP](docs/specs/architecture-mvp.md)
 - [Plano de execução e tarefas](docs/planning/implementation-plan.md)
+- [Fase zero: adaptação da stack e preparação](docs/planning/phases/00-foundation.md)
 - [Revisão do protótipo e lacunas](docs/reviews/prototype-audit.md)
 - [Regras de negócio e pendências](docs/business-rules/mvp.md)
 - [Backend, autenticação e modelo de dados](docs/architecture/backend-and-data.md)
@@ -31,5 +32,6 @@ O preview também está preparado em container Podman. Nesta máquina, o endere�
 - [Infraestrutura e operação](docs/engineering/environment.md)
 - [Revisão de segurança OWASP](docs/reviews/security-baseline.md)
 - [Evidências desta preparação](docs/reviews/foundation-validation.md)
+- [Codecov: diagnóstico e pendência OAuth](docs/reviews/codecov-diagnosis.md)
 
 Os documentos distinguem decisões confirmadas, propostas técnicas e questões abertas. A preparação não significa liberação para produção.

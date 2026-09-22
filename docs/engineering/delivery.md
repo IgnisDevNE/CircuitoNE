@@ -42,7 +42,7 @@ Para testes de caracterização de código já existente, é honesto registrar q
 ### Ferramentas por camada
 
 - Preparação: `node:test` (stdlib) para proteção do repositório, sem adicionar dependências.
-- Fase 1: Vitest para TypeScript e React Testing Library para interações; instalar quando os primeiros testes de tela forem escritos. Não criar framework de testes próprio.
+- Fase 0: Vitest para TypeScript e React Testing Library para interações; instalar quando os primeiros testes de tela forem escritos. Não criar framework de testes próprio.
 - Fluxos completos: Playwright, com testes de aceite fora da autoridade do implementador. Dados sintéticos, relógio controlado, seletores por papéis/rótulos.
 - Banco: SQL/pgTAP com Supabase local e testes REST com identidades distintas; transações concorrentes para invariantes. Serviço privilegiado não serve para provar RLS.
 - Segurança: análise de dependências e código + revisão manual; DAST somente contra homologação autorizada. Scan não substitui OWASP nem revisão de regras.

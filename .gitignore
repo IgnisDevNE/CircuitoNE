@@ -1,0 +1,31 @@
+node_modules/
+dist/
+build/
+.cache/
+.env*
+.vite/
+vite.config.*.timestamp-*
+*.tsbuildinfo
+*-debug.log*
+logs/
+*.log
+.claude-replay.*
+.tmp-*
+/.figma/design-context/
+
+# Platform-managed agentplat state, not project source. In the
+# client-initiated single-repo workspace layout (make's `Path: "."` spec) the
+# repo root IS the workspace root, so these land inside this repo rather than
+# beside it.
+/.plugins/
+/.opencode-skills/
+# BEGIN ORBIT MANAGED SCRATCH RULES
+# Orbit-generated project metadata and OS metadata stay out of source control.
+.orbit/
+.DS_Store
+# END ORBIT MANAGED SCRATCH RULES
+# Orbit runtime credentials and artifacts — never commit
+/.mcp.json
+/.codex/config.toml
+/.orbit/artifacts
+/.orbit-artifacts

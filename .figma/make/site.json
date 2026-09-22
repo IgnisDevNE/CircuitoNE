@@ -1,0 +1,10 @@
+{
+  "description": "Streamline document management and collaboration for teams, enabling easy sharing, editing, and tracking of attachments in real-time.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

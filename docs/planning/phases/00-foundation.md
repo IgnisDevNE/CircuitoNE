@@ -103,7 +103,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 ## F0-T8 — Separar validação, dinheiro e datas do JSX
 
-**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31); [#38](https://github.com/IgnisDevNE/CircuitoNE/issues/38) para idade/CPF/recuperação e [#41](https://github.com/IgnisDevNE/CircuitoNE/issues/41) para contrato temporal definitivo. Dinheiro e validações já decididas podem avançar independentemente.
+**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31); integrar registros revisados de [#38](https://github.com/IgnisDevNE/CircuitoNE/issues/38) para idade/CPF/recuperação e de RN-36 na [#40](https://github.com/IgnisDevNE/CircuitoNE/issues/40) para contato WhatsApp; [#41](https://github.com/IgnisDevNE/CircuitoNE/issues/41) para contrato temporal definitivo. Dinheiro e validações já decididas podem avançar independentemente.
 
 **Issues tratadas:** [#17](https://github.com/IgnisDevNE/CircuitoNE/issues/17) e partes de [#18](https://github.com/IgnisDevNE/CircuitoNE/issues/18)/[#19](https://github.com/IgnisDevNE/CircuitoNE/issues/19); manter aberto o que ainda depender de integração/validação definitiva no servidor.
 
@@ -111,12 +111,12 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 - Testar primeiro: CPF normalizado e dígitos, nascimento inválido, CNPJ numérico/alfanumérico, URL/e-mail, valor `R$ 1.500,00` reformatado, centavos, fim anterior ao início e conversão de fuso. Máscara não equivale a validação.
 - Entrega: funções pequenas e schemas Zod nas fronteiras. Extrair validação por etapa de `Register` e dados de evento, preservando os dois modos de cadastro/nova atuação; não reescrever o wizard inteiro.
-- Aceite: testes por tipo de atuação e etapa, erros associados aos campos. Idade mínima, política de CPF e fim/fuso definitivo continuam pendentes; não inventar requisitos para satisfazer testes.
+- Aceite: testes por tipo de atuação e etapa, erros associados aos campos. Aplicar as decisões de RN-31–34: 18 anos completos, celular obrigatório/único/confirmado e CPF corrigido pelo suporte. Cadastro aceita todas as 27 UFs e gênero vazio ou “não informar” (RN-04); informa se o celular é WhatsApp e permite número adicional opcional se diferente (RN-36). Recuperação/exclusão reais permanecem na fase 1; fim/fuso definitivo continua pendente em #41.
 - Documentação: contratos de entrada e decisões pendentes relacionadas. Adaptar apenas os consumidores alcançados pela mudança.
 
 ## F0-T9 — Conter o mock e corrigir escopos de interface
 
-**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) antes dos contratos de autorização; [#40](https://github.com/IgnisDevNE/CircuitoNE/issues/40) para invariantes ainda propostas.
+**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) antes dos contratos de autorização; [#40](https://github.com/IgnisDevNE/CircuitoNE/issues/40) na integração do registro revisado das invariantes aprovadas em 22/09/2026. Implementação e validação da autorização real permanecem nas fases correspondentes.
 
 **Issues tratadas:** [#12](https://github.com/IgnisDevNE/CircuitoNE/issues/12)/[#13](https://github.com/IgnisDevNE/CircuitoNE/issues/13)/[#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14)/[#22](https://github.com/IgnisDevNE/CircuitoNE/issues/22)/[#28](https://github.com/IgnisDevNE/CircuitoNE/issues/28) na contenção do mock e troca de contexto. Autorização real e persistência não são encerradas por uma correção de UI.
 

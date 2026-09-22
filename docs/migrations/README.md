@@ -2,7 +2,7 @@
 
 Nenhum SQL de negócio foi criado ou aplicado na preparação. Este é o diretório canônico solicitado pelo AGENTS.md.
 
-O Supabase CLI procura `supabase/migrations`. `pnpm db:prepare` gera uma árvore temporária `.tmp-supabase-run-*` contendo `supabase/config.toml` e cópia somente de execução dos SQL de `docs/migrations/`. Essa árvore não é versionada nem editada manualmente. O CLI recebe `--workdir` apontando para ela. O CLI não lê `docs/migrations/` diretamente.
+O Supabase CLI procura `supabase/migrations`. `pnpm db:prepare` gera uma árvore temporária `temp/supabase-run-*` contendo `supabase/config.toml` e cópia somente de execução dos SQL de `docs/migrations/`. Essa árvore não é versionada nem editada manualmente. O CLI recebe `--workdir` apontando para ela. O CLI não lê `docs/migrations/` diretamente.
 
 O adaptador preserva bytes, ordena nomes, rejeita versões duplicadas/nomes inválidos/links e grava checksums SHA-256 do config e de cada SQL em `manifest.json`. Cada execução recebe uma pasta nova; nenhum destino remoto ou argumento adicional é aceito. Não lê credenciais, chama o CLI ou executa reset. Os testes estão em `tests/migration-workdir.test.mjs`. Isso evita erros de preparo, mas não constitui isolamento contra um implementador capaz de alterar o script.
 

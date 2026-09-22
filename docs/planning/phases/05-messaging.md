@@ -10,7 +10,7 @@
 
 **Dependência:** F3-T2/T5 e sessão da fase 1.
 
-- Testar primeiro: participante estranho, N0 em chat de coletivo, N2 de outro coletivo, coletivo pendente, destinatário inválido, autor forjado, representação ambígua e envio repetido após timeout.
+- Testar primeiro: participante estranho, N0 em chat de coletivo, N2 de outro coletivo, coletivo pendente ou suspenso (RN-30/D-01), destinatário inválido, autor forjado, representação ambígua e envio repetido após timeout.
 - Entrega: criação/seleção de conversa, remetente pessoal ou coletivo explícito, mensagem persistida e idempotência por envio. Derivar autor e data da sessão/servidor.
 - Aceite: N1/N2 só representam coletivo aprovado com vínculo atual; contato/convite segue D-06, sem liberar leitura geral por ser administrador do site. UI anuncia sucesso apenas após confirmação.
 - Documentação: contrato de participantes, representação, estados de envio e autorização por operação.
@@ -23,7 +23,7 @@
 
 **Dependência:** F5-T1; política de revogação aprovada.
 
-- Testar primeiro: duas sessões, ordenação com mesmo timestamp, paginação sem lacunas, evento duplicado, desconexão/reconexão, marcação de leitura de outro usuário e remoção/rebaixamento durante assinatura aberta.
+- Testar primeiro: duas sessões, ordenação com mesmo timestamp, paginação sem lacunas, evento duplicado, desconexão/reconexão, marcação de leitura de outro usuário e remoção/rebaixamento ou suspensão do coletivo durante assinatura aberta, sem afetar conversas pessoais ou de outros coletivos elegíveis.
 - Entrega: cursor estável, leitura por usuário/conversa, contador derivado e Realtime autorizado. Banco é a fonte do histórico; reconexão recupera mensagens perdidas.
 - Aceite: revogação impede novas leituras/envios e encerra ou revalida acesso ao canal segundo comportamento demonstrado do Supabase; não presumir revogação imediata de assinatura sem teste. Troca de coletivo limpa conversa anterior.
 - Documentação: cursor/idempotência, semântica de leitura, reconexão e limite de exposição durante revogação.

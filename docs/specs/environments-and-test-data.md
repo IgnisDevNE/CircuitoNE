@@ -32,6 +32,12 @@ Homologação compartilhada recebe exatamente as migrações revisadas pelo flux
 
 Relatórios/screenshots/traces de CI devem conter apenas dados sintéticos e nenhuma credencial. Não reutilizar automaticamente a captura atual em fluxos com tokens, cookies ou dados pessoais reais; revisar e sanitizar antes. Testes com dados reais não devem ser publicados em artefatos acessíveis do repositório.
 
+## Backup e exclusão
+
+Decisão do responsável em 22/09/2026: backup diário e eliminação dos dados de contas excluídas das cópias de segurança em até 7 dias. O prazo deve ser divulgado nos termos e na política de privacidade. A restauração ocorre em ambiente isolado, acessível apenas ao processo de saneamento; reaplicar e verificar exclusões antes de liberar consultas, jobs, integrações ou acesso operacional normal. Novo cadastro com o mesmo CPF não recupera a conta anterior. Regras canônicas e exceção para mensagens: [RN-31–34](../business-rules/mvp.md).
+
+O plano informado é gratuito. Preparar e validar backup próprio, armazenamento restrito, expiração de cópias e cobertura dos arquivos em #43/F6-T4; não presumir backup diário gerenciado. O [backup de banco não inclui objetos do Storage](https://supabase.com/docs/guides/platform/backups). Essas decisões não declaram a rotina implantada nem definem ainda o tempo máximo de recuperação.
+
 ## Dependências de implantação
 
 [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31): identidade/credenciais/QA; [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32): migrações e homologação; [#34](https://github.com/IgnisDevNE/CircuitoNE/issues/34): validação e aceite do workflow no PR #45; [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43): DNS/HTTPS/SMTP/recuperação. SSR e containers definitivos são F0-T11/T12; schema e seeds de domínio acompanham F1–F5, com casos suficientes em dev a cada entrega. Não apontar os domínios para o protótipo inseguro como se ele já fosse produção.

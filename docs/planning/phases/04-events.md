@@ -8,9 +8,9 @@
 
 **Issues tratadas:** [#18](https://github.com/IgnisDevNE/CircuitoNE/issues/18) na temporalidade persistida e [#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14) na autoria/autorização do evento.
 
-**Dependência:** F3-T2/T5 e perfis da fase 2. **Regras:** RN-23–26.
+**Dependência:** F3-T2/T5 e perfis da fase 2. **Regras:** RN-23–26 e suspensão de RN-30/D-01, aprovada na #40; integrar seu registro revisado antes deste contrato.
 
-- Testar primeiro: N2 de outro coletivo, coletivo pendente, lineup com perfil inválido, artista duplicado, nome livre vazio, tipo “outros” sem descrição, gratuito versus ingresso e datas incompatíveis.
+- Testar primeiro: N2 de outro coletivo, coletivo pendente ou suspenso, lineup com perfil inválido, artista duplicado, nome livre vazio, tipo “outros” sem descrição, gratuito versus ingresso e datas incompatíveis.
 - Entrega: evento + lineup em transação; cachê/valores quando aplicáveis em centavos, instantes UTC e fuso explícito conforme D-04. Não converter fim vazio em início artificial.
 - Aceite: autoria vem da sessão e do vínculo aprovado; falha não deixa evento parcial; envio repetido é idempotente. Ingresso é link externo HTTP(S), sem módulo de pagamento.
 - Documentação: contrato temporal, validação, atomicidade, payload e migração.
@@ -38,7 +38,7 @@
 
 - Testar primeiro: futuro/em andamento/passado, mudança de dia/fuso, empate na ordenação, paginação, evento com artista de outro coletivo, HTML inicial/metadados e 404 real.
 - Entrega: agenda pública, evento SSR e composição dos painéis pessoal/coletivo. Definir a regra do evento de artista externo antes de fixar o teste de dashboard.
-- Aceite: visitante consulta o evento publicado, artista aparece pelo lineup e cancelamento é refletido nas superfícies; rascunho não vaza por busca/cache. Markdown continua seguro no servidor e navegador.
+- Aceite: visitante consulta o evento publicado de coletivo aprovado, artista aparece pelo lineup e cancelamento é refletido nas superfícies; rascunho e evento de coletivo suspenso não vazam por busca, acesso direto, API ou cache. Testar suspensão depois de popular o cache e reativação administrativa, preservando o estado próprio do evento. Markdown continua seguro no servidor e navegador.
 - Documentação: ordenação, filtros, consultas/índices e projeções/metadados públicos.
 
 ## Revisão e saída

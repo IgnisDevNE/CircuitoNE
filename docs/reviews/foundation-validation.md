@@ -22,11 +22,13 @@ O build emite aviso de compatibilidade futura do carregador da configuração Vi
 ## GitHub
 
 - Baseline enviado ao repositório indicado; configurações para squash e exclusão de branch após merge, alertas de dependências e atualizações automáticas habilitados.
-- CI preparado: testes, typecheck, build, auditoria completa, build do container e testes HTTP; sem secrets e sem deploy. Resultado remoto será anexado ao PR.
+- CI executado com sucesso no commit `8d24835`: testes, typecheck, build, auditoria completa, build do container e testes HTTP; sem secrets e sem deploy. [Execução 35681269767](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/35681269767). Resultados de revisões posteriores ficam no [PR #1](https://github.com/IgnisDevNE/CircuitoNE/pull/1).
 - Proteção aplicada e confirmada pela API: `quality` da App GitHub Actions (ID 15368), base atualizada, uma aprovação, CODEOWNERS, descartar aprovações antigas, revisão do último push, resolver conversas, sem force push/exclusão, aplicada também a administradores. Os testes de negação com identidade implementadora ainda dependem da instalação do App.
 - Ambientes Homologação e Producao configurados com revisão de `magalz` e prevenção de autoaprovação. Produção aceita branches protegidas. Somente variável não secreta de project ref adicionada.
 
-O PR é um rascunho de preparação, não uma liberação. A conta em uso ainda é `magalz`. Como autor não aprova seu próprio PR, após criar/instalar o GitHub App será necessário abrir o PR por essa identidade ou ter outro revisor humano autorizado. Não se remove a exigência de revisão para fazer o bootstrap. CODEOWNERS precisa entrar na base para ser aplicado a PRs seguintes.
+O PR é um rascunho de preparação, não uma liberação. A conta em uso ainda é `magalz`. Como autor não aprova seu próprio PR, após criar/instalar o GitHub App será necessário abrir o PR por essa identidade, com o último push revisável também vindo do App, ou ter outro revisor humano autorizado. Não se remove a exigência de revisão para fazer o bootstrap. CODEOWNERS precisa entrar na base para ser aplicado a PRs seguintes.
+
+Foi tentada revisão Memtrace do PR com grafo local em modo estrito e sem publicação de comentários. A ferramenta não obteve token da instalação do GitHub App (404); a revisão não executou e não produziu contagem válida de achados. Para usar essa revisão, instalar/habilitar Memtrace Code Reviewer neste repositório. Essa integração é opcional; não substitui o revisor humano nem o GitHub App implementador escolhido pelo responsável. Configurações e documentos foram inspecionados localmente, e links internos verificados.
 
 ## O que ainda impede o início de implementação autônoma/produção
 

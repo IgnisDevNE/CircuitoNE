@@ -50,7 +50,7 @@ Repositório existente: [IgnisDevNE/CircuitoNE](https://github.com/IgnisDevNE/Ci
 - Ambiente **Producao**: projeto `CircuitoNE` (`mwgccjvztzbderlwtheg`, US West), revisão de `magalz`, prevenção de autoaprovação, apenas branches protegidas (atualmente `main`). Variável de referência definida; sem secrets nesta preparação.
 - Alertas de dependências/correções automáticas habilitados. Squash é o método de merge; exclusão automática de branch após merge habilitada. Branch atual permanece enquanto PR não for aprovado/concluído.
 
-O responsável criará um GitHub App para implementar. Conectar essa identidade antes de usar gates de aprovação. Um job disparado por `magalz` não pode ser aprovado por ele mesmo quando a prevenção de autoaprovação está ativa. O PR inicial criado pela mesma conta também exige outro autor/aprovador habilitado: após instalar o App, recriar o PR sob a identidade dele para revisão humana, ou obter outro revisor humano autorizado. Não remover proteção para contornar isso. CODEOWNERS só passa a valer como regra de propriedade após entrar na branch base.
+O responsável criará um GitHub App para implementar. Conectar essa identidade antes de usar gates de aprovação. Um job disparado por `magalz` não pode ser aprovado por ele mesmo quando a prevenção de autoaprovação está ativa. O PR inicial criado pela mesma conta também exige outro autor/aprovador habilitado: após instalar o App, recriar o PR sob a identidade dele e garantir que o último push revisável venha do App, ou obter outro revisor humano autorizado. O mantenedor prepara mudanças de workflows, que o App não pode escrever. Não remover proteção para contornar isso. CODEOWNERS só passa a valer como regra de propriedade após entrar na branch base.
 
 ## Homologação Supabase
 

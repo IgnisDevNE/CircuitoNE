@@ -14,6 +14,7 @@ const env = {
   SUPABASE_DB_PASSWORD: 'synthetic-password-do-not-log',
   POOLER_HOST: pooler,
   GITHUB_OUTPUT: '/test/output',
+  RUNNER_TEMP: '/test/temp',
   PATH: '/usr/bin',
 };
 
@@ -79,6 +80,16 @@ test('wrong destination and missing credentials fail before any external request
   }
 });
 
+test('Supabase CA is pinned and downloaded without secrets before database authentication', () => {
+  const step = workflow.match(/      - name: Prepare pinned Supabase CA\r?\n([\s\S]*?)(?=      - name:)/)?.[1];
+  assert.ok(step);
+  assert.match(step, /working-directory: \$\{\{ runner\.temp \}\}/);
+  assert.match(step, /curl --disable --fail --silent --show-error --proto '=https' --connect-timeout 10 --max-time 20 --max-filesize 65536 --output supabase-ca\.crt https:\/\/supabase-downloads\.s3-ap-southeast-1\.amazonaws\.com\/prod\/ssl\/prod-ca-2021\.crt\r?\n/);
+  assert.match(step, /echo '700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7  supabase-ca\.crt' \| sha256sum --check --status/);
+  assert.doesNotMatch(step, /secrets\.|\benv:|--location|--insecure|\s-[Lk]\b/);
+  assert.ok(workflow.indexOf('Prepare pinned Supabase CA') < workflow.indexOf('Validate database password over verified TLS'));
+});
+
 test('API validation confines headers and emits only a trusted pooler host', async () => {
   const result = await execute('HOMOLOGATION_API');
   assert.equal(result.exitCode, 0);
@@ -113,7 +124,7 @@ test('database validation authenticates with verified TLS and fixed read-only SQ
   assert.equal(options.env.PGHOST, pooler);
   assert.equal(options.env.PGUSER, `postgres.${ref}`);
   assert.equal(options.env.PGSSLMODE, 'verify-full');
-  assert.equal(options.env.PGSSLROOTCERT, '/etc/ssl/certs/ca-certificates.crt');
+  assert.equal(options.env.PGSSLROOTCERT, `${env.RUNNER_TEMP}/supabase-ca.crt`);
   assert.equal(options.env.PGPASSWORD, env.SUPABASE_DB_PASSWORD);
   assert.equal(options.env.SUPABASE_ACCESS_TOKEN, undefined);
   assert.ok(!JSON.stringify(args).includes(env.SUPABASE_DB_PASSWORD));

@@ -142,6 +142,11 @@ jobs:
             process.exitCode = 1;
           });
           HOMOLOGATION_API
+      - name: Prepare pinned Supabase CA
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl --disable --fail --silent --show-error --proto '=https' --connect-timeout 10 --max-time 20 --max-filesize 65536 --output supabase-ca.crt https://supabase-downloads.s3-ap-southeast-1.amazonaws.com/prod/ssl/prod-ca-2021.crt
+          echo '700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7  supabase-ca.crt' | sha256sum --check --status
       - name: Validate database password over verified TLS
         env:
           POOLER_HOST: ${{ steps.management.outputs.pooler_host }}
@@ -161,7 +166,7 @@ jobs:
                 PGHOST: host, PGPORT: '5432', PGDATABASE: 'postgres',
                 PGUSER: 'postgres.odphoxozclrshqjgwbqk',
                 PGPASSWORD: process.env.SUPABASE_DB_PASSWORD,
-                PGSSLMODE: 'verify-full', PGSSLROOTCERT: '/etc/ssl/certs/ca-certificates.crt',
+                PGSSLMODE: 'verify-full', PGSSLROOTCERT: `${process.env.RUNNER_TEMP}/supabase-ca.crt`,
                 PGCONNECT_TIMEOUT: '10', PGOPTIONS: '-c default_transaction_read_only=on -c statement_timeout=10000',
                 PGAPPNAME: 'circuitone-credential-check',
               },

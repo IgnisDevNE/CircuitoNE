@@ -36,6 +36,8 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 - Aceite: fixar SHA dos testes antes de implementar; verificador testa SHA/artefato final em ambiente descartável. PR que altera runner/comando/fixtures ou falsifica resultado não consegue substituir o aceite. Não executar código candidato junto da chave que atesta o resultado.
 - Documentação: matriz de autoridades, ameaças, procedimento de mudança de teste, evidências de negação e recuperação/rotação de credenciais. O Codecov não é esse verificador.
 
+**Execução escolhida em 22/09/2026:** concentrar integridade, aceite canônico e promoção da suíte no CI, sem VM local obrigatória ([spec](../../specs/canonical-ci-suite.md), [ADR 0006](../../decisions/0006-canonical-ci-suite.md)). Ordem: disponibilizar autoridade QA externa → fixar suíte/workflow → conectar integridade e execução ao PR → promover novos testes revisados após merge/validação → ensaiar concorrência e recuperação. Cada entrega tem pré-requisito e evidência na spec. A #31 acompanha o trabalho; não exigir seu fechamento para começar a própria correção. Configuração do recurso QA/origem confiável pelo mantenedor é pré-requisito da ativação externa, e os requisitos de credenciais não são dispensados pela decisão de usar CI.
+
 ## F0-T3 — Manter o preview do protótipo
 
 **Bloqueios por issue:** Nenhum novo para manter o preview estático com dados fictícios.

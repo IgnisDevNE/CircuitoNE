@@ -50,7 +50,7 @@ Repositório existente: [IgnisDevNE/CircuitoNE](https://github.com/IgnisDevNE/Ci
 - Ambiente **Producao**: projeto `CircuitoNE` (`mwgccjvztzbderlwtheg`, US West), revisão de `magalz`, prevenção de autoaprovação, apenas branches protegidas (atualmente `main`). Variável de referência definida; sem secrets nesta preparação.
 - Alertas de dependências/correções automáticas habilitados. Squash é o método de merge; exclusão automática de branch após merge habilitada. Branch atual permanece enquanto PR não for aprovado/concluído.
 
-O App `ignisdevne` foi conectado em 22/09/2026, com identidade `ignisdevne[bot]`. O PR inicial foi aberto por `magalz`; a preparação deve continuar em PR aberto pelo bot, com o último push revisável também vindo dele, para permitir revisão humana. Um job disparado por `magalz` não pode ser aprovado por ele mesmo quando a prevenção de autoaprovação está ativa. O mantenedor prepara mudanças de workflows, que o App não pode escrever. Não remover proteção para contornar isso. CODEOWNERS só passa a valer como regra de propriedade após entrar na branch base.
+O App `ignisdevne` foi conectado em 22/09/2026, com identidade `ignisdevne[bot]`. O PR inicial de `magalz` foi encerrado e substituído pelo [PR #2](https://github.com/IgnisDevNE/CircuitoNE/pull/2), aberto pelo App, com o último push revisável também vindo dele. Assim, a revisão pode ser feita pelo humano. Um job disparado por `magalz` não pode ser aprovado por ele mesmo quando a prevenção de autoaprovação está ativa. O mantenedor prepara mudanças de workflows, que o App não pode escrever. Não remover proteção para contornar isso. CODEOWNERS só passa a valer como regra de propriedade após entrar na branch base.
 
 ### Autenticação local do App
 

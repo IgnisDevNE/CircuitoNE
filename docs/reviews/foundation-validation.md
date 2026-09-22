@@ -22,11 +22,11 @@ O build emite aviso de compatibilidade futura do carregador da configuração Vi
 ## GitHub
 
 - Baseline enviado ao repositório indicado; configurações para squash e exclusão de branch após merge, alertas de dependências e atualizações automáticas habilitados.
-- CI executado com sucesso no commit `8d24835`: testes, typecheck, build, auditoria completa, build do container e testes HTTP; sem secrets e sem deploy. [Execução 35681269767](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/35681269767). Resultados de revisões posteriores ficam no [PR #1](https://github.com/IgnisDevNE/CircuitoNE/pull/1).
+- CI executado com sucesso no commit `8d24835`: testes, typecheck, build, auditoria completa, build do container e testes HTTP; sem secrets e sem deploy. [Execução 35681269767](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/35681269767). Resultados de revisões posteriores ficam no [PR #2](https://github.com/IgnisDevNE/CircuitoNE/pull/2), que substituiu o PR #1 no bootstrap do App.
 - Proteção aplicada e confirmada pela API: `quality` da App GitHub Actions (ID 15368), base atualizada, uma aprovação, CODEOWNERS, descartar aprovações antigas, revisão do último push, resolver conversas, sem force push/exclusão, aplicada também a administradores. Os testes de negação com identidade implementadora ainda dependem da instalação do App.
 - Ambientes Homologação e Producao configurados com revisão de `magalz` e prevenção de autoaprovação. Produção aceita branches protegidas. Somente variável não secreta de project ref adicionada.
 
-O PR é um rascunho de preparação, não uma liberação. A conta em uso ainda é `magalz`. Como autor não aprova seu próprio PR, após criar/instalar o GitHub App será necessário abrir o PR por essa identidade, com o último push revisável também vindo do App, ou ter outro revisor humano autorizado. Não se remove a exigência de revisão para fazer o bootstrap. CODEOWNERS precisa entrar na base para ser aplicado a PRs seguintes.
+O PR é um rascunho de preparação, não uma liberação. O PR #1 foi aberto com `magalz`; em 22/09/2026 foi substituído pelo PR #2, de autoria do App e com último push do bot, permitindo revisão por `magalz`. Nenhuma exigência de revisão foi removida. CODEOWNERS precisa entrar na base para ser aplicado a PRs seguintes.
 
 Foi tentada revisão Memtrace do PR com grafo local em modo estrito e sem publicação de comentários. A ferramenta não obteve token da instalação do GitHub App (404); a revisão não executou e não produziu contagem válida de achados. Para usar essa revisão, instalar/habilitar Memtrace Code Reviewer neste repositório. Essa integração é opcional; não substitui o revisor humano nem o GitHub App implementador escolhido pelo responsável. Configurações e documentos foram inspecionados localmente, e links internos verificados.
 
@@ -43,6 +43,7 @@ Foram preservados os demais containers do host e arquivos locais preexistentes f
 ## Atualização — GitHub App, 22/09/2026
 
 - App `ignisdevne` (5028495), instalação 163660443, bot `ignisdevne[bot]` (332310975). O responsável confirmou instalação em todos os repositórios da organização para reutilização do bot.
+- Commit `9f43904` e push feitos pelo bot; CI passou sob o ator `ignisdevne[bot]` ([execução 35682392594](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/35682392594)). O PR #2 foi confirmado pela API como autoria `app/ignisdevne`, em rascunho e exigindo revisão.
 - Helper local emite token temporário limitado a CircuitoNE. API `/installation/repositories`: exatamente 1 repositório, `IgnisDevNE/CircuitoNE`. Não usa OAuth pessoal, não grava tokens nem modifica o login global.
 - Permissões verificadas: contents/pull_requests/issues write; actions/checks/statuses/metadata read. Consultas de proteção de branch e secrets retornaram 403 com o App. Isso documenta negação de leitura privilegiada; nenhuma mutação sensível foi usada como teste.
 - TDD: exclusão de `secrets/` demonstrou falha antes da regra e passou depois; nenhum segredo estava versionado. Testes do helper falharam com emissão não implementada e passaram após implementação, verificando assinatura RSA, validade temporal, escopo único, permissões e tratamento de 401 sem revelar resposta. Não usam chaves reais no CI.

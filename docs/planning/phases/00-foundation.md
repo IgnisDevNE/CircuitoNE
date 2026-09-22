@@ -1,18 +1,18 @@
 # Fase 0 — Preparar a base para desenvolver
 
-**Estado:** planejada; preparação parcial já entregue no PR #2, ainda sujeita a revisão. Esta fase reúne infraestrutura, testes, adaptação à stack e correções do protótipo necessárias antes das funcionalidades reais. [Índice e regras comuns](../implementation-plan.md).
+**Estado:** planejada; preparação parcial integrada pelo PR #2 em 22/09/2026. Esta fase reúne infraestrutura, testes, adaptação à stack e correções do protótipo necessárias antes das funcionalidades reais. [Índice e regras comuns](../implementation-plan.md).
 
 **Entrada:** arquitetura aprovada; inventário de 27 rotas e [achados UI-01–18](../../reviews/prototype-audit.md). **Saída:** aplicação executável em React Router Framework/Node/Caddy, testes e homologação operacionais, contratos sob autoridade independente e nenhum P0/P1 aberto no caminho que receberá dados reais.
 
 ## Ordem de trabalho
 
-Concluir a revisão de F0-T1/T3; preparar F0-T2 e F0-T6; corrigir F0-T7–T10; migrar F0-T11/T12; concluir F0-T4/T5 e o review de fase. F0-T13 pode avançar quando houver cobertura real, mas a dependência externa do Codecov não bloqueia a fase. Dependências específicas abaixo prevalecem sobre essa sequência resumida.
+Com F0-T1/T3 integradas, preparar F0-T2 e F0-T6; corrigir F0-T7–T10; migrar F0-T11/T12; concluir F0-T4/T5 e o review de fase. F0-T13 pode avançar quando houver cobertura real, mas a dependência externa do Codecov não bloqueia a fase. Dependências específicas abaixo prevalecem sobre essa sequência resumida.
 
 Uma tarefa corresponde a um PR revisável; dividir em subtarefas com sufixos se a revisão exigir. O planejamento atual não autoriza marcar a base como pronta nem começar regras reais sem o isolamento de F0-T2. Preparação com dados fictícios pode avançar nas partes independentes.
 
 ## F0-T1 — Consolidar GitHub, toolchain e CI
 
-**Estado:** preparado, com CI verde; falta aprovação/conclusão do PR de fundação. **Dependência:** nenhuma. **Risco:** médio, cadeia de entrega.
+**Estado:** integrado pelo PR #2, com CI verde; isolamento forte e homologação integrada continuam nas tarefas seguintes. **Dependência:** nenhuma. **Risco:** médio, cadeia de entrega.
 
 - Entrega: baseline, lockfile, versões Node/pnpm, `main` protegida, CODEOWNERS, App implementador e CI sem secrets para PRs.
 - Verificação: instalação limpa, testes existentes, TypeScript, build, auditoria e container. Confirmar identidade do App e origem dos checks; não enfraquecer proteção para facilitar merge.

@@ -11,6 +11,9 @@ Tarefa / fase / regras de negócio:
 - [ ] Migração (se houver): teste de RLS, concorrência, dados e recuperação.
 - [ ] Nenhum teste de aceite alterado pelo implementador sem revisão separada.
 - [ ] Documentação da tarefa atualizada; ADR apenas se mudou decisão.
+- [ ] Achados de review deferidos, dívida técnica e bugs não resolvidos têm issues abertas vinculadas abaixo; nenhuma pendência bloqueante foi dispensada apenas por abrir issue.
+
+Issues de pendências (ou “nenhuma”):
 
 Fim de fase: anexar review completo e matriz OWASP Top 10:2025.
 Produção: somente após homologação e revisão humana do resultado concreto.

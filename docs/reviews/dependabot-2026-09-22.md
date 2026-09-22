@@ -1,5 +1,7 @@
 # Revisão dos PRs do Dependabot
 
+**Atualização após PR #49:** #3/#8/#9/#10 foram substituídos pelo incremento conjunto #45; #4/#5/#6 foram integrados. A única PR Dependabot ainda aberta na consulta de 22/09/2026 era #7. No head `c4d3e647`, [CI 35715164144](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/35715164144) falha no build: `useNodeVersion: 22.23.2` tenta instalar Node glibc dentro do candidato Node 26 Alpine/musl (`ERR_PNPM_MUSL`). O CI verde da tabela é histórico, não o estado atual. Encerrar esse candidato sem merge e manter a seleção coordenada em F0-T14/#35 antes do SSR, conforme ADR 0003. Não houve outro PR novo na consulta; não criar upgrade só para exercitar Codecov.
+
 Inspeção em 22/09/2026, base `1fb81f5`. **Não aceitar todos apenas porque o CI passou.** Parecer favorável para #4/#5/#6 no escopo inspecionado; resolver #3/#7/#8/#9/#10 no início da fase zero, em F0-T14. Este relatório não é aprovação formal no GitHub nem homologação de produção. Nenhum PR do Dependabot foi alterado ou integrado nesta revisão.
 
 ## Resultado por PR
@@ -21,7 +23,7 @@ Acompanhamento na F0-T14: [pnpm/action-setup #34](https://github.com/IgnisDevNE/
 
 ## Evidência, limites e prioridades
 
-O CI atual executa cinco testes de infraestrutura, typecheck, build, auditoria de dependências, build do container e dois testes HTTP. Não inclui jornadas de negócio, comparação visual, SSR real, RLS ou homologação integrada. Seus resultados dão evidência útil para Actions/Caddy, mas não validam automaticamente uma migração de stack.
+O CI naquele checkpoint executava cinco testes de infraestrutura, typecheck, build, auditoria de dependências, build do container e dois testes HTTP. Naquele checkpoint não incluía jornadas de negócio, comparação visual, SSR real, RLS ou homologação integrada. Seus resultados dão evidência útil para Actions/Caddy, mas não validam automaticamente uma migração de stack.
 
 Logs consultados: [pnpm](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/35685645553), [Caddy](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/35685657351), [Node](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/35685664313) e [TypeScript](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/35685680518). Os checks dos demais heads foram consultados pela API do GitHub. Metadados dos dois digests Caddy foram lidos no Podman. Uma execução direta do binário das imagens oficiais com todas as capabilities removidas foi recusada em ambas; ela não reproduz a imagem final, cujo Dockerfile remove a capability de arquivo. O teste de execução considerado é o do container final no CI.
 

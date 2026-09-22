@@ -29,10 +29,10 @@ export function RouterProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const navigate = useCallback((to: string, opts?: { replace?: boolean }) => {
-    if (to === window.location.pathname) return
+    if (to === window.location.pathname + window.location.search + window.location.hash) return
     if (opts?.replace) window.history.replaceState({}, '', to)
     else window.history.pushState({}, '', to)
-    setPath(to)
+    setPath(window.location.pathname)
     window.scrollTo(0, 0)
   }, [])
 
@@ -69,7 +69,13 @@ function matchPath(pattern: string, path: string): Record<string, string> | null
   for (let i = 0; i < pp.length; i++) {
     const seg = pp[i]
     if (seg === '*') break
-    if (seg.startsWith(':')) params[seg.slice(1)] = decodeURIComponent(cp[i] ?? '')
+    if (seg.startsWith(':')) {
+      try {
+        params[seg.slice(1)] = decodeURIComponent(cp[i] ?? '')
+      } catch {
+        return null
+      }
+    }
     else if (seg !== cp[i]) return null
   }
   return params
@@ -98,10 +104,14 @@ type LinkProps = {
 export function Link({ to, children, className, replace, onClick, ...rest }: LinkProps) {
   const navigate = useNavigate()
   const handle = (e: MouseEvent<HTMLAnchorElement>) => {
-    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return
+    onClick?.(e)
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+    const anchor = e.currentTarget
+    if ((anchor.target && anchor.target !== '_self') || anchor.hasAttribute('download')) return
+    const url = new URL(anchor.href)
+    if (url.origin !== window.location.origin || url.hash) return
     e.preventDefault()
-    onClick?.(e as never)
-    navigate(to, { replace })
+    navigate(url.pathname + url.search, { replace })
   }
   return (
     <a href={to} className={className} onClick={handle} {...rest}>
@@ -119,7 +129,9 @@ export function NavLink({
   ...rest
 }: LinkProps & { activeClassName?: string; end?: boolean }) {
   const { path } = useRouter()
-  const active = end ? path === to : path === to || path.startsWith(to + '/')
+  const target = new URL(to, window.location.href)
+  const active = target.origin === window.location.origin &&
+    (end ? path === target.pathname : path === target.pathname || path.startsWith(target.pathname + '/'))
   return (
     <Link
       to={to}

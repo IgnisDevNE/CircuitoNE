@@ -41,6 +41,6 @@ jobs:
             body: JSON.stringify({ ref: 'main', inputs: { source_run_id: runId, mode } }),
             signal: AbortSignal.timeout(15000),
           });
-          if (response.status !== 204) throw new Error(`QA dispatch rejected (HTTP ${response.status})`);
+          if (!response.ok) throw new Error(`QA dispatch rejected (HTTP ${response.status})`);
           console.log(`Independent QA requested for source run ${runId}.`);
           DISPATCH_QA

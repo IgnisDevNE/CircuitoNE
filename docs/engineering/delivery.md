@@ -47,6 +47,8 @@ Para testes de caracterização de código já existente, é honesto registrar q
 - Banco: SQL/pgTAP com Supabase local e testes REST com identidades distintas; transações concorrentes para invariantes. Serviço privilegiado não serve para provar RLS.
 - Segurança: análise de dependências e código + revisão manual; DAST somente contra homologação autorizada. Scan não substitui OWASP nem revisão de regras.
 
+O workflow CodeQL analisa JavaScript/TypeScript e GitHub Actions com `security-extended` em PRs, `main` e semanalmente ([ADR 0005](../decisions/0005-codeql-security.md)). Conferir também os alertas em Security → Code scanning: sucesso do job não equivale a ausência de vulnerabilidades. O workflow não configura sozinho proteção de merge por severidade; revisão humana e gates de segurança continuam obrigatórios.
+
 Cada tarefa aponta suas **issues bloqueantes**, a condição de desbloqueio e as **issues que ela resolve**. Não iniciar o trecho dependente antes de registrar a resolução do pré-requisito; não exigir encerramento antecipado da própria correção. Em issues com várias partes, anexar evidência do item atendido e manter o restante aberto. Priorizar na fase zero bloqueios técnicos, decisões de produto e preparação operacional; justificar individualmente qualquer resíduo.
 
 ## Reviews e gates

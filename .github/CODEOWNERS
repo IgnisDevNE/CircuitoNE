@@ -1,0 +1,13 @@
+# Só funciona como bloqueio junto à proteção de main e credenciais separadas.
+/tests/ @magalz
+/.github/ @magalz
+/AGENTS.md @magalz
+/package.json @magalz
+/pnpm-lock.yaml @magalz
+/docs/business-rules/ @magalz
+/docs/decisions/ @magalz
+/docs/migrations/ @magalz
+/supabase/ @magalz
+/Dockerfile @magalz
+/.dockerignore @magalz
+/deploy/ @magalz

@@ -168,16 +168,16 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 ## F0-T13 — Cobertura local e integração Codecov
 
-**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) para credenciais/publicador; [#29](https://github.com/IgnisDevNE/CircuitoNE/issues/29) somente para acesso/publicação externa. LCOV local e artefatos do CI podem avançar.
+**Bloqueios por issue:** Nenhum para o upload operacional ao Codecov Cloud solicitado pelo responsável em 22/09/2026, usando OIDC em job separado sem executar aplicação. [#29](https://github.com/IgnisDevNE/CircuitoNE/issues/29) refere-se ao destino próprio anterior; não bloqueia Cloud. [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) continua exigido para o QA canônico e o fluxo integrado, que não são substituídos por cobertura. Ver [ADR 0004](../../decisions/0004-codecov-cloud.md).
 
 **Issues tratadas:** [#30](https://github.com/IgnisDevNE/CircuitoNE/issues/30) e colaboração operacional em [#29](https://github.com/IgnisDevNE/CircuitoNE/issues/29); não fechar upload sem relatório real.
 
-**Estado:** cobertura local disponível (4,33% de statements); arquivo novo não executado aparece com 0%, e falha controlada de navegação é detectada sem mudar o percentual. Publicação externa deferida por DEF-01; artefatos CI incluídos no workflow do PR #45, com execução/aceite registrados no PR. **Dependência:** F0-T6, e F0-T2 para credenciais de CI. **Risco:** médio.
+**Estado:** cobertura local e artefatos entregues pelo PR #45 (4,33% de statements); arquivo novo não executado aparece com 0%, e falha controlada de navegação é detectada sem mudar o percentual. Publicação Cloud preparada; comprovação remota por SHA em #30. **Dependência:** F0-T6 para gerar LCOV. **Risco:** médio.
 
 - Entrega: relatório LCOV/HTML reproduzível, conjunto de arquivos incluídos explícito, baseline aprovado e política de cobertura de código alterado. Não impor porcentagem arbitrária nem excluir caminhos para esconder ausência de testes.
 - Testar primeiro: código não executado aparece descoberto e arquivo novo entra no relatório; uma regressão controlada na regra exercitada faz o teste falhar mesmo se a cobertura continuar igual. Falha de teste impede tratar relatório como evidência aprovada; cobertura de linhas não prova qualidade do oráculo.
-- Aceite externo: após liberar OAuth, upload real ao Codecov da instância própria, associado a repo/commit/branch corretos. Token por repositório, sem impressão em logs e sem exposição a código não confiável de PR. Usar execução confiável separada para publicação de artefatos não confiáveis, validando origem e SHA.
-- Se DEF-01 persistir: publicar cobertura como artefato do CI, registrar pendência e continuar. Só tornar check remoto obrigatório depois de validar o caminho completo; não remover os gates locais de teste/review.
+- Aceite externo: upload real ao Codecov Cloud, associado ao repo/commit/branch corretos; OIDC no publicador separado, sem executar o app, consumir screenshots ou secrets persistentes. Validar PR interno e baseline em `main`; Dependabot/forks exigem evidência própria, sem assumir que comportamento é idêntico. Pendências em #30, responsável implementação/mantenedor, destino F0-T13.
+- Se o upload falhar: preservar cobertura como artefato do CI, registrar pendência e continuar. Só tornar check remoto obrigatório depois de validar o caminho completo; não remover os gates locais de teste/review.
 - Documentação: [diagnóstico Codecov](../../reviews/codecov-diagnosis.md), exclusões justificadas, baseline e instrução de upload. Não usar o mesmo agente/verificador para escrever testes canônicos e atestar sua imutabilidade.
 
 ## F0-T14 — Resolver upgrades e estabilizar a toolchain

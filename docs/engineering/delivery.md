@@ -47,6 +47,8 @@ Para testes de caracterização de código já existente, é honesto registrar q
 - Banco: SQL/pgTAP com Supabase local e testes REST com identidades distintas; transações concorrentes para invariantes. Serviço privilegiado não serve para provar RLS.
 - Segurança: análise de dependências e código + revisão manual; DAST somente contra homologação autorizada. Scan não substitui OWASP nem revisão de regras.
 
+Cada tarefa aponta suas **issues bloqueantes**, a condição de desbloqueio e as **issues que ela resolve**. Não iniciar o trecho dependente antes de registrar a resolução do pré-requisito; não exigir encerramento antecipado da própria correção. Em issues com várias partes, anexar evidência do item atendido e manter o restante aberto. Priorizar na fase zero bloqueios técnicos, decisões de produto e preparação operacional; justificar individualmente qualquer resíduo.
+
 ## Reviews e gates
 
 **Por tarefa:** review do diff, regra, teste vermelho/verde, validação de entrada, estados de erro, autorização, escopo, acessibilidade afetada e documentação. Autor não é único aprovador. Resultado: aprovado / alterações necessárias, com evidência no SHA final. P0/P1 bloqueiam. P2 relevante fica corrigido ou aceito com responsável e prazo.

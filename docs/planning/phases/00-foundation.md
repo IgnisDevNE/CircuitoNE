@@ -6,11 +6,15 @@
 
 ## Ordem de trabalho
 
-Com F0-T1/T3 integradas, preparar F0-T2 e F0-T6; corrigir F0-T7–T10; migrar F0-T11/T12; concluir F0-T4/T5 e o review de fase. F0-T13 pode avançar quando houver cobertura real, mas a dependência externa do Codecov não bloqueia a fase. Dependências específicas abaixo prevalecem sobre essa sequência resumida.
+Com F0-T1/T3 integradas, abrir primeiro F0-T14 (dependências) e F0-T15 (decisões/pré-requisitos), em paralelo ao trabalho independente de F0-T2 e F0-T6. Corrigir F0-T7–T10; migrar F0-T11/T12; concluir F0-T4/T5 e o review de fase. Estabilizar a toolchain de F0-T14 antes do aceite final dos testes/SSR. F0-T13 pode avançar quando houver cobertura real, mas a dependência externa do Codecov não bloqueia a fase. Dependências específicas abaixo prevalecem sobre essa sequência resumida.
 
 Uma tarefa corresponde a um PR revisável; dividir em subtarefas com sufixos se a revisão exigir. O planejamento atual não autoriza marcar a base como pronta nem começar regras reais sem o isolamento de F0-T2. Preparação com dados fictícios pode avançar nas partes independentes.
 
 ## F0-T1 — Consolidar GitHub, toolchain e CI
+
+**Bloqueios por issue:** Nenhum novo; fundação integrada. Upgrades restantes pertencem a F0-T14.
+
+**Issues tratadas:** Nenhuma pendência própria nova.
 
 **Estado:** integrado pelo PR #2, com CI verde; isolamento forte e homologação integrada continuam nas tarefas seguintes. **Dependência:** nenhuma. **Risco:** médio, cadeia de entrega.
 
@@ -21,6 +25,10 @@ Uma tarefa corresponde a um PR revisável; dividir em subtarefas com sufixos se 
 
 ## F0-T2 — Isolar contratos, testes e credenciais
 
+**Bloqueios por issue:** Nenhum pré-requisito de issue para iniciar o isolamento.
+
+**Issues tratadas:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31); sua conclusão libera os trabalhos que exigem autoridade independente.
+
 **Estado:** parcial; App conectado, isolamento forte pendente. **Dependência:** F0-T1. **Risco:** alto.
 
 - Entrega: emissor da chave do App fora do implementador; ambiente sem credencial humana/admin, inclusive acessos temporários de manutenção de SSH/Codecov; QA canônico fora das instalações desse App; verificador com comando, dependências e identidade próprios.
@@ -30,12 +38,20 @@ Uma tarefa corresponde a um PR revisável; dividir em subtarefas com sufixos se 
 
 ## F0-T3 — Manter o preview do protótipo
 
+**Bloqueios por issue:** Nenhum novo para manter o preview estático com dados fictícios.
+
+**Issues tratadas:** Nenhuma pendência própria nova; a troca de runtime fica em F0-T12.
+
 **Estado:** container estático validado no Windows; entrega provisória. **Dependência:** F0-T1. **Risco:** baixo.
 
 - Aceite: home, bundle, link profundo, 404 de asset e bloqueio de caminhos internos; root filesystem protegido e execução sem privilégios. Preservar os demais containers do host.
 - Documentação: URL/porta e comandos verificados. O preview atual só é substituído depois do aceite de F0-T12; não confundir preview com homologação integrada.
 
 ## F0-T4 — Preparar Supabase e migrações reproduzíveis
+
+**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) antes de operações com credenciais; [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) na parte de região/destino antes de conectar ambiente compartilhado.
+
+**Issues tratadas:** [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32), preparação de migrações e banco descartável; a parte de promoção continua em F0-T5.
 
 **Dependência:** F0-T2; pode ser preparada em banco descartável antes do runtime SSR. **Risco:** alto.
 
@@ -46,6 +62,10 @@ Uma tarefa corresponde a um PR revisável; dividir em subtarefas com sufixos se 
 
 ## F0-T5 — Homologar e promover pelo GitHub
 
+**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31); [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32) na parte de migrações já validada por F0-T4; [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) na parte de destino/domínio de homologação. Registrar esse aceite parcial de [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32), sem exigir fechar a própria issue antes de implementar o pipeline.
+
+**Issues tratadas:** [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32), homologação e promoção de teste.
+
 **Dependência:** F0-T2/T4/T12. **Risco:** alto.
 
 - Entrega: fluxo de homologação no `CircuitoNE-dev`, registro de SHA/checksum/artefato, smoke test e promoção protegida do artefato homologado. Workflows são preparados/aplicados pelo mantenedor, pois o App não tem permissão de escrita neles.
@@ -54,6 +74,10 @@ Uma tarefa corresponde a um PR revisável; dividir em subtarefas com sufixos se 
 - Documentação: sequência de release, responsáveis, logs/evidências, comportamento para PR só documental e plano de recuperação. CI verde não substitui homologação.
 
 ## F0-T6 — Caracterizar jornadas e instalar os testes de aplicação
+
+**Bloqueios por issue:** Nenhum para caracterização com fixtures; [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) antes de aprovar contratos canônicos usados pelos implementadores.
+
+**Issues tratadas:** [#28](https://github.com/IgnisDevNE/CircuitoNE/issues/28) na parte de relógio/seeds e isolamento de testes; complementar consultas reais nas fases de domínio.
 
 **Dependência:** F0-T1; contratos protegidos em F0-T2 antes da implementação de regras. **Risco:** médio.
 
@@ -64,6 +88,10 @@ Uma tarefa corresponde a um PR revisável; dividir em subtarefas com sufixos se 
 
 ## F0-T7 — Corrigir renderização de Markdown e URLs
 
+**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) antes da implementação do contrato de segurança.
+
+**Issues tratadas:** [#11](https://github.com/IgnisDevNE/CircuitoNE/issues/11) integralmente, incluindo renderização segura no servidor/navegador.
+
 **Dependência:** F0-T2/T6. **Risco:** alto; UI-01.
 
 - Testar primeiro: aspas, atributos/eventos, HTML, esquemas perigosos, links malformados e texto escapado, tanto no servidor quanto no navegador.
@@ -72,6 +100,10 @@ Uma tarefa corresponde a um PR revisável; dividir em subtarefas com sufixos se 
 - Documentação: formatos permitidos, exemplos de ataque bloqueados e tradeoffs registrados no PR/spec pertinente.
 
 ## F0-T8 — Separar validação, dinheiro e datas do JSX
+
+**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31); [#38](https://github.com/IgnisDevNE/CircuitoNE/issues/38) para idade/CPF/recuperação e [#41](https://github.com/IgnisDevNE/CircuitoNE/issues/41) para contrato temporal definitivo. Dinheiro e validações já decididas podem avançar independentemente.
+
+**Issues tratadas:** [#17](https://github.com/IgnisDevNE/CircuitoNE/issues/17) e partes de [#18](https://github.com/IgnisDevNE/CircuitoNE/issues/18)/[#19](https://github.com/IgnisDevNE/CircuitoNE/issues/19); manter aberto o que ainda depender de integração/validação definitiva no servidor.
 
 **Dependência:** F0-T2/T6. **Risco:** alto no cadastro; UI-07/08/09.
 
@@ -82,6 +114,10 @@ Uma tarefa corresponde a um PR revisável; dividir em subtarefas com sufixos se 
 
 ## F0-T9 — Conter o mock e corrigir escopos de interface
 
+**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) antes dos contratos de autorização; [#40](https://github.com/IgnisDevNE/CircuitoNE/issues/40) para invariantes ainda propostas.
+
+**Issues tratadas:** [#12](https://github.com/IgnisDevNE/CircuitoNE/issues/12)/[#13](https://github.com/IgnisDevNE/CircuitoNE/issues/13)/[#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14)/[#22](https://github.com/IgnisDevNE/CircuitoNE/issues/22)/[#28](https://github.com/IgnisDevNE/CircuitoNE/issues/28) na contenção do mock e troca de contexto. Autorização real e persistência não são encerradas por uma correção de UI.
+
 **Dependência:** F0-T2/T6. **Risco:** alto; UI-02/03/04/12/18.
 
 - Testar primeiro: visitante não vira N0; usuário/coletivo A não herda conversa ou formulário de B; troca de identidade limpa estado; datas de seed não variam com o relógio real.
@@ -90,6 +126,10 @@ Uma tarefa corresponde a um PR revisável; dividir em subtarefas com sufixos se 
 - Documentação: limites do mock e caminho de substituição por domínio, sem manter indefinidamente implementações duplicadas.
 
 ## F0-T10 — Corrigir estados e acessibilidade antes da integração
+
+**Bloqueios por issue:** [#22](https://github.com/IgnisDevNE/CircuitoNE/issues/22) na parte de reinicialização de contexto exercitada em F0-T9; [#37](https://github.com/IgnisDevNE/CircuitoNE/issues/37) antes do aceite visual definitivo da combinação CSS.
+
+**Issues tratadas:** [#27](https://github.com/IgnisDevNE/CircuitoNE/issues/27) e partes de [#15](https://github.com/IgnisDevNE/CircuitoNE/issues/15)/[#22](https://github.com/IgnisDevNE/CircuitoNE/issues/22)/[#28](https://github.com/IgnisDevNE/CircuitoNE/issues/28) em estados/semântica; encerrar [#22](https://github.com/IgnisDevNE/CircuitoNE/issues/22) somente quando todos os consumidores estiverem cobertos.
 
 **Dependência:** F0-T6/T9. **Risco:** médio; UI-12/17/18.
 
@@ -100,6 +140,10 @@ Uma tarefa corresponde a um PR revisável; dividir em subtarefas com sufixos se 
 
 ## F0-T11 — Migrar para React Router Framework e SSR
 
+**Bloqueios por issue:** [#11](https://github.com/IgnisDevNE/CircuitoNE/issues/11)/[#22](https://github.com/IgnisDevNE/CircuitoNE/issues/22) antes de propagar renderização/estado ao SSR; [#35](https://github.com/IgnisDevNE/CircuitoNE/issues/35)/[#36](https://github.com/IgnisDevNE/CircuitoNE/issues/36) na seleção e validação da toolchain atual. Registrar esse aceite parcial; a compatibilidade com SSR é demonstrada nesta tarefa, sem exigir sua própria conclusão antecipadamente.
+
+**Issues tratadas:** [#26](https://github.com/IgnisDevNE/CircuitoNE/issues/26) e partes de [#28](https://github.com/IgnisDevNE/CircuitoNE/issues/28) em SSR, metadata de fixtures e estados HTTP; dados reais ficam nos domínios.
+
 **Dependência:** F0-T6–T10. **Risco:** alto, transversal.
 
 - Testar primeiro: conteúdo público/metadados no HTML sem JavaScript, 404 HTTP, links profundos, navegação/histórico e renderização sem `window`/`document` disponíveis no servidor.
@@ -108,6 +152,10 @@ Uma tarefa corresponde a um PR revisável; dividir em subtarefas com sufixos se 
 - Documentação: mapa antigo → novo, composição de módulos, política de cache e configuração de build. Metadados reais serão integrados nas fases 2–4.
 
 ## F0-T12 — Executar Node e Caddy em containers
+
+**Bloqueios por issue:** [#35](https://github.com/IgnisDevNE/CircuitoNE/issues/35) para linha Node coerente; [#11](https://github.com/IgnisDevNE/CircuitoNE/issues/11) antes de servir conteúdo renderizado no servidor; bloqueios de F0-T11 propagam-se.
+
+**Issues tratadas:** Evidência de runtime contribui para [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32); a issue só encerra após homologação integrada.
 
 **Dependência:** F0-T11; F0-T3 é a referência do preview anterior. **Risco:** médio.
 
@@ -118,6 +166,10 @@ Uma tarefa corresponde a um PR revisável; dividir em subtarefas com sufixos se 
 
 ## F0-T13 — Cobertura local e integração Codecov
 
+**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) para credenciais/publicador; [#29](https://github.com/IgnisDevNE/CircuitoNE/issues/29) somente para acesso/publicação externa. LCOV local e artefatos do CI podem avançar.
+
+**Issues tratadas:** [#30](https://github.com/IgnisDevNE/CircuitoNE/issues/30) e colaboração operacional em [#29](https://github.com/IgnisDevNE/CircuitoNE/issues/29); não fechar upload sem relatório real.
+
 **Estado:** publicação externa parcialmente deferida por DEF-01; cobertura local planejada. **Dependência:** F0-T6, e F0-T2 para credenciais de CI. **Risco:** médio.
 
 - Entrega: relatório LCOV/HTML reproduzível, conjunto de arquivos incluídos explícito, baseline aprovado e política de cobertura de código alterado. Não impor porcentagem arbitrária nem excluir caminhos para esconder ausência de testes.
@@ -125,6 +177,46 @@ Uma tarefa corresponde a um PR revisável; dividir em subtarefas com sufixos se 
 - Aceite externo: após liberar OAuth, upload real ao Codecov da instância própria, associado a repo/commit/branch corretos. Token por repositório, sem impressão em logs e sem exposição a código não confiável de PR. Usar execução confiável separada para publicação de artefatos não confiáveis, validando origem e SHA.
 - Se DEF-01 persistir: publicar cobertura como artefato do CI, registrar pendência e continuar. Só tornar check remoto obrigatório depois de validar o caminho completo; não remover os gates locais de teste/review.
 - Documentação: [diagnóstico Codecov](../../reviews/codecov-diagnosis.md), exclusões justificadas, baseline e instrução de upload. Não usar o mesmo agente/verificador para escrever testes canônicos e atestar sua imutabilidade.
+
+## F0-T14 — Resolver upgrades e estabilizar a toolchain
+
+**Bloqueios por issue:** Nenhum para iniciar revisão/correção de dependências em CI sem secrets. Escrita de workflows requer atuação do mantenedor, registrada em [#34](https://github.com/IgnisDevNE/CircuitoNE/issues/34).
+
+**Issues tratadas:** [#34](https://github.com/IgnisDevNE/CircuitoNE/issues/34)/[#35](https://github.com/IgnisDevNE/CircuitoNE/issues/35)/[#36](https://github.com/IgnisDevNE/CircuitoNE/issues/36)/[#37](https://github.com/IgnisDevNE/CircuitoNE/issues/37); cada incremento tem seu próprio review e evidência.
+
+**Dependência:** F0-T1. **Risco:** médio/alto; [revisão dos oito PRs](../../reviews/dependabot-2026-09-22.md). Executar em incrementos revisáveis, sem misturar a migração do compilador com a do framework.
+
+- Prioridade imediata: revisar/integrar Actions e Caddy elegíveis (#4/#5/#6), mantendo o CI no SHA atualizado. Substituir o candidato antigo de pnpm/action-setup por versão mantida com runtime Node 24; não mudar pnpm 10.34.3 incidentalmente. Workflows são aplicados pelo mantenedor.
+- Node: resolver a divergência do PR #7. Avaliar Node 24 LTS; manter a linha 22 até validar a mudança. Alinhar engines, mise, tipos, CI e imagens por digest; Node 26 Current não entra apenas por ser mais novo.
+- TypeScript: reproduzir TS5102 do PR #8, adaptar configuração/aliases e verificar compilador/editor/tooling nas plataformas usadas. Não enfraquecer typecheck; conferir compatibilidade com React Router Framework ao executar F0-T11.
+- Tailwind: atualizar core/plugin juntos, revisar transitivas, instalação limpa e aparência em páginas públicas, cadastro e dashboard, desktop/mobile. Agrupar futuras atualizações compatíveis de Tailwind no Dependabot; manter majors sob revisão própria.
+- Aceite: testes existentes, typecheck, build, auditoria e container passam na combinação final; registrar evidência visual do CSS. Toda falha encontrada ganha teste de regressão antes da correção. Atualização sem novo comportamento usa os testes existentes; não fabricar vermelho. Resolver destino dos PRs substituídos sem declarar uma versão aprovada só pelo número ou pelo CI.
+- Documentação: versões escolhidas, motivo, SHAs dos PRs, resultados, limites e rollback. Revisão humana continua obrigatória.
+
+## F0-T15 — Antecipar decisões e pré-requisitos que bloqueiam produto
+
+**Bloqueios por issue:** Nenhum para preparar decisões; [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) antes da preparação que use credenciais de ambiente.
+
+**Issues tratadas:** [#38](https://github.com/IgnisDevNE/CircuitoNE/issues/38)/[#39](https://github.com/IgnisDevNE/CircuitoNE/issues/39)/[#40](https://github.com/IgnisDevNE/CircuitoNE/issues/40)/[#41](https://github.com/IgnisDevNE/CircuitoNE/issues/41)/[#42](https://github.com/IgnisDevNE/CircuitoNE/issues/42)/[#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43); decisão só encerra após aprovação, pré-requisito operacional após verificação.
+
+**Dependência:** regras/propostas já inventariadas; decisões de produto podem avançar sem código. **Responsáveis:** produto e mantenedor. A preparação com credenciais depende do isolamento de F0-T2.
+
+- Resolver na fase zero: idade/CPF/recuperação/retenção, arquivos e dados sociais, verificação/suspensão e invariantes de coletivos, tempo/publicação/agenda de eventos, iniciação/moderação de mensagens. Propostas continuam propostas até aprovação; não inventar resposta para encerrar issue.
+- Preparar: decisão de região/destinos, SMTP de homologação e callbacks, domínio/DNS/TLS planejados, capacidade e responsabilidades, RPO/RTO e escopo de backup. A preparação não autoriza migrar produção nem enviar mensagens a usuários reais.
+- Aceite: cada decisão tem responsável, registro aprovado e exemplos de aceite/negação nos contratos afetados; SMTP é validado com destino de teste controlado. Marcar evidências por pré-requisito e remover apenas o bloqueio correspondente.
+- Documentação: atualizar regras canônicas, ambiente/spec pertinente e issues; implementação persistente, deploy final e ensaio completo de restauração continuam nas fases correspondentes. Sem testes artificiais para decisões documentais.
+
+## Meta de redução do backlog na fase zero
+
+| Grupo | Meta na fase 0 | Condição para permanecer aberto |
+|---|---|---|
+| Defeitos autônomos de Markdown, dinheiro, estado de rota e semântica (#11/#17/#22/#27) | Corrigir e encerrar com evidência de todos os critérios aplicáveis ao protótipo | Critério ainda não demonstrado, explicitamente atribuído a uma tarefa; não fechar só porque o exemplo deixou de falhar |
+| Dependências (#34–#37), decisões e pré-requisitos (#38–#43) | Resolver antes de estabilizar a base e antes das tarefas dependentes | Incompatibilidade externa demonstrada ou decisão humana pendente, com responsável e impacto exato |
+| Infraestrutura (#29–#32) | Concluir OAuth, cobertura, isolamento e homologação dentro da fase | #29 pode depender de autorização externa, e só a publicação de #30 depende dele; #31/#32 bloqueiam a integração real e a saída correspondente da fase |
+| Achados que incluem persistência/autorizações e funcionalidades ainda inexistentes | Antecipar na F0 validação, testes, contenção do mock, estados de falha e correções independentes | Manter a issue aberta até o aceite integral nas fases 1–5; não inventar backend provisório ou mover todo o produto para F0 só para zerar a lista |
+| SEO e qualidade integrada (#26/#28 e validação final) | Corrigir metadados estáticos, SSR com fixtures, determinismo e estados já testáveis | Consultas/paginação/dados reais e validação do produto final permanecem nas tarefas de domínio e F6-T3 |
+
+O relatório de saída deve listar **cada issue ainda aberta**, o que já foi resolvido, motivo concreto do restante, tarefa de destino e efeito no gate. Ausência de issue nova não prova ausência de dívida; uma issue parcialmente atendida não é encerrada como resolvida.
 
 ## Escopo da limpeza e evidências
 

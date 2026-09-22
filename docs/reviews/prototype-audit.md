@@ -6,7 +6,7 @@ Base de código inicial: `3d860df`. Revisão estática orientada pelo grafo Memt
 
 **Não recomendo reescrita completa.** O projeto tem componentes reutilizáveis, tipos discriminados de atuação, páginas separadas e dependências enxutas. TypeScript estrito e build passam. O problema principal é a distância entre mock e comportamento real, com riscos concentrados em permissões, validações, estado e conteúdo. O Memtrace apontou cadastro (`Register`, complexidade estimada 79), criação de evento (26) e edição de coletivo (17) como áreas prioritárias; métricas são indicadores, não um veredito automático.
 
-Uma fase de preparação (F0) reduz risco antes de ligar banco. Preservar o visual, componentes básicos e fluxos válidos. A migração do roteador foi aprovada para atender SSR; não dividir arquivos apenas pelo tamanho nem instalar store global por preferência. As referências abaixo seguem a revisão 2 do plano; os achados continuam descrevendo o protótipo inspecionado.
+Uma fase de preparação (F0) reduz risco antes de ligar banco. Preservar o visual, componentes básicos e fluxos válidos. A migração do roteador foi aprovada para atender SSR; não dividir arquivos apenas pelo tamanho nem instalar store global por preferência. As referências abaixo seguem os IDs preservados na revisão 3 do plano; os achados continuam descrevendo o protótipo inspecionado.
 
 ## Achados acionáveis
 

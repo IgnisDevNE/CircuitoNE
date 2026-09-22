@@ -53,7 +53,7 @@ Playwright usa servidor próprio em `127.0.0.1:5182`, encerrado ao terminar. Nã
 
 O [workflow](../../.github/workflows/ci.yml) inclui E2E Chromium, cobertura e publicação de `quality-reports` por sete dias no job `quality`, além do job `database` com banco descartável. A action pnpm v6.1.0 usa runtime Node 24 e preserva o pnpm do projeto. Resultados de execução e aceite ficam no [PR #45](https://github.com/IgnisDevNE/CircuitoNE/pull/45); não encerrar [#34](https://github.com/IgnisDevNE/CircuitoNE/issues/34) sem validá-los.
 
-Em 22/09/2026, o responsável autorizou explicitamente sua credencial para publicar esta alteração de CI. A exceção se limita a essa operação; o App continua sem Workflows e segue como identidade padrão. A proteção `require_last_push_approval` permanece: um push autenticado como `magalz` exige aprovação de outra pessoa. Não retirar a regra nem simular um push do bot para contorná-la. Essa manutenção não resolve o isolamento de [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31).
+Em 22/09/2026, o responsável autorizou explicitamente sua credencial para publicar esta alteração de CI. Naquele momento, o App não tinha `Workflows:write`; a permissão foi concedida depois, temporariamente, e ainda consta na instalação ([controle de acesso](../controls/access-control.md)). A proteção `require_last_push_approval` permanece: um push autenticado como `magalz` exige aprovação de outra pessoa. Não retirar a regra nem simular um push do bot para contorná-la. Essa manutenção não resolve o isolamento de [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31).
 
 Os jobs automáticos de CI não publicam imagens, não acessam secrets e não migram bancos remotos. A opção manual descrita abaixo verifica somente credenciais de homologação em outro job. A automação de homologação e promoção é F0-T4/T5, depois da separação de identidade e das credenciais apropriadas. Até lá, não promover o protótipo por estar com CI verde.
 
@@ -102,7 +102,7 @@ O helper usa Node nativo, emite um token temporário limitado ao repositório ID
 
 A chave fornecida está em `secrets/ignisdevne.2026-09-21.private-key.pem`; a pasta inteira está ignorada pelo Git e excluída do contexto do container. Nenhum desses arquivos estava versionado na inspeção. Para outro caminho ou rotação, definir `GITHUB_APP_PRIVATE_KEY_FILE`. O arquivo `githubapp-secret.txt` não é usado por esse fluxo de autenticação por instalação.
 
-A instalação 163660443 (App 5028495) cobre todos os repositórios da IgnisDevNE por decisão do responsável. Limitar tokens não reduz o poder da chave privada; por isso a separação definitiva exige emissor controlado fora do ambiente implementador e QA fora dessa instalação. A configuração local atual é uma etapa de bootstrap, não prova de isolamento contra processos que ainda possam acessar credenciais humanas.
+A instalação 163660443 (App 5028495) está hoje em `selected repositories`, apenas `IgnisDevNE/CircuitoNE`; o QA permanece excluído. O responsável pretende reutilizar o bot em outros repositórios da organização, que deverão ser selecionados individualmente. Limitar tokens não reduz o poder da chave privada; por isso a separação definitiva exige emissor controlado fora do ambiente implementador. A configuração local atual é uma etapa de bootstrap, não prova de isolamento contra processos que ainda possam acessar credenciais humanas.
 
 ## Homologação Supabase
 

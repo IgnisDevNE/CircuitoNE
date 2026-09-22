@@ -1,6 +1,6 @@
 # Controle de mudanças
 
-Estado em 22/09/2026: **operacional com gates manuais e pendências na [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31)**. Aplica-se a código, testes, workflows, banco e infraestrutura do CircuitoNE. A [ADR 0006](../decisions/0006-canonical-ci-suite.md) define a decisão; a [spec de aceite](../specs/canonical-ci-suite.md) define o contrato técnico. Este documento registra quem autoriza cada mudança e o que a esteira já executa.
+Estado em 22/09/2026: **operacional com gates manuais e pendências na [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31)**. Aplica-se a código, testes, workflows, banco e infraestrutura do CircuitoNE. O [controle de acesso](access-control.md) define as identidades; a [ADR 0006](../decisions/0006-canonical-ci-suite.md) define a decisão; a [spec de aceite](../specs/canonical-ci-suite.md) define o contrato técnico. Este documento registra quem autoriza cada mudança e o que a esteira já executa.
 
 ## Autoridade e registro
 

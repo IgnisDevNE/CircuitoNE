@@ -3,6 +3,8 @@ dist/
 build/
 .cache/
 .env*
+!.env.example
+/secrets/
 .vite/
 vite.config.*.timestamp-*
 *.tsbuildinfo
@@ -29,3 +31,15 @@ logs/
 /.codex/config.toml
 /.orbit/artifacts
 /.orbit-artifacts
+
+# Agent databases, local integrations and machine-specific state.
+/.memdb/
+/.memtrace/
+/.claude/
+/.agents/
+/.sweep/
+/test-results/
+/playwright-report/
+/coverage/
+/supabase/.temp/
+/supabase/.branches/

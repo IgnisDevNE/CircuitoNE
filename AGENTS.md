@@ -8,11 +8,19 @@ React + Vite + Tailwind CSS project running inside Figma Make.
 - Every pull request must be validated in homologation before production. Use the dedicated Supabase homologation database `CircuitoNE-dev` on GitHub first, apply and validate migrations there, and only promote the change after homologation succeeds. Do not test schema changes directly against the production database.
 - After each pull request is approved and completed, clean up branches so that only `main` remains. Before starting new work, create a fresh branch from the updated `main`.
 
+## GitHub Agent Identity
+
+- Use `node scripts/github-app.mjs gh <args>` for GitHub operations and `node scripts/github-app.mjs git <args>` for authenticated Git operations and commits. These commands use the `ignisdevne` App with a temporary token scoped to this repository.
+- Do not fall back to the saved human GitHub credentials when App access is denied. Report the missing permission; keep review and branch protections intact.
+- Never commit or print files from `secrets/`, private keys, or tokens. The helper also accepts `GITHUB_APP_PRIVATE_KEY_FILE` for an external key path.
+- The App is installed across the IgnisDevNE organization. Canonical acceptance tests must be controlled outside this App's installations. Local helpers/instructions do not replace credential and execution isolation; see `docs/engineering/delivery.md`.
+
 ## Documentation Locations
 
 All paths below are relative to the repository root:
 
 - Architecture Decision Records (ADRs): `docs/decisions/`
+- Specifications, technical requirements, and architecture/infrastructure contracts: `docs/specs/` (see its index; approved target architecture is not necessarily implemented)
 - Database migration files: `docs/migrations/`
 - Business rules: `docs/business-rules/`
 

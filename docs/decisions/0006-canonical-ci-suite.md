@@ -21,7 +21,7 @@ Usar Git e Actions, sem criar middleware ou framework próprio. O contrato de ve
 - Reduzir processamento local de aceite; manter testes rápidos locais para TDD e diagnóstico.
 - Separar aprovação de testes, execução do candidato e publicação/promoção. O implementador pode propor testes, mas não aprovar sua referência ou atestar a própria entrega.
 - Invalidar aceite antes do merge quando a suíte/base avançar; coordenar a integração e a promoção anterior para impedir entrada com resultado desatualizado. Tratar promoção como operação auditável e condicionada ao estado atual, com retentativa e histórico; um merge não pode apagar testes aceitos por outro PR.
-- O repositório QA e seus workflows foram preparados; a identidade publicadora, o check obrigatório com origem fixada e a promoção validada ainda estão pendentes. Esta decisão não dispensa homologação, revisão ou gates.
+- O repositório QA, a suíte inicial e o App publicador foram preparados. O check obrigatório com origem fixada e a promoção validada ainda estão pendentes. Esta decisão não dispensa homologação, revisão ou gates.
 - Não alegar proteção contra credenciais administrativas disponíveis ao agente por outro caminho. O isolamento de credenciais permanece pendência da [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31); a escolha de CI não exige VM local nem encerra automaticamente essa issue.
 
 ## Alternativas consideradas

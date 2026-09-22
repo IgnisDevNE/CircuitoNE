@@ -2,7 +2,7 @@
 
 ## Autoridades separadas
 
-O responsável escolheu **criar um GitHub App para os agentes**, em vez de outra conta pessoal. `magalz` permanece como responsável humano. App/instalação ainda não foram disponibilizados; não compartilhar token de administrador com a execução cotidiana.
+O responsável escolheu **um GitHub App para os agentes**, em vez de outra conta pessoal. `magalz` permanece como responsável humano. Em 22/09/2026 foi conectado o App `ignisdevne` (5028495), instalação 163660443. Não compartilhar token de administrador com a execução cotidiana.
 
 | Papel | Pode | Não pode |
 |---|---|---|
@@ -13,13 +13,13 @@ O responsável escolheu **criar um GitHub App para os agentes**, em vez de outra
 
 `CODEOWNERS` foi preparado para testes, workflows, contratos e dependências. Ele só exige aprovação quando combinado com proteção da branch. Não impede editar um arquivo localmente, não esconde testes e não protege contra alguém com suas credenciais de administrador.
 
-Instalar o App somente nos repositórios necessários. Proposta mínima: Contents e Pull requests com escrita; Metadata e, se necessário para consulta, Checks/Actions somente leitura. Sem Administration, Secrets, Environments, Workflows ou Checks com escrita. Alterações de workflows passam pelo mantenedor. Chave privada fica em um emissor controlado, fora do workspace do agente; fornecer token de instalação temporário e de escopo limitado. Não usar o mesmo App para implementar e atestar o aceite. Confirmar permissões e testar negações após instalação. Referências: [permissões do GitHub App](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/choosing-permissions-for-a-github-app) e [tokens de instalação](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-an-installation-access-token-for-a-github-app).
+O responsável confirmou que o App atenderá **todos os repositórios da IgnisDevNE**. A instalação mantém esse alcance; cada execução deve emitir token limitado ao projeto necessário. Permissões verificadas: Contents, Pull requests e Issues com escrita; Metadata, Actions, Checks e Commit statuses somente leitura. Sem Administration, Secrets, Environments ou Workflows. Alterações de workflows passam pelo mantenedor. Para isolamento forte, a chave privada deve ficar em um emissor controlado, fora do ambiente do implementador; fornecer apenas token temporário. Não usar o mesmo App para implementar e atestar o aceite. Referências: [permissões do GitHub App](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/choosing-permissions-for-a-github-app) e [tokens de instalação](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-an-installation-access-token-for-a-github-app).
 
 ## Isolamento do TDD
 
 **Camada imediata:** testes de unidade/caracterização no projeto, revisão obrigatória de testes e CI de PR sem secrets. Alterações de contrato/teste têm revisão própria e não são diluídas no diff da implementação. Não usar `chmod`, hash guardado ao lado do teste ou instrução de prompt como barreira de segurança.
 
-**Camada de aceite antes de agentes implementarem regras:** suíte canônica em repositório de QA controlado pelo humano, sem escrita da conta implementadora. Definir teste e commit imutável antes da implementação; registrar esse SHA na tarefa. O implementador recebe critérios e pode receber cópia local dos testes, mas o verificador usa a versão canônica, não a cópia alterada no PR. Nome do repositório sugerido: `IgnisDevNE/CircuitoNE-qa`; ainda não criado.
+**Camada de aceite antes de agentes implementarem regras:** suíte canônica em repositório de QA controlado pelo humano, sem escrita da identidade implementadora. Definir teste e commit imutável antes da implementação; registrar esse SHA na tarefa. O implementador recebe critérios e pode receber cópia local dos testes, mas o verificador usa a versão canônica, não a cópia alterada no PR. Como o App foi destinado a todos os repositórios da organização, o QA deve ficar em **outra conta/organização sem instalação desse App**, por exemplo `magalz/CircuitoNE-qa` (proposta, ainda não criado). Um QA dentro da IgnisDevNE não teria a separação desejada.
 
 O pipeline confiável parte de configuração controlada pelo mantenedor, com dependências e comando de teste próprios. Baixa o SHA exato da aplicação, executa build em ambiente descartável sem segredo e testa externamente comportamento/API/RLS. Restaurar apenas `tests/` do `main` e executar `npm test` do PR seria insuficiente: o PR também pode alterar runner, scripts, loaders, fixtures e build para burlar a verificação.
 
@@ -71,4 +71,6 @@ Não gerar ADR para cada função nem repetir todo o modelo em cada tarefa. Para
 
 ## Limitação atual
 
-Esta preparação configura os primeiros controles e propõe o isolamento forte. O GitHub App dos agentes, o repositório de QA e o verificador externo ainda não estão conectados. Enquanto a sessão usar `magalz` com privilégios administrativos, **não existe garantia de impossibilidade de alterar testes/proteções**. A separação será demonstrada com tentativas negativas: identidade implementadora falha ao escrever no QA, mudar regra, editar secret, aprovar próprio PR e promover produção.
+O GitHub App está autenticado pelo helper descrito em `environment.md`. A API confirmou que o token emitido só enxerga CircuitoNE; consultas às proteções de branch e aos secrets foram negadas com HTTP 403. Não foram tentadas mutações reais em regras/secrets para simular negações.
+
+**Ainda não há isolamento forte:** o QA/verificador externo não estão conectados, a chave do App ainda está em `secrets/` no ambiente local e as credenciais humanas continuam disponíveis nas ferramentas da máquina. O helper separa a identidade de cada comando, mas não impede um processo com esse acesso de usar outra credencial ou emitir token mais amplo. F0-T2 só termina ao separar o emissor e o ambiente implementador, retirar acesso humano/admin e demonstrar os demais testes negativos de QA, aprovação e promoção.

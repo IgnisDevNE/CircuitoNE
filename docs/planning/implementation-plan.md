@@ -116,7 +116,7 @@ flowchart LR
 - Apenas duas instâncias Supabase existem; homologação compartilhada não serve para `reset` de cada PR. Usar banco descartável local/CI para testes destrutivos, serializar migrations compartilhadas.
 - Região da homologação é São Paulo e produção é US West. Verificar latência, residência pretendida e eventual reprovisionamento antes dos primeiros dados reais; não migrar automaticamente.
 - Supabase gerenciado continua dependência externa mesmo com frontend em Debian próprio. Fazer self-host do Supabase não está incluído.
-- O GitHub App separado resolve identidade, mas sem retirar acesso a segredos/admin não resolve isolamento. A suíte externa precisa verificar a aplicação, não confiar no runner do candidato.
+- O GitHub App está conectado e foi destinado a toda a organização. Tokens de cada execução são limitados ao projeto; a suíte externa deve ficar em outra conta/organização sem esse App. A chave e a credencial humana precisam sair do alcance do implementador para haver isolamento forte. O aceite verifica a aplicação, sem confiar no runner do candidato.
 - SMTP, backup de Storage, DNS/TLS, perda do host, moderação, acessibilidade e SEO não estavam cobertos pelo mock; agora têm tarefas e gates.
 - Não estimar calendário antes de fechar decisões de produto e disponibilidade do responsável. Avançar por aceite, com tarefas pequenas; dividir item que não caiba em um diff revisável.
 

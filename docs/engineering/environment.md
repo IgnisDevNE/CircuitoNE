@@ -50,7 +50,23 @@ Repositório existente: [IgnisDevNE/CircuitoNE](https://github.com/IgnisDevNE/Ci
 - Ambiente **Producao**: projeto `CircuitoNE` (`mwgccjvztzbderlwtheg`, US West), revisão de `magalz`, prevenção de autoaprovação, apenas branches protegidas (atualmente `main`). Variável de referência definida; sem secrets nesta preparação.
 - Alertas de dependências/correções automáticas habilitados. Squash é o método de merge; exclusão automática de branch após merge habilitada. Branch atual permanece enquanto PR não for aprovado/concluído.
 
-O responsável criará um GitHub App para implementar. Conectar essa identidade antes de usar gates de aprovação. Um job disparado por `magalz` não pode ser aprovado por ele mesmo quando a prevenção de autoaprovação está ativa. O PR inicial criado pela mesma conta também exige outro autor/aprovador habilitado: após instalar o App, recriar o PR sob a identidade dele e garantir que o último push revisável venha do App, ou obter outro revisor humano autorizado. O mantenedor prepara mudanças de workflows, que o App não pode escrever. Não remover proteção para contornar isso. CODEOWNERS só passa a valer como regra de propriedade após entrar na branch base.
+O App `ignisdevne` foi conectado em 22/09/2026, com identidade `ignisdevne[bot]`. O PR inicial foi aberto por `magalz`; a preparação deve continuar em PR aberto pelo bot, com o último push revisável também vindo dele, para permitir revisão humana. Um job disparado por `magalz` não pode ser aprovado por ele mesmo quando a prevenção de autoaprovação está ativa. O mantenedor prepara mudanças de workflows, que o App não pode escrever. Não remover proteção para contornar isso. CODEOWNERS só passa a valer como regra de propriedade após entrar na branch base.
+
+### Autenticação local do App
+
+Use o helper para comandos do agente:
+
+```powershell
+node scripts/github-app.mjs gh pr list
+node scripts/github-app.mjs gh pr checks
+node scripts/github-app.mjs git push
+```
+
+O helper usa Node nativo, emite um token temporário limitado ao repositório ID 1380574734 e o fornece somente ao processo `gh`/`git`. Não imprime nem grava o token; não faz login global nem substitui a credencial humana salva. Commits feitos por esse helper usam autor/committer `ignisdevne[bot]`. Para o Git, a cadeia de helpers é substituída somente no comando, sem fallback interativo para a conta humana.
+
+A chave fornecida está em `secrets/ignisdevne.2026-09-21.private-key.pem`; a pasta inteira está ignorada pelo Git e excluída do contexto do container. Nenhum desses arquivos estava versionado na inspeção. Para outro caminho ou rotação, definir `GITHUB_APP_PRIVATE_KEY_FILE`. O arquivo `githubapp-secret.txt` não é usado por esse fluxo de autenticação por instalação.
+
+A instalação 163660443 (App 5028495) cobre todos os repositórios da IgnisDevNE por decisão do responsável. Limitar tokens não reduz o poder da chave privada; por isso a separação definitiva exige emissor controlado fora do ambiente implementador e QA fora dessa instalação. A configuração local atual é uma etapa de bootstrap, não prova de isolamento contra processos que ainda possam acessar credenciais humanas.
 
 ## Homologação Supabase
 

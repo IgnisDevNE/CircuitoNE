@@ -11,3 +11,4 @@
 /Dockerfile @magalz
 /.dockerignore @magalz
 /deploy/ @magalz
+/scripts/github-app.mjs @magalz

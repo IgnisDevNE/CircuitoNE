@@ -32,10 +32,19 @@ Foi tentada revisão Memtrace do PR com grafo local em modo estrito e sem public
 
 ## O que ainda impede o início de implementação autônoma/produção
 
-1. Criar/instalar o GitHub App informado pelo responsável; retirar credencial administrativa do implementador e demonstrar permissões negativas.
+1. O App foi conectado em 22/09/2026; resta retirar a chave ampla e as credenciais humanas do ambiente implementador e demonstrar todas as permissões negativas. Ver atualização abaixo.
 2. Fixar aceite fora da autoridade implementadora e conectar verificador confiável. Os testes locais atuais podem ser editados pela sessão; não existe isolamento forte ainda.
 3. Configurar CLI/migrações e secrets de homologação, executar fluxo no CircuitoNE-dev pelo GitHub e registrar evidências. O preview Podman não cumpre sozinho essa exigência.
 4. Review independente do plano/PR e decisões de produto restantes (idade, recuperação do CPF, critérios de verificação, entre outras no registro de regras).
 5. Implementar backend/jornadas e concluir gates por fase. Sem dados reais no protótipo atual.
 
 Foram preservados os demais containers do host e arquivos locais preexistentes fora da entrega. Containers temporários desta verificação ficaram parados; a remoção foi bloqueada pela revisão automática de aprovação. Não foram feitas tentativas de contornar esse bloqueio.
+
+## Atualização — GitHub App, 22/09/2026
+
+- App `ignisdevne` (5028495), instalação 163660443, bot `ignisdevne[bot]` (332310975). O responsável confirmou instalação em todos os repositórios da organização para reutilização do bot.
+- Helper local emite token temporário limitado a CircuitoNE. API `/installation/repositories`: exatamente 1 repositório, `IgnisDevNE/CircuitoNE`. Não usa OAuth pessoal, não grava tokens nem modifica o login global.
+- Permissões verificadas: contents/pull_requests/issues write; actions/checks/statuses/metadata read. Consultas de proteção de branch e secrets retornaram 403 com o App. Isso documenta negação de leitura privilegiada; nenhuma mutação sensível foi usada como teste.
+- TDD: exclusão de `secrets/` demonstrou falha antes da regra e passou depois; nenhum segredo estava versionado. Testes do helper falharam com emissão não implementada e passaram após implementação, verificando assinatura RSA, validade temporal, escopo único, permissões e tratamento de 401 sem revelar resposta. Não usam chaves reais no CI.
+- QA proposto foi deslocado para outra conta/organização sem o App, pois qualquer repositório da IgnisDevNE estaria ao alcance da chave dele.
+- Limite remanescente: a chave privada e ferramentas com acesso humano continuam na máquina. O helper demonstra identidade e escopo do comando, não um isolamento de sistema operacional. Emissor separado e aceite independente continuam necessários.

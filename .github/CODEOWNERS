@@ -6,6 +6,7 @@
 /pnpm-lock.yaml @magalz
 /pnpm-workspace.yaml @magalz
 /vitest.config.ts @magalz
+/codecov.yml @magalz
 /playwright.config.ts @magalz
 /tsconfig.json @magalz
 /vite.config.ts @magalz

@@ -122,7 +122,9 @@ As regiões diferentes exigem decisão antes de dados reais. Banco e arquivos t�
 
 ## Codecov
 
-A instância própria em [pipeline.magalz.space](https://pipeline.magalz.space) foi inspecionada em 22/09/2026. `magalz` está ativo e `IgnisDevNE/CircuitoNE` habilitado para cobertura. A associação de organizações pelo login OAuth ainda depende de autorização no GitHub; upload real no CI não foi configurado. Causa, ações e encerramento da pendência em [diagnóstico Codecov](../reviews/codecov-diagnosis.md). F0-T13 prevê cobertura local como artefato enquanto a integração externa estiver deferida.
+Por solicitação do responsável em 22/09/2026, o destino passa a ser [Codecov Cloud](https://app.codecov.io/gh/IgnisDevNE/CircuitoNE), com App oficial já instalado. O CI publica somente LCOV em job separado após `quality`/`database`, usando OIDC temporário; não cadastrar `CODECOV_TOKEN`. A [ADR 0004](../decisions/0004-codecov-cloud.md) registra permissões, associação ao SHA testado e limites. Configuração do serviço: `codecov.yml`, protegida por CODEOWNERS; status de cobertura informativos e sem comentários automáticos.
+
+Os artefatos `quality-reports` e `codecov-lcov` duram sete dias, mesmo se o serviço externo falhar. O upload não é check obrigatório. PRs de forks mantêm apenas artefatos nesta etapa; validação real de Dependabot/forks e evidência do primeiro upload em `main` ficam em [#30](https://github.com/IgnisDevNE/CircuitoNE/issues/30). Não confundir instalação do App com relatório recebido. O [diagnóstico da instância própria](../reviews/codecov-diagnosis.md) permanece histórico; a pendência OAuth #29 não bloqueia Cloud e nenhum serviço próprio foi alterado.
 
 ## Caminho para Debian
 

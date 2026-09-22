@@ -29,11 +29,11 @@ São **36 tarefas**, identificadas nos planos. Eventos e mensagens podem avança
 
 ## Estado real e próximo passo
 
-- GitHub/App, CI, documentação e preview estático estão preparados no [PR #2](https://github.com/IgnisDevNE/CircuitoNE/pull/2), sujeitos a revisão/conclusão. F0-T1/T3 não equivalem a fase zero completa.
+- GitHub/App, CI, documentação e preview estático foram integrados pelo [PR #2](https://github.com/IgnisDevNE/CircuitoNE/pull/2) em 22/09/2026. F0-T1/T3 não equivalem a fase zero completa.
 - SSR, backend, Auth, banco de negócio e funcionalidades persistentes continuam pendentes. O preview segue com mocks.
 - F0-T2 está parcial: a identidade por comando foi separada, mas QA/verificador e isolamento de credenciais ainda não estão completos.
 - Codecov: usuário ativo e CircuitoNE habilitado no servidor; descoberta da organização via OAuth e upload real permanecem pendentes conforme [diagnóstico](../reviews/codecov-diagnosis.md).
-- Primeiro trabalho de implementação: concluir a revisão da fundação; atualizar `main`; abrir branch nova; executar F0-T2 e F0-T6 antes das regras reais. Preparação independente com fixtures pode avançar sem tratar pendências como aprovadas.
+- Próximo trabalho de implementação: partir de `main` atualizada e branch nova; executar F0-T2 e F0-T6 antes das regras reais. Preparação independente com fixtures pode avançar sem tratar pendências como aprovadas.
 
 ## Contrato comum de cada tarefa
 
@@ -41,7 +41,7 @@ São **36 tarefas**, identificadas nos planos. Eventos e mensagens podem avança
 2. Escrever teste primeiro e registrar falha pelo comportamento ausente. O contrato de aceite é revisado e fixado fora da autoridade do implementador. Caracterização já correta pode começar verde; documentação recebe revisão de consistência, links e evidências.
 3. Implementar o menor incremento completo: UI/servidor/banco/políticas quando necessários, com falhas, autorização e documentação. Não construir todo o schema antes de testar a primeira jornada.
 4. Rodar verificações pertinentes: unidade/interação, TypeScript/build, API/RLS/Storage/concorrência, jornada e acessibilidade afetadas. Registrar SHA final e versão do oráculo; cobertura é evidência auxiliar.
-5. Review normal independente do diff e dos contratos/testes. Resolver P0/P1; risco residual aceito precisa de responsável e prazo. O implementador não é seu único aprovador.
+5. Review normal independente do diff e dos contratos/testes. Resolver P0/P1; risco residual aceito precisa de responsável e prazo. Todo achado deferido, dívida técnica ou bug não resolvido deve ter issue aberta vinculada, conforme `AGENTS.md`; abrir issue não dispensa o gate. O implementador não é seu único aprovador.
 6. Homologar alterações executáveis pelo GitHub no `CircuitoNE-dev`, com migrations/checksums, artefato e smoke. Nenhum teste de schema em produção. Documentar aplicabilidade quando o PR só altera documentos.
 7. Após aprovação e conclusão, limpar a branch e iniciar o próximo trabalho a partir de `main` atualizada.
 
@@ -68,10 +68,10 @@ O resultado é aprovado ou bloqueado no SHA exato. Autoavaliação e scanners n�
 
 | ID | Pendência / responsável | Efeito e aceite |
 |---|---|---|
-| DEF-01 | Autorizar OAuth CodeCov na IgnisDevNE / proprietário da organização | Sincronizar associação sem 403 e confirmar organização na conta. Deferido; não bloqueia testes locais, planejamento ou demais tarefas |
-| DEF-02 | Publicar cobertura no Codecov / mantenedor + implementação F0-T13 | Relatório real no SHA correto, token restrito e publicação isolada. Até lá, artefato local/CI; sem declarar cobertura remota validada |
-| F0-T2 | Isolamento do QA/emissor/implementador / mantenedor | Barreira obrigatória antes de agentes implementarem regras reais; demonstrar testes negativos, incluindo ausência de credenciais administrativas locais |
-| F0-T4/T5 | Credenciais e fluxo real de homologação / mantenedor + implementação | Testar o fluxo no projeto correto; não promover só por CI verde |
+| [DEF-01](https://github.com/IgnisDevNE/CircuitoNE/issues/29) | Autorizar OAuth CodeCov na IgnisDevNE / proprietário da organização | Sincronizar associação sem 403 e confirmar organização na conta. Deferido; não bloqueia testes locais, planejamento ou demais tarefas |
+| [DEF-02](https://github.com/IgnisDevNE/CircuitoNE/issues/30) | Publicar cobertura no Codecov / mantenedor + implementação F0-T13 | Relatório real no SHA correto, token restrito e publicação isolada. Até lá, artefato local/CI; sem declarar cobertura remota validada |
+| [F0-T2](https://github.com/IgnisDevNE/CircuitoNE/issues/31) | Isolamento do QA/emissor/implementador / mantenedor | Barreira obrigatória antes de agentes implementarem regras reais; demonstrar testes negativos, incluindo ausência de credenciais administrativas locais |
+| [F0-T4/T5](https://github.com/IgnisDevNE/CircuitoNE/issues/32) | Credenciais e fluxo real de homologação / mantenedor + implementação | Testar o fluxo no projeto correto; não promover só por CI verde |
 | D-02/D-03 | Idade, CPF, recuperação e retenção / responsável pelo produto | Resolver antes de contratos afetados da fase 1 e abertura de cadastro |
 | D-08/D-10 | Arquivos/cotas e dados sociais / responsável pelo produto | Resolver antes de tarefas afetadas da fase 2 |
 | D-01/D-09, RN-21 | Critérios de verificação/suspensão, diretório e invariantes propostas / responsável pelo produto | Resolver antes de tarefas afetadas da fase 3; aprovação prévia de coletivos já é obrigatória |

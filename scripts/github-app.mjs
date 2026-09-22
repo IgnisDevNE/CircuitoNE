@@ -14,7 +14,11 @@ export async function createInstallationToken(privateKey) {
     headers: { Authorization: `Bearer ${jwt}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json', 'X-GitHub-Api-Version': '2026-03-10' },
     body: JSON.stringify({
       repository_ids: [1380574734],
-      permissions: { contents: 'write', pull_requests: 'write', issues: 'write', actions: 'read', checks: 'read', statuses: 'read', metadata: 'read' },
+      permissions: {
+        contents: 'write', pull_requests: 'write', issues: 'write', checks: 'read', statuses: 'read', metadata: 'read',
+        actions: process.env.GITHUB_APP_ACTIONS_WRITE === '1' ? 'write' : 'read',
+        ...(process.env.GITHUB_APP_WORKFLOWS_WRITE === '1' ? { workflows: 'write' } : {}),
+      },
     }),
     signal: AbortSignal.timeout(15000),
   })

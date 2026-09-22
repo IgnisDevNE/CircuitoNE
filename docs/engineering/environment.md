@@ -62,10 +62,14 @@ Os jobs automáticos de CI não publicam imagens, não acessam secrets e não mi
 O CI inclui a opção `validate_homologation`, desativada por padrão. Publicar/revisar o workflow e integrá-lo em `main` antes de disparar:
 
 ```powershell
+$env:GITHUB_APP_ACTIONS_WRITE = '1'
 node scripts/github-app.mjs gh workflow run ci.yml --ref main -f validate_homologation=true
+Remove-Item Env:GITHUB_APP_ACTIONS_WRITE
 ```
 
 O bot precisa de `Actions: write` para o disparo (permissão temporária informada pelo responsável em 22/09/2026); publicar alterações no YAML requer `Workflows: write` separadamente. O job `homologation-credentials` só roda em `main`, pede aprovação do environment `Homologação` e usa runner Ubuntu 24.04 descartável, sem checkout/código da aplicação. O mantenedor deve conferir ator, SHA e workflow antes de liberar o environment; `prevent_self_review` permanece habilitado. A permissão de Actions pode ser retirada ao concluir a operação temporária.
+
+O helper também limita as permissões de cada token. Por padrão, continua pedindo Actions somente leitura e nenhum Workflows. Somente na operação autorizada, definir `GITHUB_APP_ACTIONS_WRITE=1` para disparo ou `GITHUB_APP_WORKFLOWS_WRITE=1` para publicar YAML; remover a variável após o comando. Nenhum outro valor ativa esses flags. O token continua limitado ao CircuitoNE e não ganha Administration/Secrets/Environments. A instalação precisa ter concedido a permissão correspondente; os flags locais não substituem essa autorização.
 
 Entradas verificadas: variáveis `SUPABASE_PROJECT_REF`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`; secrets `SUPABASE_ACCESS_TOKEN` e `SUPABASE_DB_PASSWORD`, cada um em sua própria etapa. O destino é fixo em `CircuitoNE-dev` (`odphoxozclrshqjgwbqk`). Token valida leitura da configuração do projeto; senha valida sessão PostgreSQL pela porta 5432 com TLS `verify-full` e consulta literal em transação de leitura. Nenhum reset, migração, seed ou deploy. Não há opção de produção.
 

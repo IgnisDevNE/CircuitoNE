@@ -111,7 +111,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 - Testar primeiro: CPF normalizado e dígitos, nascimento inválido, CNPJ numérico/alfanumérico, URL/e-mail, valor `R$ 1.500,00` reformatado, centavos, fim anterior ao início e conversão de fuso. Máscara não equivale a validação.
 - Entrega: funções pequenas e schemas Zod nas fronteiras. Extrair validação por etapa de `Register` e dados de evento, preservando os dois modos de cadastro/nova atuação; não reescrever o wizard inteiro.
-- Aceite: testes por tipo de atuação e etapa, erros associados aos campos. Idade mínima, política de CPF e fim/fuso definitivo continuam pendentes; não inventar requisitos para satisfazer testes.
+- Aceite: testes por tipo de atuação e etapa, erros associados aos campos. Aplicar as decisões de RN-31–34: 18 anos completos, celular obrigatório/único/confirmado e CPF corrigido pelo suporte. Cadastro aceita todas as 27 UFs (RN-04). Recuperação/exclusão reais permanecem na fase 1; fim/fuso definitivo continua pendente em #41.
 - Documentação: contratos de entrada e decisões pendentes relacionadas. Adaptar apenas os consumidores alcançados pela mudança.
 
 ## F0-T9 — Conter o mock e corrigir escopos de interface

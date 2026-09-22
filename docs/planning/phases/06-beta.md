@@ -23,8 +23,8 @@
 
 **Dependência:** políticas F1-T4 e F5-T3, decisões de retenção aprovadas.
 
-- Testar primeiro: exportação só do titular, solicitação de exclusão autenticada, conta que é último N2, referência de autoria histórica, retenção vencida e recuperação indevida por CPF alegado.
-- Entrega: processos executáveis de suporte, suspensão, exclusão/exportação e retenção, incluindo arquivos e backups. Não prometer apagar imediatamente todo backup se isso não for operacionalmente verdadeiro.
+- Testar primeiro: exportação só do titular, solicitação de exclusão autenticada, conta que é último N2, mensagens preservadas sem identificar o remetente também na API, ausência de restauração de dados/permissões ao recadastrar o CPF, prazo de expurgo de backups e recuperação indevida por CPF alegado.
+- Entrega: processos executáveis de suporte, suspensão, exclusão/exportação e retenção, incluindo arquivos e backups, conforme RN-32–34. Backup diário com expurgo de dados excluídos em até 7 dias foi aprovado; verificar todas as cópias relevantes e divulgar o prazo nos termos/privacidade. Uma restauração não pode reativar contas excluídas.
 - Aceite: responsável/canal definidos, textos de privacidade coerentes com a operação e sem dados reais em seeds/logs. Não incorporar dados de terceiros na exportação por associação de conversa/coletivo.
 - Documentação: política publicada, procedimento interno, prazos e evidência de execução com dados sintéticos.
 

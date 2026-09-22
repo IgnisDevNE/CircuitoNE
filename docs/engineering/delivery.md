@@ -57,6 +57,8 @@ Para testes de caracterização de código já existente, é honesto registrar q
 
 ## Documentação mínima, sem duplicação
 
+Todo achado de review deferido, item de dívida técnica ou bug que não possa ser resolvido imediatamente deve ter **issue aberta no GitHub antes de encerrar ou repassar a tarefa**. Reutilizar uma issue aberta correspondente; registrar evidência/impacto, motivo do adiamento, papel responsável e critérios de aceite. Vincular a issue no PR, review ou plano pertinente: documento, comentário ou TODO isolado não substitui a issue. Abrir issue não dispensa gates bloqueantes; planejar a correção não permite encerrar o achado como resolvido. Se a criação estiver bloqueada, informar o impedimento concreto e preservar o rascunho sem declarar a issue criada.
+
 | Frequência | Artefato | Conteúdo mínimo |
 |---|---|---|
 | Cada tarefa | Issue/PR + `docs/tasks/Fx-Ty.md` se a evidência não couber no PR | Problema, RN, critérios, escopo, teste vermelho/verde, SHA, homologação, review, risco e recuperação |
@@ -74,4 +76,4 @@ Specs descrevem o resultado esperado; ADRs registram contexto, alternativas e co
 
 O GitHub App está autenticado pelo helper descrito em `environment.md`. A API confirmou que o token emitido só enxerga CircuitoNE; consultas às proteções de branch e aos secrets foram negadas com HTTP 403. Não foram tentadas mutações reais em regras/secrets para simular negações.
 
-**Ainda não há isolamento forte:** o QA/verificador externo não estão conectados, a chave do App ainda está em `secrets/` no ambiente local e as credenciais humanas continuam disponíveis nas ferramentas da máquina. O helper separa a identidade de cada comando, mas não impede um processo com esse acesso de usar outra credencial ou emitir token mais amplo. F0-T2 só termina ao separar o emissor e o ambiente implementador, retirar acesso humano/admin e demonstrar os demais testes negativos de QA, aprovação e promoção.
+**Ainda não há isolamento forte** ([issue #31](https://github.com/IgnisDevNE/CircuitoNE/issues/31)): o QA/verificador externo não estão conectados, a chave do App ainda está em `secrets/` no ambiente local e as credenciais humanas continuam disponíveis nas ferramentas da máquina. O helper separa a identidade de cada comando, mas não impede um processo com esse acesso de usar outra credencial ou emitir token mais amplo. F0-T2 só termina ao separar o emissor e o ambiente implementador, retirar acesso humano/admin e demonstrar os demais testes negativos de QA, aprovação e promoção.

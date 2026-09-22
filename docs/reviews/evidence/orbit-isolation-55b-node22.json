@@ -1,0 +1,242 @@
+{
+  "purpose": "Reprodução do probe sintético; não atesta isolamento do Orbit nem aceite independente",
+  "recoveredCommit": "41ccc313f35d98c5982e35cb0ef77bc2556e79da",
+  "originalProbeSha256": "4bd19ba2e133d8bb32433dd2d522eba10537ef6aae8403f0dd680d64354915a8",
+  "correctedProbeSha256": "808a4d38970a6bcefda5715b03589e044cefc48928a780f335d89dadafe02b85",
+  "imageId": "sha256:d8123cc242555fddfbc6735537cc6c78c3e33807fcf82b585c840e8cd36353d9",
+  "imageReference": "docker.io/library/node@sha256:b64da1de5a51067ab8e75f0bc8dbd0905d8894baa22261f439a4572f41291e50",
+  "containerArgs": [
+    "run",
+    "--rm",
+    "-i",
+    "--pull=never",
+    "--network=none",
+    "--read-only",
+    "--cap-drop=ALL",
+    "--security-opt=no-new-privileges",
+    "--user=1000:1000",
+    "--pids-limit=64",
+    "--memory=256m",
+    "--cpus=1",
+    "--tmpfs=/work:rw,nosuid,nodev,size=32m,mode=1777",
+    "--workdir=/work",
+    "--entrypoint=node",
+    "d8123cc242555fddfbc6735537cc6c78c3e33807fcf82b585c840e8cd36353d9",
+    "--input-type=module",
+    "-e"
+  ],
+  "bootstrap": "import { mkdirSync, writeFileSync } from 'node:fs';\nlet source = '';\nfor await (const chunk of process.stdin) source += chunk;\nmkdirSync('/work/scripts/diagnostics', { recursive: true });\nwriteFileSync('/work/scripts/diagnostics/orbit-isolation-probe.mjs', source);\nawait import('file:///work/scripts/diagnostics/orbit-isolation-probe.mjs');",
+  "sourceInput": "PowerShell Get-Content -Raw pipes the source into Podman stdin; the pipeline adds a terminal newline. Hashes above identify the source files before piping.",
+  "originalFailure": {
+    "exitCode": 1,
+    "stderr": "node:internal/modules/run_main:123\r\n    triggerUncaughtException(\r\n    ^\r\n\r\nAssertionError [ERR_ASSERTION]: test-script: expected misleading zero exit\r\n\r\n1 !== 0\r\n\r\n    at file:///work/scripts/diagnostics/orbit-isolation-probe.mjs:126:12\r\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\r\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\r\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\r\n    at async file:///work/[eval1]:6:1 {\r\n  generatedMessage: false,\r\n  code: 'ERR_ASSERTION',\r\n  actual: 1,\r\n  expected: 0,\r\n  operator: 'strictEqual',\r\n  diff: 'simple'\r\n}\r\n\r\nNode.js v22.23.2\r\n"
+  },
+  "pathDiagnostic": [
+    {
+      "label": "empty",
+      "runtime": "v22.23.2",
+      "exit": 1,
+      "stderr": "/bin/sh: node: not found\n"
+    },
+    {
+      "label": "runtimePath",
+      "runtime": "v22.23.2",
+      "exit": 0,
+      "stderr": ""
+    }
+  ],
+  "correction": "PATH contains only dirname(process.execPath). No assertion, expectation, fixture or inherited parent PATH changed.",
+  "correctedRun": {
+    "exitCode": 0,
+    "result": {
+      "prompt": "55b",
+      "generatedAt": "2026-09-22T17:53:35.83Z",
+      "runtime": "v22.23.2",
+      "authority": "same worker controls fixture, reference, runner and this result; NOT independent acceptance",
+      "directory": ".orbit/tmp/orbit-isolation-55b/probe-EPLgkE",
+      "oracleSha256": "7497dd75eff2edb0b9638d0989658e6134e3fc40f2fd31732cb19f1862478df6",
+      "localTestSha256": "f823f46ecd8d53bff2aab17024869e673d8587757f6e1d3f6b203307c13b8de7",
+      "badCandidateSha256": "e77ce1f09268079de910c45c2b1b66b28fe0f516708a1eabfec5157d711cdd98",
+      "correctedCandidateSha256": "a2098bd92b10bf8b816d24b7556b1ce8c49a879d130489065ef1051c17e042f6",
+      "parentCredentialValuesRead": false,
+      "checks": [
+        {
+          "case": "known-bad-candidate",
+          "observed": {
+            "exit": 1,
+            "executed": true,
+            "passed": 0,
+            "failed": 1,
+            "skipped": 0,
+            "outputSha256": "98555a75c068346f5729dfd2d2d606126448b35534f9fd26456e30a11d333c89"
+          }
+        },
+        {
+          "case": "corrected-candidate",
+          "observed": {
+            "exit": 0,
+            "executed": true,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "outputSha256": "82ac3f48bea35aa1d6087e129b9a176f56d976919357eb1243b4c12937ef6cd8"
+          },
+          "oracleUnchanged": true
+        },
+        {
+          "case": "test-script",
+          "observed": {
+            "exit": 0,
+            "executed": false,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 0,
+            "outputSha256": "327fd7e1de1b0c5fa94c4c84e37c8db029d2d30b8478a0138b49635f6e44acb2"
+          },
+          "fixedReference": {
+            "exit": 1,
+            "executed": true,
+            "passed": 0,
+            "failed": 1,
+            "skipped": 0,
+            "outputSha256": "911c012424e9d0f62f0c920b1c62faa68af8b9dc4c27e7cb2802cc84a3e6d340"
+          }
+        },
+        {
+          "case": "runner",
+          "observed": {
+            "exit": 0,
+            "executed": false,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 0,
+            "outputSha256": "327fd7e1de1b0c5fa94c4c84e37c8db029d2d30b8478a0138b49635f6e44acb2"
+          },
+          "fixedReference": {
+            "exit": 1,
+            "executed": true,
+            "passed": 0,
+            "failed": 1,
+            "skipped": 0,
+            "outputSha256": "71acaa5ce84dcafb0d77097d31dc706d1f21ae537174123c3c850c6b73fb282f"
+          }
+        },
+        {
+          "case": "dependency",
+          "observed": {
+            "exit": 0,
+            "executed": true,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "outputSha256": "4c71306638f5d2533a72092fa4b54a894deadad3ce7248639bfc32640285fcf0"
+          },
+          "fixedReference": {
+            "exit": 1,
+            "executed": true,
+            "passed": 0,
+            "failed": 1,
+            "skipped": 0,
+            "outputSha256": "9a8dee1cf7bda8bba408f150b7bf4b4b5791d94b0417d03ea0f3b883af9aa6c3"
+          }
+        },
+        {
+          "case": "expectation-fixture",
+          "observed": {
+            "exit": 0,
+            "executed": true,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "outputSha256": "8af9944746c41063e604b847f214e5a37cbaff4d4e6cb790154979fb8b435b6f"
+          },
+          "fixedReference": {
+            "exit": 1,
+            "executed": true,
+            "passed": 0,
+            "failed": 1,
+            "skipped": 0,
+            "outputSha256": "9fa7123a2f973f543a11d290485acd3e859c075cb05883d74d24279c8e1c887f"
+          }
+        },
+        {
+          "case": "skip",
+          "observed": {
+            "exit": 0,
+            "executed": false,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 1,
+            "outputSha256": "4c26280d5855d9e0523fa5ce5b7409dda9f7ea775727bdb2235f4bccb694e956"
+          },
+          "fixedReference": {
+            "exit": 1,
+            "executed": true,
+            "passed": 0,
+            "failed": 1,
+            "skipped": 0,
+            "outputSha256": "fc102e11dcbcb4bc16e6b5c21e908373109cdc3b96f15c97b447e32f04cc8ff6"
+          }
+        },
+        {
+          "case": "forced-zero-exit",
+          "observed": {
+            "exit": 0,
+            "executed": true,
+            "passed": 0,
+            "failed": 1,
+            "skipped": 0,
+            "outputSha256": "a14e83f5eeca8f4f308cf040e1ddd6b0748d506e8776e815d61ecc39c83ffe76"
+          },
+          "fixedReference": {
+            "exit": 1,
+            "executed": true,
+            "passed": 0,
+            "failed": 1,
+            "skipped": 0,
+            "outputSha256": "41501fa0ef0fd323be93accfb261b8b36f3c4fbfae0ba84d5ea1b6a1e85ccd47"
+          }
+        },
+        {
+          "case": "loader",
+          "observed": {
+            "exit": 0,
+            "executed": true,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "outputSha256": "ce5d29fca116b10fe2b09eec83618779d7ec48d45b7a4d12c0b51f5b9bc3d14a"
+          },
+          "fixedReference": {
+            "exit": 1,
+            "executed": true,
+            "passed": 0,
+            "failed": 1,
+            "skipped": 0,
+            "outputSha256": "a16c10365df7acee24b0bf91c3fbe40142795c08df63cf3d78d0e4170f17433f"
+          },
+          "candidateUnchanged": true
+        },
+        {
+          "case": "persisted-versus-restored",
+          "persistedDetected": true,
+          "restoredInvisibleToFinalHash": true,
+          "duringTemporary": {
+            "exit": 0,
+            "executed": false,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 1,
+            "outputSha256": "432e43c6eb94f8e9b2333650e863ad37ee1236f6245211200cb5623686337228"
+          }
+        },
+        {
+          "case": "synthetic-env-canary",
+          "injectedReadable": true,
+          "removedAbsent": true,
+          "vaultInjectionTested": false
+        }
+      ]
+    }
+  }
+}

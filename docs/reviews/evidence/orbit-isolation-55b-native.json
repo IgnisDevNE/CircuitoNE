@@ -1,0 +1,251 @@
+{
+  "prompt": "55b",
+  "applicationGitSha": "f7f9dc2690906eb35fef77a5ddf15464fea8ce31",
+  "recordedBy": "same worker; retrospective report plus fresh native rerun; not independent authority",
+  "startedAt": "2026-09-22T17:33:23.704Z",
+  "events": [
+    {
+      "time": "2026-09-22T17:33:24.214Z",
+      "call": {
+        "tool": "orbit_get_project_settings",
+        "args": {
+          "project": "circuitone"
+        }
+      },
+      "observed": {
+        "success": true,
+        "worktree": {
+          "isolation": "required",
+          "dependencyMode": "none",
+          "nativeRuntime": "node",
+          "nativeModules": [],
+          "provision": null,
+          "prepare": null,
+          "managedByOrbit": true,
+          "scaffoldVersion": 1
+        },
+        "default_execution_target": "local",
+        "gitPublish": {
+          "mode": "commit-only"
+        },
+        "memtraceRepoId": null
+      }
+    },
+    {
+      "time": "2026-09-22T17:33:24.615Z",
+      "call": {
+        "tool": "orbit_list_locks",
+        "args": {
+          "project": "circuitone"
+        }
+      },
+      "observed": {
+        "locks": [],
+        "total": 0
+      }
+    },
+    {
+      "time": "2026-09-22T17:33:24.973Z",
+      "call": {
+        "tool": "orbit_get_qa_history",
+        "args": {
+          "project": "circuitone",
+          "limit": 5
+        }
+      },
+      "observed": []
+    },
+    {
+      "time": "2026-09-22T17:33:25.838Z",
+      "shellCommand": "$f = Join-Path (Get-Location) '.orbit/tmp/orbit-isolation-55b/native-review-fixture.txt'; if (Test-Path -LiteralPath $f) { throw 'Fixture already exists; preserve it' }; [IO.File]::WriteAllText($f,\"SYNTHETIC-55b-BASELINE`n\"); [pscustomobject]@{Utc=[DateTime]::UtcNow.ToString('o');Hash=(Get-FileHash -LiteralPath $f -Algorithm SHA256).Hash} | ConvertTo-Json",
+      "exit": 0,
+      "observed": {
+        "Utc": "2026-09-22T17:33:25.3898959Z",
+        "Hash": "CCEDE3F2B8F157768A8E48FBFD8543F2A42D022EB1374853AC5F6E3627155A8C"
+      }
+    },
+    {
+      "time": "2026-09-22T17:33:36.287Z",
+      "call": {
+        "tool": "orbit_lock_file",
+        "args": {
+          "project": "circuitone",
+          "pattern": ".worktrees/run-q18/.orbit/tmp/orbit-isolation-55b/native-review-fixture.txt",
+          "reason": "Prompt #55b: disposable fixture rerun after independent review"
+        }
+      },
+      "observed": {
+        "id": "lock_495ea836-ebe2-40be-904a-f3d18b22fc2d",
+        "project": "circuitone",
+        "pattern": ".worktrees/run-q18/.orbit/tmp/orbit-isolation-55b/native-review-fixture.txt",
+        "reason": "Prompt #55b: disposable fixture rerun after independent review",
+        "createdAt": "2026-09-22T17:33:35.935Z"
+      }
+    },
+    {
+      "time": "2026-09-22T17:33:36.603Z",
+      "call": {
+        "tool": "orbit_lock_file",
+        "args": {
+          "project": "circuitone",
+          "pattern": ".orbit/tmp/orbit-isolation-55b/native-review-fixture.txt",
+          "reason": "Prompt #55b: disposable fixture rerun after independent review"
+        }
+      },
+      "observed": {
+        "id": "lock_cf24f800-059d-4721-b098-f406a7147669",
+        "project": "circuitone",
+        "pattern": ".orbit/tmp/orbit-isolation-55b/native-review-fixture.txt",
+        "reason": "Prompt #55b: disposable fixture rerun after independent review",
+        "createdAt": "2026-09-22T17:33:36.294Z"
+      }
+    },
+    {
+      "time": "2026-09-22T17:33:36.918Z",
+      "call": {
+        "tool": "orbit_list_locks",
+        "args": {
+          "project": "circuitone"
+        }
+      },
+      "observed": {
+        "locks": [
+          {
+            "id": "lock_495ea836-ebe2-40be-904a-f3d18b22fc2d",
+            "project": "circuitone",
+            "pattern": ".worktrees/run-q18/.orbit/tmp/orbit-isolation-55b/native-review-fixture.txt",
+            "reason": "Prompt #55b: disposable fixture rerun after independent review",
+            "createdAt": "2026-09-22T17:33:35.935Z"
+          },
+          {
+            "id": "lock_cf24f800-059d-4721-b098-f406a7147669",
+            "project": "circuitone",
+            "pattern": ".orbit/tmp/orbit-isolation-55b/native-review-fixture.txt",
+            "reason": "Prompt #55b: disposable fixture rerun after independent review",
+            "createdAt": "2026-09-22T17:33:36.294Z"
+          }
+        ],
+        "total": 2
+      }
+    },
+    {
+      "time": "2026-09-22T17:33:56.920Z",
+      "shellCommand": "$f = Join-Path (Get-Location) '.orbit/tmp/orbit-isolation-55b/native-review-fixture.txt'; $baseline = [IO.File]::ReadAllBytes($f); $before = (Get-FileHash -LiteralPath $f -Algorithm SHA256).Hash; try { [IO.File]::WriteAllText($f, 'SYNTHETIC-55b-PERSISTED'); $persisted = (Get-FileHash -LiteralPath $f -Algorithm SHA256).Hash; [IO.File]::WriteAllBytes($f,$baseline); [IO.File]::WriteAllText($f, 'SYNTHETIC-55b-TEMPORARY'); $temporary = (Get-FileHash -LiteralPath $f -Algorithm SHA256).Hash } finally { [IO.File]::WriteAllBytes($f,$baseline) }; $after = (Get-FileHash -LiteralPath $f -Algorithm SHA256).Hash; [pscustomobject]@{Utc=[DateTime]::UtcNow.ToString('o');Before=$before;Persisted=$persisted;Temporary=$temporary;After=$after;PersistedChanged=($persisted -ne $before);TemporaryChanged=($temporary -ne $before);Restored=($after -eq $before)} | ConvertTo-Json",
+      "exit": 0,
+      "observed": {
+        "Utc": "2026-09-22T17:33:56.5132563Z",
+        "Before": "CCEDE3F2B8F157768A8E48FBFD8543F2A42D022EB1374853AC5F6E3627155A8C",
+        "Persisted": "1E8014BF96CD73C8D966A04CFB551572B48BABC4BE530E2E0A6F700FBEC52392",
+        "Temporary": "9B4114EFBF6AB8CD3444962BD9B3131084083102638211A5E728B031D6B1FA32",
+        "After": "CCEDE3F2B8F157768A8E48FBFD8543F2A42D022EB1374853AC5F6E3627155A8C",
+        "PersistedChanged": true,
+        "TemporaryChanged": true,
+        "Restored": true
+      }
+    },
+    {
+      "time": "2026-09-22T17:33:56.998Z",
+      "call": {
+        "tool": "orbit_write_file",
+        "args": {
+          "project": "circuitone",
+          "path": "D:\\Repos\\circuito-ne\\.worktrees\\run-q18\\.orbit\\tmp\\orbit-isolation-55b\\native-review-fixture.txt",
+          "content": "SYNTHETIC-55b-MCP-WRITE\n"
+        }
+      },
+      "isError": true,
+      "observed": {
+        "error": "working_session_required",
+        "code": "working_session_required",
+        "effect": "project_repo_write",
+        "tool": "orbit_write_file",
+        "project": "circuitone"
+      }
+    },
+    {
+      "time": "2026-09-22T17:33:57.010Z",
+      "call": {
+        "tool": "orbit_run_script",
+        "args": {
+          "project": "circuitone",
+          "script": "qa-git-clean"
+        }
+      },
+      "isError": true,
+      "observed": {
+        "error": "working_session_required",
+        "code": "working_session_required",
+        "effect": "project_repo_write",
+        "tool": "orbit_run_script",
+        "project": "circuitone"
+      }
+    },
+    {
+      "time": "2026-09-22T17:34:12.913Z",
+      "shellCommand": "$f = Join-Path (Get-Location) '.orbit/tmp/orbit-isolation-55b/native-review-fixture.txt'; [pscustomobject]@{Utc=[DateTime]::UtcNow.ToString('o');Hash=(Get-FileHash -LiteralPath $f -Algorithm SHA256).Hash} | ConvertTo-Json",
+      "exit": 0,
+      "observed": {
+        "Utc": "2026-09-22T17:34:12.3920454Z",
+        "Hash": "CCEDE3F2B8F157768A8E48FBFD8543F2A42D022EB1374853AC5F6E3627155A8C"
+      }
+    },
+    {
+      "time": "2026-09-22T17:34:13.339Z",
+      "call": {
+        "tool": "orbit_unlock_file",
+        "args": {
+          "project": "circuitone",
+          "id": "lock_495ea836-ebe2-40be-904a-f3d18b22fc2d"
+        }
+      },
+      "observed": {
+        "released": 1,
+        "locks": [
+          {
+            "id": "lock_495ea836-ebe2-40be-904a-f3d18b22fc2d",
+            "project": "circuitone",
+            "pattern": ".worktrees/run-q18/.orbit/tmp/orbit-isolation-55b/native-review-fixture.txt",
+            "reason": "Prompt #55b: disposable fixture rerun after independent review",
+            "createdAt": "2026-09-22T17:33:35.935Z"
+          }
+        ]
+      }
+    },
+    {
+      "time": "2026-09-22T17:34:13.801Z",
+      "call": {
+        "tool": "orbit_unlock_file",
+        "args": {
+          "project": "circuitone",
+          "id": "lock_cf24f800-059d-4721-b098-f406a7147669"
+        }
+      },
+      "observed": {
+        "released": 1,
+        "locks": [
+          {
+            "id": "lock_cf24f800-059d-4721-b098-f406a7147669",
+            "project": "circuitone",
+            "pattern": ".orbit/tmp/orbit-isolation-55b/native-review-fixture.txt",
+            "reason": "Prompt #55b: disposable fixture rerun after independent review",
+            "createdAt": "2026-09-22T17:33:36.294Z"
+          }
+        ]
+      }
+    },
+    {
+      "time": "2026-09-22T17:34:14.205Z",
+      "call": {
+        "tool": "orbit_list_locks",
+        "args": {
+          "project": "circuitone"
+        }
+      },
+      "observed": {
+        "locks": [],
+        "total": 0
+      }
+    }
+  ],
+  "finishedAt": "2026-09-22T17:34:14.205Z"
+}

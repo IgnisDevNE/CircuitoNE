@@ -27,6 +27,8 @@ Para automatizar o bloqueio forte, o resultado de aceite precisa vir de workflow
 
 Separar obtenção de credenciais, execução de código não confiável e publicação de resultados. Não usar `pull_request_target` com checkout/execução do PR. Nenhum runner persistente da infraestrutura pessoal recebe código de PR. Não publicar chave de QA dentro do contexto de execução da aplicação. Usar usuários fictícios descartáveis e banco de teste, não dados reais.
 
+**Direção aprovada em 22/09/2026:** concentrar o aceite e a atualização da suíte na esteira, poupando recursos locais ([ADR 0006](../decisions/0006-canonical-ci-suite.md), [spec](../specs/canonical-ci-suite.md)). Comparar o conjunto protegido com a versão aprovada e executar os testes com comando/configuração de origem independente do PR. Novos testes recebem revisão específica e SHA fixado antes da implementação; a proposta revisada pode validar a tarefa, mas só vira referência global depois do merge e da validação do commit integrado. Uma etapa de promoção publica automaticamente esse conteúdo aprovado, com controle de concorrência e recuperação. CI verde sozinho não aprova testes novos ou alterados. Esse fluxo ainda não está instalado e não exige VM local para o aceite; as pendências de credenciais e autoridade da #31 permanecem explícitas.
+
 ### Fluxo TDD de cada tarefa
 
 1. Vincular tarefa a RN e critérios mensuráveis (incluindo negações, falhas e concorrência quando aplicável).
@@ -36,6 +38,7 @@ Separar obtenção de credenciais, execução de código não confiável e publi
 5. Rodar suite, typecheck e build; refatorar mantendo verde. Para SQL, aplicar migrations em banco descartável, testar roles reais/RLS e depois homologação.
 6. Rodar aceite canônico contra SHA final. Fazer review normal independente; corrigir e repetir somente o que a mudança invalida.
 7. Homologar e anexar evidência. Merge somente após gates. Excluir branch concluída, atualizar `main`, criar nova branch na próxima tarefa.
+8. Quando a suíte evoluir, revalidar o commit integrado e promover a versão exata dos testes revisados na esteira confiável. Até a promoção bem-sucedida, manter a referência anterior e bloquear aceite dependente da nova suíte; nunca atualizar a referência durante a validação do PR para esconder divergência.
 
 Para testes de caracterização de código já existente, é honesto registrar que o primeiro resultado foi verde. Não fabricar uma falha nem preservar um bug como contrato. Testes de novo comportamento devem demonstrar vermelho → verde.
 

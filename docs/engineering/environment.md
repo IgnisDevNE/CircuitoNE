@@ -37,7 +37,21 @@ Imagens base são fixadas por digest; Dependabot propõe atualizações revisáv
 
 ## Ferramentas e CI
 
-Node 22, mínimo 22.12; pnpm 10.34.3. `pnpm check` executa testes de repositório, TypeScript e build. `pnpm audit --audit-level=high` inclui dependências de desenvolvimento. CI também constrói a imagem e executa os testes HTTP no container. Actions fixadas por SHA e token somente leitura. O runner é hospedado no GitHub; não instalar runner de PR neste host nem no Debian de produção.
+Node **22.23.2**, pnpm **10.34.3**. `pnpm-workspace.yaml` seleciona esse Node para os comandos do projeto sem substituir o Node global do Windows. `.mise.toml` documenta as mesmas versões. O container usa Node 22.23.2 por digest; o CI atual seleciona a linha 22 e o pnpm usa o patch fixado. [Decisão e limites](../decisions/0003-phase-zero-toolchain.md).
+
+`pnpm check` executa testes de infraestrutura/unidade, TypeScript, regressão de build CSS e build final. `pnpm audit --audit-level=high` inclui dependências de desenvolvimento. CI também constrói a imagem e executa os testes HTTP no container. Actions fixadas por SHA e token somente leitura. O runner é hospedado no GitHub; não instalar runner de PR neste host nem no Debian de produção.
+
+```powershell
+pnpm install --frozen-lockfile
+pnpm check
+pnpm exec playwright install chromium
+pnpm test:e2e
+pnpm test:coverage
+```
+
+Playwright usa servidor próprio em `127.0.0.1:5182`, encerrado ao terminar. Não reutiliza o preview do responsável. Testa Chromium em desktop/mobile, relógio fixo e rede externa bloqueada. As imagens/fontes remotas não são validadas nessa suíte. Relatórios ficam em `playwright-report/` e `coverage/` (LCOV/HTML/JSON), ignorados pelo Git. O mapa das 27 rotas está em `tests/e2e/routes.spec.ts`; as rotas privadas usam sessão mock, sem provar autorização.
+
+**Pendência de CI:** E2E e publicação dos relatórios ainda não fazem parte do workflow vigente. O mantenedor deve revisar/aplicar `git apply --check docs/engineering/ci-phase-zero.patch` e depois `git apply docs/engineering/ci-phase-zero.patch` em uma branch própria atualizada com este checkpoint. O patch mantém token somente leitura, adiciona Chromium/relatórios e troca a action pnpm para v6.1.0, com runtime Node 24, preservando o pnpm do projeto. Validar o workflow real antes de encerrar [#34](https://github.com/IgnisDevNE/CircuitoNE/issues/34). O App não tem escrita em workflows; não usar credencial humana como fallback.
 
 O workflow de CI não publica imagens, não acessa secrets e não migra banco. A automação de homologação e promoção é F0-T4/T5, depois da separação de identidade e das credenciais apropriadas. Até lá, não promover o protótipo por estar com CI verde.
 
@@ -72,6 +86,14 @@ A instalação 163660443 (App 5028495) cobre todos os repositórios da IgnisDevN
 
 Na inspeção, `CircuitoNE-dev` estava saudável, sem tabelas públicas e sem migrações. Nenhuma migração foi aplicada. A futura integração deve fixar CLI, preparar [migrações canônicas](../migrations/README.md) e usar credenciais de ambiente com escopo mínimo. Não pedir ou registrar secrets em chat; inseri-los no mecanismo de secrets do ambiente.
 
+A [auditoria de 22/09/2026](../reviews/supabase-environments-2026-09-22.md) confirmou os dois projetos saudáveis, mas encontrou Auth ainda com URLs locais padrão, SMTP próprio desligado e concessões automáticas amplas na Data API. Login do painel foi concluído pelo responsável. Variáveis/secrets dos environments não puderam ser revalidados pelo App (403); os valores acima registram a preparação anterior, não uma nova confirmação.
+
+CLI 2.117.0 e `pnpm db:prepare` já estão disponíveis. O comando gera uma pasta `.tmp-supabase-run-*` com configuração de banco descartável, cópias dos SQL e manifesto SHA-256. Não executa SQL nem conecta a serviços. O Supabase local **ainda não funciona diretamente neste Windows**: a CLI recusou o wrapper `docker.cmd` do Podman; um ensaio com executável nativo superou essa etapa, mas falhou na conexão `127.0.0.1:55432` porque o encaminhamento WSL está indisponível.
+
+O caminho alternativo foi validado executando a CLI em um container Linux temporário sobre o Podman, com rede do host e acesso ao socket do Podman: duas reconstruções e verificação SQL passaram. Esse ensaio tem acesso privilegiado ao daemon e **não é o ambiente isolado de QA**, nem deve executar código de PR não confiável neste host. Foram usados apenas arquivos do ensaio, sem montar secrets ou o repositório inteiro. Em Alpine, foi necessário selecionar o binário musl da CLI, pois sua seleção padrão pode escolher glibc quando ambos estão instalados. O CI proposto usa Ubuntu e não precisa desse ajuste.
+
+`pnpm test:database` prepara um projeto local com identificador único, aplica migrações canônicas mais uma migração sintética temporária, reconstrói duas vezes e consulta constraints/RLS. Também provoca perda de proteção e exige a falha específica do verificador. Encerra somente seu projeto, removendo seus volumes; não usa `--all` nem credenciais/destinos remotos. O job `database` está no patch do mantenedor; após execução bem-sucedida no GitHub, acrescentá-lo aos checks obrigatórios sem retirar `quality`. [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32) permanece aberto para schema/contratos reais e homologação compartilhada. Não alteramos a rede/VM nem os demais serviços.
+
 Testes destrutivos e `reset` usam banco descartável local/CI. Homologação compartilhada recebe migrações revisadas, em sequência, com bloqueio de concorrência e registro de SHA/checksum. Preview usa somente dados fictícios. Produção nunca é destino de teste de schema.
 
 As regiões diferentes exigem decisão antes de dados reais. Banco e arquivos têm estratégias próprias de backup; registrar retenção, responsáveis, perda aceitável e tempo de recuperação. Testar restauração de ambos antes do beta; não presumir que backup de Postgres recupera objetos de Storage.
@@ -84,7 +106,7 @@ A instância própria em [pipeline.magalz.space](https://pipeline.magalz.space) 
 
 1. Confirmar recursos, arquitetura, serviços existentes, acesso administrativo e política de atualização do servidor.
 2. Após a migração SSR, executar o runtime Node e o proxy Caddy revisados por digest com Podman rootless; serviço systemd/Quadlet para reinício e logs. Não fazer build de PR no host de produção. O container estático atual não entrega SSR.
-3. Configurar proxy HTTPS e DNS, por exemplo `circuito.magalz.space` e subdomínio distinto de homologação (nomes apenas propostos). O domínio final ainda não foi criado/configurado. Certificados automáticos dependem de DNS e conectividade corretos.
+3. Configurar proxy HTTPS e DNS para **`circuitone.magalz.space`** (produção) e **`circuitone-dev.magalz.space`** (dev), nomes aprovados pelo responsável. Dev usa exclusivamente `CircuitoNE-dev`, com seeds sintéticos; produção usa `CircuitoNE`. Os domínios ainda não foram implantados nesta preparação. Certificados automáticos dependem de DNS e conectividade corretos. Seguir a [spec de ambientes e dados de teste](../specs/environments-and-test-data.md).
 4. Restringir portas, proteger o acesso administrativo, monitorar disponibilidade e espaço, registrar rotação de logs e alertas. Servir a aplicação atrás de HTTPS; HTTP do preview local não é configuração de produção.
 5. Promover artefato homologado, testar home/deep link/Auth, e manter digest anterior para rollback. Migrações precisam de plano próprio; voltar o container não desfaz SQL.
 

@@ -2,7 +2,7 @@
 
 Data: 21/09/2026. Estado: **proposta técnica para revisão**; decisões de produto confirmadas estão em `docs/business-rules/mvp.md`.
 
-**Atualização de 22/09/2026:** a [spec aprovada de arquitetura](../specs/architecture-mvp.md) substitui as propostas abaixo de SPA exclusiva, manutenção do roteador próprio e runtime exclusivamente estático. O destino passa a ser React Router Framework com SSR, Node e Caddy. Este documento preserva a proposta original; sua aprovação integral não deve ser presumida.
+**Atualização de 22/09/2026:** a [spec aprovada de arquitetura](../specs/architecture-mvp.md), registrada na [ADR 0002](0002-modular-monolith-ssr.md), substitui as propostas abaixo de SPA exclusiva, manutenção do roteador próprio e runtime exclusivamente estático. O destino passa a ser React Router Framework com SSR, Node e Caddy. Este documento preserva a proposta original; sua aprovação integral não deve ser presumida.
 
 ## Contexto
 

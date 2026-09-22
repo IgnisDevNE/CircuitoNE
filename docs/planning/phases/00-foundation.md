@@ -1,6 +1,6 @@
 # Fase 0 — Preparar a base para desenvolver
 
-**Estado:** planejada; preparação parcial integrada pelo PR #2 em 22/09/2026. Esta fase reúne infraestrutura, testes, adaptação à stack e correções do protótipo necessárias antes das funcionalidades reais. [Índice e regras comuns](../implementation-plan.md).
+**Estado:** em execução; fundação do PR #2 integrada e checkpoint de testes/toolchain preparado em 22/09/2026. A fase não está concluída; [evidências e bloqueios](../../reviews/phase-0.md). Esta fase reúne infraestrutura, testes, adaptação à stack e correções do protótipo necessárias antes das funcionalidades reais. [Índice e regras comuns](../implementation-plan.md).
 
 **Entrada:** arquitetura aprovada; inventário de 27 rotas e [achados UI-01–18](../../reviews/prototype-audit.md). **Saída:** aplicação executável em React Router Framework/Node/Caddy, testes e homologação operacionais, contratos sob autoridade independente e nenhum P0/P1 aberto no caminho que receberá dados reais.
 
@@ -8,7 +8,7 @@
 
 Com F0-T1/T3 integradas, abrir primeiro F0-T14 (dependências) e F0-T15 (decisões/pré-requisitos), em paralelo ao trabalho independente de F0-T2 e F0-T6. Corrigir F0-T7–T10; migrar F0-T11/T12; concluir F0-T4/T5 e o review de fase. Estabilizar a toolchain de F0-T14 antes do aceite final dos testes/SSR. F0-T13 pode avançar quando houver cobertura real, mas a dependência externa do Codecov não bloqueia a fase. Dependências específicas abaixo prevalecem sobre essa sequência resumida.
 
-Uma tarefa corresponde a um PR revisável; dividir em subtarefas com sufixos se a revisão exigir. O planejamento atual não autoriza marcar a base como pronta nem começar regras reais sem o isolamento de F0-T2. Preparação com dados fictícios pode avançar nas partes independentes.
+Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em checkpoints necessários, mantendo cada tarefa com review normal independente. PRs intermediários seguem a ordem das dependências para aprovação crescente. O planejamento atual não autoriza marcar a base como pronta nem começar regras reais sem o isolamento de F0-T2. Preparação com dados fictícios pode avançar nas partes independentes. A [auditoria atual do Supabase](../../reviews/supabase-environments-2026-09-22.md) distingue o que foi verificado das configurações ainda pendentes.
 
 ## F0-T1 — Consolidar GitHub, toolchain e CI
 
@@ -170,7 +170,7 @@ Uma tarefa corresponde a um PR revisável; dividir em subtarefas com sufixos se 
 
 **Issues tratadas:** [#30](https://github.com/IgnisDevNE/CircuitoNE/issues/30) e colaboração operacional em [#29](https://github.com/IgnisDevNE/CircuitoNE/issues/29); não fechar upload sem relatório real.
 
-**Estado:** publicação externa parcialmente deferida por DEF-01; cobertura local planejada. **Dependência:** F0-T6, e F0-T2 para credenciais de CI. **Risco:** médio.
+**Estado:** cobertura local disponível (4,33% de statements); arquivo novo não executado aparece com 0%, e falha controlada de navegação é detectada sem mudar o percentual. Publicação externa deferida por DEF-01 e artefatos CI dependem do patch do mantenedor. **Dependência:** F0-T6, e F0-T2 para credenciais de CI. **Risco:** médio.
 
 - Entrega: relatório LCOV/HTML reproduzível, conjunto de arquivos incluídos explícito, baseline aprovado e política de cobertura de código alterado. Não impor porcentagem arbitrária nem excluir caminhos para esconder ausência de testes.
 - Testar primeiro: código não executado aparece descoberto e arquivo novo entra no relatório; uma regressão controlada na regra exercitada faz o teste falhar mesmo se a cobertura continuar igual. Falha de teste impede tratar relatório como evidência aprovada; cobertura de linhas não prova qualidade do oráculo.

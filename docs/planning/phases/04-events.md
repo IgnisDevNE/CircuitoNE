@@ -4,6 +4,10 @@
 
 ## F4-T1 — Evento e lineup transacionais
 
+**Bloqueios por issue:** [#16](https://github.com/IgnisDevNE/CircuitoNE/issues/16) e aprovação operacional das partes de [#12](https://github.com/IgnisDevNE/CircuitoNE/issues/12)/[#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14); [#41](https://github.com/IgnisDevNE/CircuitoNE/issues/41) para datas/estados.
+
+**Issues tratadas:** [#18](https://github.com/IgnisDevNE/CircuitoNE/issues/18) na temporalidade persistida e [#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14) na autoria/autorização do evento.
+
 **Dependência:** F3-T2/T5 e perfis da fase 2. **Regras:** RN-23–26.
 
 - Testar primeiro: N2 de outro coletivo, coletivo pendente, lineup com perfil inválido, artista duplicado, nome livre vazio, tipo “outros” sem descrição, gratuito versus ingresso e datas incompatíveis.
@@ -13,6 +17,10 @@
 
 ## F4-T2 — Criar, editar, publicar e cancelar
 
+**Bloqueios por issue:** [#41](https://github.com/IgnisDevNE/CircuitoNE/issues/41); [#18](https://github.com/IgnisDevNE/CircuitoNE/issues/18) na parte de invariantes temporais entregue em F4-T1.
+
+**Issues tratadas:** [#18](https://github.com/IgnisDevNE/CircuitoNE/issues/18) e estados de falha de [#28](https://github.com/IgnisDevNE/CircuitoNE/issues/28) no fluxo completo de evento.
+
 **Dependência:** F4-T1; máquina de estados D-05 aprovada.
 
 - Testar primeiro: rascunho lido anonimamente, publicação sem campos exigidos, mudança concorrente, cancelamento repetido e falha no salvamento.
@@ -21,6 +29,10 @@
 - Documentação: estados/transições, recuperação e efeitos de cancelamento/reagendamento.
 
 ## F4-T3 — Agenda e detalhes SSR coerentes
+
+**Bloqueios por issue:** [#41](https://github.com/IgnisDevNE/CircuitoNE/issues/41) para composição da agenda; [#18](https://github.com/IgnisDevNE/CircuitoNE/issues/18) para datas/estados validados.
+
+**Issues tratadas:** [#24](https://github.com/IgnisDevNE/CircuitoNE/issues/24) integralmente e partes de [#26](https://github.com/IgnisDevNE/CircuitoNE/issues/26)/[#28](https://github.com/IgnisDevNE/CircuitoNE/issues/28) na agenda SSR/paginação.
 
 **Dependência:** F4-T2 e F2-T2/F3-T4.
 

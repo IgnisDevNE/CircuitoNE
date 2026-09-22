@@ -4,6 +4,10 @@
 
 ## F1-T1 — Identidade privada e unicidade
 
+**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31)/[#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32) concluídas; [#38](https://github.com/IgnisDevNE/CircuitoNE/issues/38) para contrato de identidade; [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) na decisão de região/destino. Gate da fase zero permanece obrigatório.
+
+**Issues tratadas:** [#19](https://github.com/IgnisDevNE/CircuitoNE/issues/19) na integridade/validação no banco, complementando F0-T8.
+
 **Dependência:** F0-T2/T4/T5. **Regras:** RN-01/03/04; confirmar D-02/D-03 antes de fixar contratos.
 
 - Testar primeiro: anônimo e conta B não leem dados de A; CPF ausente/inválido/normalizado duplicado; duas gravações simultâneas; nascimento inválido; esquema privado não exposto por API/view.
@@ -12,6 +16,10 @@
 - Documentação: dicionário dos campos, matriz de acesso, política de CPF/nascimento e nota da migração com recuperação.
 
 ## F1-T2 — Cadastro, confirmação e onboarding recuperável
+
+**Bloqueios por issue:** [#38](https://github.com/IgnisDevNE/CircuitoNE/issues/38); [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) na parte de SMTP/callbacks validada. Herda os bloqueios de F1-T1.
+
+**Issues tratadas:** [#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14)/[#15](https://github.com/IgnisDevNE/CircuitoNE/issues/15)/[#19](https://github.com/IgnisDevNE/CircuitoNE/issues/19)/[#23](https://github.com/IgnisDevNE/CircuitoNE/issues/23) na identidade/cadastro real; partes de coletivo e mensagens seguem abertas.
 
 **Dependência:** F1-T1 e SMTP operacional. **Escopo:** substituir o cadastro/login demo por persistência real.
 
@@ -22,6 +30,10 @@
 
 ## F1-T3 — Sessão SSR, login, logout e recuperação
 
+**Bloqueios por issue:** [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) na parte de SMTP/callbacks; partes de cadastro de [#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14)/[#15](https://github.com/IgnisDevNE/CircuitoNE/issues/15) entregues em F1-T2, sem exigir encerramento das partes de outros domínios.
+
+**Issues tratadas:** [#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14)/[#23](https://github.com/IgnisDevNE/CircuitoNE/issues/23) na sessão, login/logout e recuperação; completar [#23](https://github.com/IgnisDevNE/CircuitoNE/issues/23) com F1-T4.
+
 **Dependência:** F1-T1/T2 e runtime F0-T11/T12.
 
 - Testar primeiro: login correto/incorreto, refresh concorrente, sessão expirada, link de recuperação inválido, redirect externo malicioso, CSRF, logout e duas contas em requisições/cache distintos.
@@ -30,6 +42,10 @@
 - Documentação: ciclo de sessão, URLs por ambiente, política de cookies/CSRF, limites de abuso e casos de falha.
 
 ## F1-T4 — Alterar dados e proteger operações sensíveis
+
+**Bloqueios por issue:** [#38](https://github.com/IgnisDevNE/CircuitoNE/issues/38); [#23](https://github.com/IgnisDevNE/CircuitoNE/issues/23) na parte de sessão/recuperação validada em F1-T3, sem exigir encerrar a manutenção de conta antes de iniciá-la.
+
+**Issues tratadas:** [#23](https://github.com/IgnisDevNE/CircuitoNE/issues/23) integralmente nos fluxos de conta; contribuir para [#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14) e para o ciclo de vida posterior.
 
 **Dependência:** F1-T2/T3; D-03 aprovada.
 

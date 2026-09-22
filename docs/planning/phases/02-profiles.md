@@ -4,6 +4,10 @@
 
 ## F2-T1 — Múltiplas atuações e edição profissional
 
+**Bloqueios por issue:** [#39](https://github.com/IgnisDevNE/CircuitoNE/issues/39) para dados sociais; [#23](https://github.com/IgnisDevNE/CircuitoNE/issues/23) nos fluxos de identidade/sessão concluídos.
+
+**Issues tratadas:** [#20](https://github.com/IgnisDevNE/CircuitoNE/issues/20) e partes de [#15](https://github.com/IgnisDevNE/CircuitoNE/issues/15)/[#19](https://github.com/IgnisDevNE/CircuitoNE/issues/19)/[#22](https://github.com/IgnisDevNE/CircuitoNE/issues/22) na edição por atuação e persistência.
+
 **Dependência:** F1-T1–T4. **Regras:** RN-02/06/09–12 e D-10.
 
 - Testar primeiro: duas atuações do mesmo usuário, artistas com nomes iguais, edição de ID de outra conta, troca de atuação sem estado antigo, persistência de todos os campos por tipo.
@@ -13,6 +17,10 @@
 
 ## F2-T2 — Catálogo e perfil públicos com SSR
 
+**Bloqueios por issue:** [#20](https://github.com/IgnisDevNE/CircuitoNE/issues/20) para atuações editáveis; [#39](https://github.com/IgnisDevNE/CircuitoNE/issues/39) para projeção pública/privada.
+
+**Issues tratadas:** [#26](https://github.com/IgnisDevNE/CircuitoNE/issues/26)/[#28](https://github.com/IgnisDevNE/CircuitoNE/issues/28) nos catálogos SSR e consultas; revisar de novo no produto integrado.
+
 **Dependência:** F2-T1. **Regras:** projeção pública e privacidade de RN-07.
 
 - Testar primeiro: HTML inicial com título/conteúdo/metadados; perfil inexistente/indisponível; busca e paginação estáveis; nenhuma resposta anônima inclui CPF, nascimento, contato, cachê ou presskit.
@@ -21,6 +29,10 @@
 - Documentação: payload/projeção pública, metadados e política de invalidação de cache.
 
 ## F2-T3 — Upload, galeria e substituição
+
+**Bloqueios por issue:** [#39](https://github.com/IgnisDevNE/CircuitoNE/issues/39) para cotas/formato/modalidade de presskit; [#20](https://github.com/IgnisDevNE/CircuitoNE/issues/20) para atuação e propriedade.
+
+**Issues tratadas:** [#21](https://github.com/IgnisDevNE/CircuitoNE/issues/21) integralmente, com Storage e compensação de falhas reais.
 
 **Dependência:** F2-T1 e D-08 aprovada. Política de publicação definida para distinguir rascunhos e imagens públicas.
 

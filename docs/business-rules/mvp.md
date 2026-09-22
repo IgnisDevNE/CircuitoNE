@@ -60,17 +60,19 @@ RN-30 se aplica também ao criador N2. Ser administrador de um coletivo pendente
 
 ## Decisões em aberto e momento de resolução
 
+Meta: resolver as decisões na **F0-T15**, antes de iniciar os contratos dependentes. A última coluna indica o limite que permanece bloqueado se a decisão atrasar. As issues vinculadas exigem aprovação explícita; a criação delas não ratifica propostas.
+
 | Decisão | Proposta inicial | Resolver antes de |
 |---|---|---|
-| D-01 Aprovação de coletivos | **Resolvida:** administração do site verifica/aprova antes de liberar dashboard e funções internas (RN-30). Critérios de verificação, recusa/reapresentação e suspensão ainda devem ser definidos, sem presumir KYC. | Fase 3. |
-| D-02 Idade mínima e tratamento de menores | Definir público, política de privacidade e responsáveis; não inferir 18 anos. | Fase 1, abertura do cadastro. |
-| D-03 Recuperação de conta com CPF já usado; edição de CPF; exclusão e novo cadastro | CPF não editável livremente; recuperação autenticada; retenção a definir. | Fase 1. |
-| D-04 Fim do evento e fuso | Fim opcional como `NULL`; se preenchido, maior que início; fuso explícito America/Fortaleza. | Fase 4. |
-| D-05 Publicação e cancelamento | Estados rascunho/publicado/cancelado; cancelamento preserva página e aviso. | Fase 4. |
-| D-06 Quem inicia conversa, destinatário e representação do coletivo | Usuário autenticado inicia contato permitido; remetente pessoal ou representante explícito. | Fase 5. |
-| D-07 Moderação e bloqueio | Canal de denúncia e fluxo de suspensão antes do beta público; operação manual inicial. | Fase 5/6. |
-| D-08 Galeria, cotas e tipos de arquivo | Imagens JPG/PNG/WebP até 5 MB; presskit por URL no MVP; confirmar limites. | Fase 2. |
-| D-09 Permissão de diretório para administrador sem e-mail confirmado ou coletivo suspenso | Negar; checar estado atual no banco. | Fase 3. |
-| D-10 Dados sociais pessoais versus projeto | Cada atuação mantém seus links; dados pessoais privados não são publicados por herança implícita. | Fase 2. |
+| [D-01 Aprovação de coletivos](https://github.com/IgnisDevNE/CircuitoNE/issues/40) | **Resolvida:** administração do site verifica/aprova antes de liberar dashboard e funções internas (RN-30). Critérios de verificação, recusa/reapresentação e suspensão ainda devem ser definidos, sem presumir KYC. | Fase 3. |
+| [D-02 Idade mínima e tratamento de menores](https://github.com/IgnisDevNE/CircuitoNE/issues/38) | Definir público, política de privacidade e responsáveis; não inferir 18 anos. | Fase 1, abertura do cadastro. |
+| [D-03 Recuperação de conta com CPF já usado; edição de CPF; exclusão e novo cadastro](https://github.com/IgnisDevNE/CircuitoNE/issues/38) | CPF não editável livremente; recuperação autenticada; retenção a definir. | Fase 1. |
+| [D-04 Fim do evento e fuso](https://github.com/IgnisDevNE/CircuitoNE/issues/41) | Fim opcional como `NULL`; se preenchido, maior que início; fuso explícito America/Fortaleza. | Fase 4. |
+| [D-05 Publicação e cancelamento](https://github.com/IgnisDevNE/CircuitoNE/issues/41) | Estados rascunho/publicado/cancelado; cancelamento preserva página e aviso. | Fase 4. |
+| [D-06 Quem inicia conversa, destinatário e representação do coletivo](https://github.com/IgnisDevNE/CircuitoNE/issues/42) | Usuário autenticado inicia contato permitido; remetente pessoal ou representante explícito. | Fase 5. |
+| [D-07 Moderação e bloqueio](https://github.com/IgnisDevNE/CircuitoNE/issues/42) | Canal de denúncia e fluxo de suspensão antes do beta público; operação manual inicial. | Fase 5/6. |
+| [D-08 Galeria, cotas e tipos de arquivo](https://github.com/IgnisDevNE/CircuitoNE/issues/39) | Imagens JPG/PNG/WebP até 5 MB; presskit por URL no MVP; confirmar limites. | Fase 2. |
+| [D-09 Permissão de diretório para administrador sem e-mail confirmado ou coletivo suspenso](https://github.com/IgnisDevNE/CircuitoNE/issues/40) | Negar; checar estado atual no banco. | Fase 3. |
+| [D-10 Dados sociais pessoais versus projeto](https://github.com/IgnisDevNE/CircuitoNE/issues/39) | Cada atuação mantém seus links; dados pessoais privados não são publicados por herança implícita. | Fase 2. |
 
 Mudança de regra exige atualizar este documento, os critérios de aceite e os testes por revisão separada. Não resolver divergência enfraquecendo teste existente.

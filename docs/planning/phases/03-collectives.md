@@ -6,6 +6,10 @@
 
 ## F3-T1 — Criar coletivo/produtora pendente
 
+**Bloqueios por issue:** [#40](https://github.com/IgnisDevNE/CircuitoNE/issues/40) para estados/critérios operacionais e invariantes; [#20](https://github.com/IgnisDevNE/CircuitoNE/issues/20) para atuação do titular.
+
+**Issues tratadas:** [#15](https://github.com/IgnisDevNE/CircuitoNE/issues/15) na criação persistida, [#12](https://github.com/IgnisDevNE/CircuitoNE/issues/12)/[#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14) no estado pendente e ausência de privilégio imediato.
+
 **Dependência:** F1-T2 e F2-T1. **Regras:** RN-15/16/30.
 
 - Testar primeiro: criação repetida/concorrente, produtora sem CNPJ, CNPJ alfanumérico, falha no vínculo inicial e tentativa de o criador definir estado aprovado.
@@ -14,6 +18,10 @@
 - Documentação: máquina de estados da solicitação, payload privado/público e recuperação/idempotência.
 
 ## F3-T2 — Vínculos, cargos e invariantes
+
+**Bloqueios por issue:** [#40](https://github.com/IgnisDevNE/CircuitoNE/issues/40) para ratificação de RN-21; parte de coletivo persistido de [#15](https://github.com/IgnisDevNE/CircuitoNE/issues/15) entregue em F3-T1.
+
+**Issues tratadas:** [#12](https://github.com/IgnisDevNE/CircuitoNE/issues/12)/[#16](https://github.com/IgnisDevNE/CircuitoNE/issues/16) e parte de [#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14) em vínculo, cargo e invariantes transacionais.
 
 **Dependência:** F3-T1; contrato RN-21 revisado.
 
@@ -24,6 +32,10 @@
 
 ## F3-T3 — Solicitar entrada e decidir
 
+**Bloqueios por issue:** [#16](https://github.com/IgnisDevNE/CircuitoNE/issues/16) para invariantes; [#40](https://github.com/IgnisDevNE/CircuitoNE/issues/40) e parte de aprovação operacional de [#12](https://github.com/IgnisDevNE/CircuitoNE/issues/12)/[#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14) verificada em F3-T5.
+
+**Issues tratadas:** [#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14)/[#15](https://github.com/IgnisDevNE/CircuitoNE/issues/15) na solicitação, decisão e vínculo N0 atômicos.
+
 **Dependência:** F3-T2/T5; RN-21 ratificada.
 
 - Testar primeiro: pedido duplicado, cancelamento, decisões simultâneas, retry, decisão em coletivo pendente e leitura de solicitações alheias.
@@ -33,6 +45,10 @@
 
 ## F3-T4 — Gestão, perfil público e diretório restrito
 
+**Bloqueios por issue:** [#16](https://github.com/IgnisDevNE/CircuitoNE/issues/16); [#40](https://github.com/IgnisDevNE/CircuitoNE/issues/40) para diretório/revogação; partes de autorização de [#12](https://github.com/IgnisDevNE/CircuitoNE/issues/12)/[#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14) entregues em F3-T2/T5.
+
+**Issues tratadas:** [#12](https://github.com/IgnisDevNE/CircuitoNE/issues/12)/[#15](https://github.com/IgnisDevNE/CircuitoNE/issues/15)/[#22](https://github.com/IgnisDevNE/CircuitoNE/issues/22)/[#26](https://github.com/IgnisDevNE/CircuitoNE/issues/26)/[#28](https://github.com/IgnisDevNE/CircuitoNE/issues/28) na gestão, perfil e diretório; fechar apenas critérios efetivamente concluídos.
+
 **Dependência:** F3-T2/T5 e F2-T2. **Regras:** RN-07/18/20/22/30; D-09 e seleção de atuação pública de membro definidas.
 
 - Testar primeiro: dados de todos os formulários persistem; HTML público só de aprovado; pendente/recusado não habilita diretório; N2 com outro vínculo aprovado continua elegível pelo vínculo válido; revogação é considerada sem esperar novo login.
@@ -41,6 +57,10 @@
 - Documentação: projeções públicas/restritas, consultas/índices e controles de coleta abusiva de dados.
 
 ## F3-T5 — Administração do site e verificação
+
+**Bloqueios por issue:** [#40](https://github.com/IgnisDevNE/CircuitoNE/issues/40) para verificação/suspensão; [#16](https://github.com/IgnisDevNE/CircuitoNE/issues/16) para integridade de cargos; [#23](https://github.com/IgnisDevNE/CircuitoNE/issues/23) para sessão segura.
+
+**Issues tratadas:** [#12](https://github.com/IgnisDevNE/CircuitoNE/issues/12)/[#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14) na aprovação operacional e ausência de autoaprovação.
 
 **Dependência:** F3-T1/T2 e critérios de D-01/D-09 resolvidos.
 

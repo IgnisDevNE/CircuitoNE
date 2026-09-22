@@ -1,6 +1,6 @@
 # Plano de implementação
 
-**Revisão 2 — 22/09/2026.** Planos executáveis para a [arquitetura aprovada](../specs/architecture-mvp.md). A pedido do responsável, a fase zero agora inclui a adaptação de código à stack, limpeza necessária e setups anteriores às funcionalidades reais. Os documentos detalham trabalho futuro; não declaram a implementação concluída.
+**Revisão 3 — 22/09/2026.** Planos executáveis para a [arquitetura aprovada](../specs/architecture-mvp.md). A fase zero concentra adaptação à stack, limpeza, upgrades e remoção antecipada de bloqueios. Cada tarefa distingue issues de entrada das que deve resolver. Os documentos detalham trabalho futuro; não declaram a implementação concluída.
 
 ## Fases e dependências
 
@@ -25,7 +25,7 @@ flowchart LR
   F5 --> F6
 ```
 
-São **36 tarefas**, identificadas nos planos. Eventos e mensagens podem avançar independentemente depois dos respectivos pré-requisitos de coletivos; isso não dispensa os reviews de fase. Se uma tarefa não couber em um diff revisável, dividir em subtarefas com sufixos, mantendo o vínculo ao contrato original.
+São **38 tarefas**, identificadas nos planos. F0-T14 trata dependências e F0-T15 antecipa decisões/pré-requisitos; os IDs anteriores foram preservados. Eventos e mensagens podem avançar independentemente depois dos respectivos pré-requisitos de coletivos; isso não dispensa os reviews de fase. Se uma tarefa não couber em um diff revisável, dividir em subtarefas com sufixos, mantendo o vínculo ao contrato original.
 
 ## Estado real e próximo passo
 
@@ -33,11 +33,11 @@ São **36 tarefas**, identificadas nos planos. Eventos e mensagens podem avança
 - SSR, backend, Auth, banco de negócio e funcionalidades persistentes continuam pendentes. O preview segue com mocks.
 - F0-T2 está parcial: a identidade por comando foi separada, mas QA/verificador e isolamento de credenciais ainda não estão completos.
 - Codecov: usuário ativo e CircuitoNE habilitado no servidor; descoberta da organização via OAuth e upload real permanecem pendentes conforme [diagnóstico](../reviews/codecov-diagnosis.md).
-- Próximo trabalho de implementação: partir de `main` atualizada e branch nova; executar F0-T2 e F0-T6 antes das regras reais. Preparação independente com fixtures pode avançar sem tratar pendências como aprovadas.
+- Próximo trabalho: partir de `main` atualizada e branch nova; priorizar F0-T14/T15, F0-T2 e F0-T6 nas partes independentes. Resolver o máximo de bloqueios na fase zero; preparação com fixtures pode avançar sem tratar pendências como aprovadas. [Parecer por PR do Dependabot](../reviews/dependabot-2026-09-22.md).
 
 ## Contrato comum de cada tarefa
 
-1. Vincular RN/decisão, definir critérios e negações, escopo, dependências, risco e responsável por revisão. Pendência de produto bloqueia apenas o trabalho que depende dela; não inventar resposta.
+1. Vincular RN/decisão, definir critérios e negações, escopo, dependências, risco e responsável por revisão. Identificar issues bloqueantes e o pré-requisito que deve ser resolvido antes do trecho dependente. Separar essas issues das que a própria tarefa resolve; não criar ciclo exigindo que a correção termine antes de começar. Em issue com várias partes, registrar evidência do pré-requisito atendido; o restante continua aberto. Pendência de produto bloqueia apenas o trabalho que depende dela; não inventar resposta.
 2. Escrever teste primeiro e registrar falha pelo comportamento ausente. O contrato de aceite é revisado e fixado fora da autoridade do implementador. Caracterização já correta pode começar verde; documentação recebe revisão de consistência, links e evidências.
 3. Implementar o menor incremento completo: UI/servidor/banco/políticas quando necessários, com falhas, autorização e documentação. Não construir todo o schema antes de testar a primeira jornada.
 4. Rodar verificações pertinentes: unidade/interação, TypeScript/build, API/RLS/Storage/concorrência, jornada e acessibilidade afetadas. Registrar SHA final e versão do oráculo; cobertura é evidência auxiliar.
@@ -52,6 +52,8 @@ Detalhes de credenciais, TDD e autoridade do verificador em [delivery.md](../eng
 Produzir `docs/reviews/phase-N.md` com review completo: jornadas e erros, arquitetura, dados/RLS, acessibilidade, desempenho, operação e documentação. Acrescentar **as dez categorias OWASP Top 10:2025**, com evidência, severidade/tratamento ou justificativa concreta de não aplicabilidade. Usar a [matriz de segurança](../reviews/security-baseline.md).
 
 O resultado é aprovado ou bloqueado no SHA exato. Autoavaliação e scanners não substituem revisão independente. Não iniciar a parte de uma fase que depende de gate reprovado. O relatório final registra pendências com dono, escopo afetado e condição de encerramento.
+
+Os blocos **Bloqueios por issue** dos planos registram requisitos de entrada. **Issues tratadas** registram o escopo a resolver durante a tarefa, não bloqueios para iniciá-la. As dependências de tarefas propagam seus bloqueios; os links explícitos destacam a causa aberta e não substituem o gate da fase. Revalidar estado das issues antes de iniciar e atualizar links/condições quando surgirem novos achados.
 
 ## Documentação por tarefa e fase
 
@@ -72,12 +74,14 @@ O resultado é aprovado ou bloqueado no SHA exato. Autoavaliação e scanners n�
 | [DEF-02](https://github.com/IgnisDevNE/CircuitoNE/issues/30) | Publicar cobertura no Codecov / mantenedor + implementação F0-T13 | Relatório real no SHA correto, token restrito e publicação isolada. Até lá, artefato local/CI; sem declarar cobertura remota validada |
 | [F0-T2](https://github.com/IgnisDevNE/CircuitoNE/issues/31) | Isolamento do QA/emissor/implementador / mantenedor | Barreira obrigatória antes de agentes implementarem regras reais; demonstrar testes negativos, incluindo ausência de credenciais administrativas locais |
 | [F0-T4/T5](https://github.com/IgnisDevNE/CircuitoNE/issues/32) | Credenciais e fluxo real de homologação / mantenedor + implementação | Testar o fluxo no projeto correto; não promover só por CI verde |
-| D-02/D-03 | Idade, CPF, recuperação e retenção / responsável pelo produto | Resolver antes de contratos afetados da fase 1 e abertura de cadastro |
-| D-08/D-10 | Arquivos/cotas e dados sociais / responsável pelo produto | Resolver antes de tarefas afetadas da fase 2 |
-| D-01/D-09, RN-21 | Critérios de verificação/suspensão, diretório e invariantes propostas / responsável pelo produto | Resolver antes de tarefas afetadas da fase 3; aprovação prévia de coletivos já é obrigatória |
-| D-04/D-05 | Tempo e estados do evento / responsável pelo produto | Resolver antes da fase 4 |
-| D-06/D-07, RN-29 | Iniciação/moderação de mensagens e integridade proposta / responsável pelo produto | Resolver antes da fase 5; operação de privacidade completa antes do beta |
-| Região, domínio, recuperação | Região Supabase, DNS, SMTP, RPO/RTO / responsável operacional | Definir nas tarefas correspondentes, antes de dados reais/liberação |
+| [D-02/D-03](https://github.com/IgnisDevNE/CircuitoNE/issues/38) | Idade, CPF, recuperação e retenção / responsável pelo produto | Resolver antes de contratos afetados da fase 1 e abertura de cadastro |
+| [D-08/D-10](https://github.com/IgnisDevNE/CircuitoNE/issues/39) | Arquivos/cotas e dados sociais / responsável pelo produto | Resolver antes de tarefas afetadas da fase 2 |
+| [D-01/D-09, RN-21](https://github.com/IgnisDevNE/CircuitoNE/issues/40) | Critérios de verificação/suspensão, diretório e invariantes propostas / responsável pelo produto | Resolver antes de tarefas afetadas da fase 3; aprovação prévia de coletivos já é obrigatória |
+| [D-04/D-05](https://github.com/IgnisDevNE/CircuitoNE/issues/41) | Tempo e estados do evento / responsável pelo produto | Resolver antes da fase 4 |
+| [D-06/D-07, RN-29](https://github.com/IgnisDevNE/CircuitoNE/issues/42) | Iniciação/moderação de mensagens e integridade proposta / responsável pelo produto | Resolver antes da fase 5; operação de privacidade completa antes do beta |
+| [Região, domínio, recuperação](https://github.com/IgnisDevNE/CircuitoNE/issues/43) | Região Supabase, DNS, SMTP, RPO/RTO / responsável operacional | Definir nas tarefas correspondentes, antes de dados reais/liberação |
+
+As decisões [#38](https://github.com/IgnisDevNE/CircuitoNE/issues/38)–[#42](https://github.com/IgnisDevNE/CircuitoNE/issues/42) e a preparação [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) são antecipadas para F0-T15; o momento limite das tabelas continua indicando qual implementação fica bloqueada se não forem resolvidas. F0-T14 acompanha [#34](https://github.com/IgnisDevNE/CircuitoNE/issues/34)–[#37](https://github.com/IgnisDevNE/CircuitoNE/issues/37) e os PRs de dependências. O alvo é encerrar o máximo na fase zero, mantendo abertas as partes que realmente dependem de funcionalidades futuras.
 
 ## Revisão crítica do plano
 

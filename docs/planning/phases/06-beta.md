@@ -4,6 +4,10 @@
 
 ## F6-T1 — Debian/Podman, domínio e release
 
+**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31)/[#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32); [#35](https://github.com/IgnisDevNE/CircuitoNE/issues/35) para runtime escolhido; [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) na parte de host/domínio/destino definida e verificada.
+
+**Issues tratadas:** Aplicar e revalidar pré-requisitos operacionais de [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) no ambiente final.
+
 **Dependência:** F0-T5/T12 e gates de produto.
 
 - Verificar primeiro: capacidade/arquitetura/serviços existentes do Debian, portas, DNS, TLS, reinício, configuração ausente e rollback. O servidor Codecov usa Docker e atende outros serviços; não converter ou remover esse ambiente para instalar CircuitoNE.
@@ -12,6 +16,10 @@
 - Documentação: inventário do serviço, operação, DNS/TLS, atualização, rollback e responsabilidades.
 
 ## F6-T2 — Privacidade, suporte e ciclo de vida da conta
+
+**Bloqueios por issue:** [#38](https://github.com/IgnisDevNE/CircuitoNE/issues/38) para identidade/retenção; [#40](https://github.com/IgnisDevNE/CircuitoNE/issues/40) para último N2; [#42](https://github.com/IgnisDevNE/CircuitoNE/issues/42) para moderação/retenção; [#16](https://github.com/IgnisDevNE/CircuitoNE/issues/16)/[#23](https://github.com/IgnisDevNE/CircuitoNE/issues/23) para fluxos correspondentes.
+
+**Issues tratadas:** Revalidar critérios de ciclo de vida de [#38](https://github.com/IgnisDevNE/CircuitoNE/issues/38)/[#42](https://github.com/IgnisDevNE/CircuitoNE/issues/42) na operação; decisões aprovadas não substituem os testes de execução.
 
 **Dependência:** políticas F1-T4 e F5-T3, decisões de retenção aprovadas.
 
@@ -22,6 +30,10 @@
 
 ## F6-T3 — Qualidade pública e desempenho
 
+**Bloqueios por issue:** [#20](https://github.com/IgnisDevNE/CircuitoNE/issues/20)/[#21](https://github.com/IgnisDevNE/CircuitoNE/issues/21)/[#24](https://github.com/IgnisDevNE/CircuitoNE/issues/24)/[#25](https://github.com/IgnisDevNE/CircuitoNE/issues/25) para jornadas completas; [#37](https://github.com/IgnisDevNE/CircuitoNE/issues/37) para CSS estabilizado; gates das fases 2–5.
+
+**Issues tratadas:** [#26](https://github.com/IgnisDevNE/CircuitoNE/issues/26)/[#27](https://github.com/IgnisDevNE/CircuitoNE/issues/27)/[#28](https://github.com/IgnisDevNE/CircuitoNE/issues/28) na validação integrada final; um achado reintroduzido reabre issue ou ganha regressão vinculada.
+
 **Dependência:** fases 2–5 integradas.
 
 - Verificar: 27 rotas originais e novas jornadas de recuperação/aprovação/moderação; teclado, leitor de tela amostrado, contraste, mobile/zoom/movimento reduzido; conteúdo/metadados SSR, canonical, indexação e social cards.
@@ -31,6 +43,10 @@
 
 ## F6-T4 — Segurança, observabilidade e restauração
 
+**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31)/[#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32); [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) para RPO/RTO, destinos e escopo de recuperação; gates de dados/ambiente.
+
+**Issues tratadas:** Ensaios operacionais previstos em [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) e achados de segurança novos com issues próprias; não tratar relatório como certificação.
+
 **Dependência:** ambiente final e schemas completos.
 
 - Testar primeiro: alerta chega ao responsável, falha de Auth/banco/Storage, disco cheio, perda do container/host e restauração em destino separado. Definir RPO/RTO antes do ensaio, sem fabricar números.
@@ -39,6 +55,10 @@
 - Documentação: relatório de segurança, runbook de incidentes, retenção de backups, resultados de restauração e riscos residuais aceitos pelo responsável.
 
 ## F6-T5 — Piloto e promoção
+
+**Bloqueios por issue:** [#11](https://github.com/IgnisDevNE/CircuitoNE/issues/11)/[#12](https://github.com/IgnisDevNE/CircuitoNE/issues/12)/[#13](https://github.com/IgnisDevNE/CircuitoNE/issues/13)/[#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14)/[#15](https://github.com/IgnisDevNE/CircuitoNE/issues/15)/[#16](https://github.com/IgnisDevNE/CircuitoNE/issues/16)/[#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31)/[#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32) resolvidas no escopo de produção; [#38](https://github.com/IgnisDevNE/CircuitoNE/issues/38)/[#40](https://github.com/IgnisDevNE/CircuitoNE/issues/40)/[#42](https://github.com/IgnisDevNE/CircuitoNE/issues/42)/[#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) com decisões/pré-requisitos atendidos; nenhum novo P0/P1 aberto. [#29](https://github.com/IgnisDevNE/CircuitoNE/issues/29)/[#30](https://github.com/IgnisDevNE/CircuitoNE/issues/30) só admitem exceção conforme gate documentado.
+
+**Issues tratadas:** Nenhuma issue é encerrada automaticamente por promover; verificar evidência de todas as pendências residuais.
 
 **Dependência:** F6-T1–T4, homologação do SHA final e aprovação humana.
 

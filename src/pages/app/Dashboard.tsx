@@ -3,7 +3,7 @@ import { useStore } from '../../context/StoreContext'
 import { usePageTitle } from '../../lib/usePageTitle'
 import { Empty, LinkButton, Panel } from '../../components/ui/primitives'
 import { BootLog } from '../../components/ui/anim'
-import { fmtDataHora, isFuturo, porProximidade } from '../../lib/utils'
+import { eventoNaoEncerrado, fmtDataHora, porProximidade } from '../../lib/utils'
 import { TIPO_LABEL } from '../../data/types'
 
 export function Dashboard() {
@@ -13,7 +13,7 @@ export function Dashboard() {
 
   const meusColetivos = coletivos.filter((c) => c.membros.some((m) => m.userId === user.id))
   const proximos = eventos
-    .filter((e) => isFuturo(e.inicio) && meusColetivos.some((c) => c.id === e.coletivoId))
+    .filter((e) => eventoNaoEncerrado(e) && meusColetivos.some((c) => c.id === e.coletivoId))
     .sort(porProximidade)
   const ultimasMensagens = threads
     .flatMap((t) => t.mensagens.map((m) => ({ ...m, thread: t.titulo, threadId: t.id })))

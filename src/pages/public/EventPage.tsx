@@ -6,7 +6,7 @@ import { DuotoneImage } from '../../components/ui/DuotoneImage'
 import { AccentScope } from '../../components/ui/AccentScope'
 import { Markdown } from '../../components/ui/Markdown'
 import { useToast } from '../../context/ToastContext'
-import { fmtDataHora, isFuturo, tipoEventoLabel } from '../../lib/utils'
+import { eventoNaoEncerrado, fmtDataHora, tipoEventoLabel } from '../../lib/utils'
 
 export function EventPage() {
   const { id } = useParams()
@@ -18,7 +18,7 @@ export function EventPage() {
   if (!ev) return <Empty>Evento não encontrado. <Link to="/eventos" className="text-[var(--accent-text)] underline">Voltar</Link></Empty>
 
   const col = coletivos.find((c) => c.id === ev.coletivoId)
-  const futuro = isFuturo(ev.inicio)
+  const naoEncerrado = eventoNaoEncerrado(ev)
 
   return (
     <AccentScope color={col?.corPredominante ?? '#ff2040'}>
@@ -32,7 +32,7 @@ export function EventPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone="accent">{tipoEventoLabel(ev)}</Badge>
             {ev.gratuito ? <Badge tone="ok">Gratuito</Badge> : <Badge tone="neutral">Ingresso</Badge>}
-            {!futuro && <Badge tone="warn">Evento passado</Badge>}
+            {!naoEncerrado && <Badge tone="warn">Evento passado</Badge>}
           </div>
           <h1 className="mt-3 font-display text-4xl font-bold text-glow sm:text-5xl">{ev.nome}</h1>
           {col && (
@@ -56,7 +56,7 @@ export function EventPage() {
                 </div>
                 <div>
                   <dt className="text-xs uppercase tracking-widest text-[var(--color-muted)]">fim</dt>
-                  <dd>{fmtDataHora(ev.fim)}</dd>
+                  <dd>{ev.fim ? fmtDataHora(ev.fim) : 'Não informado'}</dd>
                 </div>
                 <div>
                   <dt className="text-xs uppercase tracking-widest text-[var(--color-muted)]">local</dt>

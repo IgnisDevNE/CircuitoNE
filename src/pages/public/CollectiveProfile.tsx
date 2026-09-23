@@ -6,7 +6,7 @@ import { DuotoneImage } from '../../components/ui/DuotoneImage'
 import { AccentScope } from '../../components/ui/AccentScope'
 import { Social } from '../../components/ui/Social'
 import { Avatar } from '../../components/ui/primitives'
-import { fmtDataHora, isFuturo } from '../../lib/utils'
+import { eventoNaoEncerrado, fmtDataHora } from '../../lib/utils'
 
 export function CollectiveProfile() {
   const { id } = useParams()
@@ -16,7 +16,7 @@ export function CollectiveProfile() {
 
   if (!col) return <Empty>Coletivo não encontrado. <Link to="/coletivos" className="text-[var(--accent-text)] underline">Voltar</Link></Empty>
 
-  const proximos = eventos.filter((e) => e.coletivoId === col.id && isFuturo(e.inicio))
+  const proximos = eventos.filter((e) => e.coletivoId === col.id && eventoNaoEncerrado(e))
   const cargoNome = (cargoId: string) => col.cargos.find((c) => c.id === cargoId)?.nome ?? '—'
 
   return (

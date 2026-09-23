@@ -4,7 +4,7 @@ import { useStore } from '../../context/StoreContext'
 import { usePageTitle } from '../../lib/usePageTitle'
 import { Badge, Empty, SectionHeading } from '../../components/ui/primitives'
 import { DuotoneImage } from '../../components/ui/DuotoneImage'
-import { fmtDataHora, isFuturo, tipoEventoLabel } from '../../lib/utils'
+import { eventoNaoEncerrado, fmtDataHora, porProximidade, tipoEventoLabel } from '../../lib/utils'
 
 export function EventsList() {
   usePageTitle('Eventos Programados')
@@ -12,15 +12,15 @@ export function EventsList() {
   const [estado, setEstado] = useState<string | null>(null)
 
   const futuros = eventos
-    .filter((e) => isFuturo(e.inicio))
+    .filter((e) => eventoNaoEncerrado(e))
     .filter((e) => !estado || e.estado === estado)
-    .sort((a, b) => new Date(a.inicio).getTime() - new Date(b.inicio).getTime())
+    .sort(porProximidade)
 
-  const estados = [...new Set(eventos.filter((e) => isFuturo(e.inicio)).map((e) => e.estado))]
+  const estados = [...new Set(eventos.filter((e) => eventoNaoEncerrado(e)).map((e) => e.estado))]
 
   return (
     <div>
-      <SectionHeading prompt="grep --upcoming" sub="Agenda de eventos que ainda vão acontecer no circuito.">eventos.log</SectionHeading>
+      <SectionHeading prompt="grep --upcoming" sub="Agenda de eventos em andamento e futuros no circuito.">eventos.log</SectionHeading>
 
       <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Filtrar por estado">
         <button onClick={() => setEstado(null)} aria-pressed={estado === null} className="cursor-pointer">

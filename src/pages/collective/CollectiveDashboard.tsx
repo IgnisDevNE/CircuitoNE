@@ -4,7 +4,7 @@ import { usePageTitle } from '../../lib/usePageTitle'
 import { useColetivo } from '../../components/layout/CollectiveLayout'
 import { Badge, Empty, Panel } from '../../components/ui/primitives'
 import { Avatar } from '../../components/ui/primitives'
-import { fmtDataHora, isFuturo, porProximidade } from '../../lib/utils'
+import { eventoNaoEncerrado, fmtDataHora, porProximidade } from '../../lib/utils'
 
 export function CollectiveDashboard() {
   const { id } = useParams()
@@ -24,14 +24,14 @@ export function CollectiveDashboard() {
         ) : (
           <ul className="space-y-2">
             {eventosCol.map((e) => {
-              const futuro = isFuturo(e.inicio)
+              const naoEncerrado = eventoNaoEncerrado(e)
               return (
                 <li key={e.id}>
                   <Link to={`/eventos/${e.id}`} className="flex items-center justify-between gap-4 border border-[var(--color-line)] p-3 hover:border-[var(--accent)]">
                     <span>
                       <span className="flex items-center gap-2">
                         <span className="font-display font-bold">{e.nome}</span>
-                        {!futuro && <Badge tone="warn">passado</Badge>}
+                        {!naoEncerrado && <Badge tone="warn">passado</Badge>}
                       </span>
                       <span className="font-mono text-xs text-[var(--color-muted)]">{fmtDataHora(e.inicio)} · {e.local}</span>
                     </span>

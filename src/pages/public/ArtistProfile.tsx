@@ -5,7 +5,7 @@ import { Badge, Empty, LinkButton, Panel } from '../../components/ui/primitives'
 import { DuotoneImage } from '../../components/ui/DuotoneImage'
 import { AccentScope } from '../../components/ui/AccentScope'
 import { Social } from '../../components/ui/Social'
-import { fmtDataHora, isFuturo } from '../../lib/utils'
+import { eventoNaoEncerrado, fmtDataHora } from '../../lib/utils'
 
 export function ArtistProfile() {
   const { id } = useParams()
@@ -15,7 +15,7 @@ export function ArtistProfile() {
 
   if (!artista) return <Empty>Artista não encontrado. <Link to="/artistas" className="text-[var(--accent-text)] underline">Voltar ao hub</Link></Empty>
 
-  const proximos = eventos.filter((e) => isFuturo(e.inicio) && e.lineup.some((l) => l.artistaId === artista.id))
+  const proximos = eventos.filter((e) => eventoNaoEncerrado(e) && e.lineup.some((l) => l.artistaId === artista.id))
 
   return (
     <AccentScope color={artista.corPredominante}>

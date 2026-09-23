@@ -183,7 +183,7 @@ export const eventos: Evento[] = [
     descricao:
       '# Encontro de Sound Systems\n\nTarde livre e **gratuita** de dub, bass e cultura de rua. Roda de conversa + som na praça.',
     inicio: days(12),
-    fim: days(12),
+    fim: days(12.25),
     estado: 'CE',
     cidade: 'Fortaleza',
     local: 'Praça Verde do Dragão',

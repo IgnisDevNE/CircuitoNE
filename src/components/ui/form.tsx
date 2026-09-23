@@ -103,15 +103,18 @@ export function RadioCards<T extends string>({
   onChange,
   options,
   required,
+  error,
 }: {
   legend: string
   value: T | ''
   onChange: (v: T) => void
   options: { value: T; label: string; desc?: string }[]
   required?: boolean
+  error?: string
 }) {
+  const errorId = useId()
   return (
-    <fieldset>
+    <fieldset aria-describedby={error ? errorId : undefined}>
       <legend className="mb-2 font-mono text-xs uppercase tracking-widest text-[var(--color-muted)]">
         <span aria-hidden className="text-[var(--accent-text)]">$ </span>
         {legend}
@@ -131,6 +134,8 @@ export function RadioCards<T extends string>({
               <input
                 type="radio"
                 name={legend}
+                aria-invalid={!!error}
+                aria-describedby={error ? errorId : undefined}
                 value={o.value}
                 checked={active}
                 onChange={() => onChange(o.value)}
@@ -144,6 +149,7 @@ export function RadioCards<T extends string>({
           )
         })}
       </div>
+      {error && <p id={errorId} className="mt-1 font-mono text-xs text-[var(--accent-text)]">[erro] {error}</p>}
     </fieldset>
   )
 }

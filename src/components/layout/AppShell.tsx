@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { Link, NavLink, useNavigate } from '../../router'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { Link, NavLink, useLocation, useNavigate } from '../../router'
 import { useStore } from '../../context/StoreContext'
 import { TIPO_LABEL } from '../../data/types'
 import { cx } from '../../lib/utils'
@@ -14,11 +14,13 @@ interface NavItem {
 export function AppShell({ children }: { children: ReactNode }) {
   const { user, logout, threads, coletivos } = useStore()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const loggingOut = useRef(false)
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
-    if (!user) navigate('/entrar', { replace: true })
-  }, [user, navigate])
+    if (!user && !loggingOut.current && pathname !== '/') navigate('/entrar', { replace: true })
+  }, [user, pathname, navigate])
 
   const naoLidas = threads.reduce((n, t) => n + t.naoLidas, 0)
 
@@ -105,6 +107,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="mt-auto border-t border-[var(--color-line)] pt-4">
         <button
           onClick={() => {
+            loggingOut.current = true
             logout()
             navigate('/')
           }}

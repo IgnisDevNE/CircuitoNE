@@ -1,14 +1,26 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
+import { createServer } from "node:net"
 import { readFileSync, readdirSync, writeFileSync, rmSync, realpathSync } from "node:fs"
 import { resolve, join, basename, dirname } from "node:path"
 import { prepareLocalDatabase } from "../../scripts/prepare-local-db.mjs"
 
+const reservePort = async (port) => {
+  const server = createServer()
+  await new Promise((resolve, reject) => {
+    server.once("error", reject)
+    server.listen(port, "0.0.0.0", resolve)
+  })
+  return server
+}
+
+const releasePort = (server) => new Promise((resolve) => server.close(resolve))
+
 test(
   "reconstrói migrações duas vezes e detecta perda de RLS",
   { timeout: 480_000 },
-  (t) => {
+  async (t) => {
     assert.equal(
       process.argv.length,
       2,
@@ -32,14 +44,35 @@ test(
       }
     })
     const config = join(workdir, "supabase/config.toml")
-    assert.match(readFileSync(config, "utf8"), /^project_id = "circuitone-local"$/m)
+    const original = readFileSync(config, "utf8")
+    assert.match(original, /^project_id = "circuitone-local"$/m)
+    let blocker
+    try {
+      blocker = await reservePort(55432)
+      blocker.unref()
+      t.after(() => releasePort(blocker))
+    } catch (error) {
+      if (error.code !== "EADDRINUSE") throw error
+    }
+    const dbServer = await reservePort(0)
+    let shadowServer
+    let dbPort
+    let shadowPort
+    try {
+      shadowServer = await reservePort(0)
+      dbPort = dbServer.address().port
+      shadowPort = shadowServer.address().port
+    } finally {
+      await Promise.all([dbServer, shadowServer].filter(Boolean).map(releasePort))
+    }
     writeFileSync(
       config,
-      readFileSync(config, "utf8").replace(
-        'project_id = "circuitone-local"',
-        `project_id = "circuitone-test-${basename(workdir).split("-").at(-1).toLowerCase()}"`,
-      ),
+      original
+        .replace('project_id = "circuitone-local"', `project_id = "circuitone-test-${basename(workdir).split("-").at(-1).toLowerCase()}"`)
+        .replace(/^port = 55432$/m, `port = ${dbPort}`)
+        .replace(/^shadow_port = 55430$/m, `shadow_port = ${shadowPort}`),
     )
+    assert.doesNotMatch(readFileSync(config, "utf8"), /^port = 55432$/m)
     const check = () =>
       run(
         "db",

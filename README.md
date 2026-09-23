@@ -37,6 +37,6 @@ O preview também está preparado em container Podman. Nesta máquina, o endere�
 - [Infraestrutura e operação](docs/engineering/environment.md)
 - [Revisão de segurança OWASP](docs/reviews/security-baseline.md)
 - [Evidências desta preparação](docs/reviews/foundation-validation.md)
-- [Codecov: diagnóstico e pendência OAuth](docs/reviews/codecov-diagnosis.md)
+- [Codecov: diagnóstico e regularização](docs/reviews/codecov-diagnosis.md)
 
 Os documentos distinguem decisões confirmadas, propostas técnicas e questões abertas. A preparação não significa liberação para produção.

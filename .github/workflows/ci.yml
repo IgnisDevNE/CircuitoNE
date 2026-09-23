@@ -83,38 +83,6 @@ jobs:
       # Banco descartável; nenhum environment/secreto/projeto remoto vinculado.
       - run: pnpm test:database
 
-  codecov:
-    name: codecov-upload
-    needs: [quality, database]
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      # Checkout fornece metadados; nenhum código/dependência da aplicação é executado.
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: codecov-lcov
-          path: .codecov-reports
-      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
-        with:
-          version: v11.3.1
-          use_oidc: true
-          override_commit: ${{ github.sha }}
-          override_pr: ${{ github.event.pull_request.number }}
-          slug: IgnisDevNE/CircuitoNE
-          files: .codecov-reports/lcov.info
-          disable_search: true
-          disable_file_fixes: true
-          disable_telem: true
-          plugins: noop
-          fail_ci_if_error: true
-
   homologation_credentials:
     name: homologation-credentials
     if: github.event_name == 'workflow_dispatch' && inputs.validate_homologation && github.ref == 'refs/heads/main'

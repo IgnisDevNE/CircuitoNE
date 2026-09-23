@@ -7,4 +7,4 @@ coverage:
       default:
         informational: true
 comment:
-  layout: reach,diff,flags,files
+  layout: header,diff,files,footer

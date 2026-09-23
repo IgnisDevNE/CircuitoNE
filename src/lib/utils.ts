@@ -68,9 +68,10 @@ export function tipoEventoLabel(e: Evento) {
 }
 
 // ---- input masks ----
-/** Formata CPF como 000.000.000-00 a partir dos dígitos digitados. */
+/** Formata CPF parcial sem apagar entradas inválidas que precisam ser corrigidas. */
 export function maskCPF(v: string) {
-  const d = v.replace(/\D/g, '').slice(0, 11)
+  const d = v.replace(/[.\-\s]/g, '')
+  if (!/^\d{0,11}$/.test(d)) return v
   const p = [d.slice(0, 3), d.slice(3, 6), d.slice(6, 9), d.slice(9, 11)]
   let out = p[0]
   if (p[1]) out += '.' + p[1]

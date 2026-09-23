@@ -144,6 +144,30 @@ describe('jornadas com fixtures — sem prova de Auth, autorização ou persist�
     expect(screen.getByRole('textbox', { name: 'Média de cachê' })).toBeTruthy()
   })
 
+  it('exige tipo de atuação e valida os dados gerais antes da próxima etapa', async () => {
+    open('/cadastro')
+    const user = userEvent.setup()
+    await user.type(screen.getByRole('textbox', { name: /Nome completo/ }), 'Ana Teste')
+    await user.type(screen.getByRole('textbox', { name: /E-mail/ }), 'a..b@example.org')
+    fireEvent.change(screen.getByLabelText(/Data de nascimento/), { target: { value: '2010-01-01' } })
+    await user.type(screen.getByRole('textbox', { name: /CPF/ }), 'abc12345678909')
+    await user.type(screen.getByRole('textbox', { name: /Cidade/ }), 'Recife')
+    await user.click(screen.getByRole('button', { name: 'avançar →' }))
+    expect(screen.getByText('[erro] Escolha um tipo de cadastro.')).toBeTruthy()
+    expect(screen.getByText('[erro] Informe um e-mail válido.')).toBeTruthy()
+    expect(screen.getByText('[erro] Informe um CPF válido.')).toBeTruthy()
+    expect(screen.getByText('[erro] É necessário ter 18 anos completos.')).toBeTruthy()
+
+    await user.click(screen.getByRole('radio', { name: /^Artista/ }))
+    await user.clear(screen.getByRole('textbox', { name: /E-mail/ }))
+    await user.type(screen.getByRole('textbox', { name: /E-mail/ }), 'ana@example.org')
+    fireEvent.change(screen.getByLabelText(/Data de nascimento/), { target: { value: '2000-01-01' } })
+    await user.clear(screen.getByRole('textbox', { name: /CPF/ }))
+    await user.type(screen.getByRole('textbox', { name: /CPF/ }), '12345678909')
+    await user.click(screen.getByRole('button', { name: 'avançar →' }))
+    expect(screen.getByRole('textbox', { name: 'instagram' })).toBeTruthy()
+  })
+
   it('rejeita fim anterior e preserva fim vazio ao criar evento em Fortaleza', async () => {
     open('/entrar')
     const user = userEvent.setup()

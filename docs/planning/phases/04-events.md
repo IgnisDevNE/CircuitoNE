@@ -23,7 +23,7 @@
 
 **Dependência:** F4-T1; máquina de estados D-05 aprovada.
 
-- Testar primeiro: rascunho lido anonimamente, publicação permitida ao proprietário do coletivo aprovado mesmo sem permissão no perfil, negada ao membro sem permissão específica ou ao evento sem campos exigidos; mudança concorrente, cancelamento repetido, reagendamento preservando identidade/aviso e falha no salvamento.
+- Testar primeiro: leitura anônima de rascunho negada, publicação permitida ao proprietário do coletivo aprovado mesmo sem permissão no perfil, negada ao membro sem permissão específica ou ao evento sem campos exigidos; membro com editar mas sem publicar não altera conteúdo visível, membro com publicar mas sem cancelar não cancela; mudança concorrente, cancelamento repetido, reagendamento preservando identidade/aviso e falha no salvamento.
 - Entrega: jornadas completas, controle de versão/conflito e estados de publicação; cancelamento retira o evento das listagens mas preserva a página de aviso, e reagendamento mantém sua URL.
 - Aceite: editar não sobrescreve silenciosamente outra versão; erro preserva conteúdo digitado; transições inválidas falham no servidor e banco, não apenas no botão.
 - Documentação: estados/transições, recuperação e efeitos de cancelamento/reagendamento.
@@ -36,7 +36,7 @@
 
 **Dependência:** F4-T2 e F2-T2/F3-T4.
 
-- Testar primeiro: futuro/em andamento/passado com fim; sem fim, usar a classificação em andamento só após o critério proposto em RN-24/#41 ser aceito. Cobrir mudança de dia/fuso, empate na ordenação, paginação, participação do artista em eventos de vários organizadores sem duplicatas, cancelado fora da agenda/listas mas acessível por URL com aviso, HTML inicial/metadados e 404 real.
+- Testar primeiro: futuro/em andamento/passado com fim; sem fim, em andamento até o fim do dia local do início conforme RN-24/#41. Cobrir mudança de dia/fuso, passados do mais recente ao mais antigo, empate estável na ordenação, paginação, participação do artista em eventos de vários organizadores sem duplicatas, cancelado fora da agenda/listas mas acessível por URL com aviso, HTML inicial/metadados e 404 real.
 - Entrega: agenda pública, evento SSR e composição dos painéis pessoal/coletivo. A agenda do artista inclui todo evento publicado em cujo lineup vinculado participou, inclusive passado ou de outro organizador, excluindo cancelados (RN-27).
 - Aceite: visitante consulta o evento publicado de coletivo aprovado, artista aparece pelo lineup e cancelamento é refletido nas superfícies; rascunho e evento de coletivo suspenso não vazam por busca, acesso direto, API ou cache. Testar suspensão depois de popular o cache e reativação administrativa, preservando o estado próprio do evento. Markdown continua seguro no servidor e navegador.
 - Documentação: ordenação, filtros, consultas/índices e projeções/metadados públicos.

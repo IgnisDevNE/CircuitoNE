@@ -6,6 +6,8 @@
 
 ## Ordem de trabalho
 
+**Sprint de 23/09/2026:** o responsável pediu para executar primeiro as correções e preparações da fase 0 que não dependem de isolamento, deixando a retirada das credenciais temporárias e o fechamento da #31 por último. Isso não libera jobs com secrets, migrações no projeto compartilhado nem promoção: esses passos aguardam o gate de isolamento de F0-T2 e serão verificados antes da saída da fase.
+
 Com F0-T1/T3 integradas, abrir primeiro F0-T14 (dependências) e F0-T15 (decisões/pré-requisitos), em paralelo ao trabalho independente de F0-T2 e F0-T6. Corrigir F0-T7–T10; migrar F0-T11/T12; concluir F0-T4/T5 e o review de fase. Estabilizar a toolchain de F0-T14 antes do aceite final dos testes/SSR. F0-T13 pode avançar quando houver cobertura real, mas a dependência externa do Codecov não bloqueia a fase. Dependências específicas abaixo prevalecem sobre essa sequência resumida.
 
 Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em checkpoints necessários, mantendo cada tarefa com review normal independente. PRs intermediários seguem a ordem das dependências para aprovação crescente. O planejamento atual não autoriza marcar a base como pronta nem começar regras reais sem o isolamento de F0-T2. Preparação com dados fictícios pode avançar nas partes independentes. A [auditoria atual do Supabase](../../reviews/supabase-environments-2026-09-22.md) distingue o que foi verificado das configurações ainda pendentes.

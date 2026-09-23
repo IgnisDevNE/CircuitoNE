@@ -121,4 +121,18 @@ describe('jornadas com fixtures — sem prova de Auth, autorização ou persist�
       expect((input as HTMLInputElement).value).toBe('Projeto de teste')
     }
   })
+
+  it('não avança com cachê inválido na nova atuação artística', async () => {
+    open('/entrar')
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: '[demo] entrar como Ana' }))
+    await user.click(screen.getByRole('link', { name: 'Editar Dados' }))
+    await user.click(screen.getByRole('link', { name: /nova atuação/i }))
+    await user.click(screen.getByRole('radio', { name: 'Artista' }))
+    await user.type(screen.getByRole('textbox', { name: /Nome artístico \/ projeto/ }), 'Projeto de teste')
+    await user.type(screen.getByRole('textbox', { name: 'Média de cachê' }), 'R$ abc')
+    await user.click(screen.getByRole('button', { name: 'avançar →' }))
+    expect(screen.getByText('[erro] Informe um cachê válido.')).toBeTruthy()
+    expect(screen.getByRole('textbox', { name: 'Média de cachê' })).toBeTruthy()
+  })
 })

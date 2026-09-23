@@ -50,16 +50,21 @@ export function maskCPF(v: string) {
   return out
 }
 
-/** Formata valor monetário x,xx. Sem vírgula/ponto → assume ,00. Vazio permanece vazio. */
+/** Lê uma quantia única em reais no formato brasileiro e devolve centavos inteiros. */
+export function parseCacheCents(v: string): number | null {
+  const match = /^(?:R\$\s*)?(\d{1,3}(?:\.\d{3})+|\d+)(?:,(\d{1,2}))?$/.exec(v.trim())
+  if (!match) return null
+  const cents = Number(match[1].replace(/\./g, '')) * 100 + Number((match[2] ?? '').padEnd(2, '0'))
+  return Number.isSafeInteger(cents) ? cents : null
+}
+
+/** Vazio permanece vazio; entrada inválida permanece visível para correção. */
 export function maskCache(v: string) {
-  const t = v.trim()
-  if (!t) return ''
-  const num = t.replace(/[^\d.,]/g, '').replace(/\./g, ',')
-  const [intRaw, decRaw = ''] = num.split(',')
-  const int = (intRaw || '0').replace(/^0+(?=\d)/, '') || '0'
-  const dec = (decRaw + '00').slice(0, 2)
-  const intFmt = int.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-  return `R$ ${intFmt},${dec}`
+  if (!v.trim()) return ''
+  const cents = parseCacheCents(v)
+  if (cents === null) return v
+  const intFmt = String(Math.floor(cents / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  return `R$ ${intFmt},${String(cents % 100).padStart(2, '0')}`
 }
 
 // ---- WCAG contrast helpers ----

@@ -1,5 +1,7 @@
 # Prompt #55b — Diagnóstico de isolamento do Orbit
 
+**Registro histórico:** este relatório, seu probe e as evidências anexas documentam o ensaio da [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31). Não são necessários para construir ou executar a aplicação. O setup local do Orbit será refeito separadamente; remover seus arquivos locais não altera o resultado histórico nem conclui o isolamento pendente.
+
 Data: 22/09/2026 (America/Fortaleza); repetição instrumentada dos checks nativos às 14:33–14:34. Projeto: CircuitoNE. Escopo: parte de F0-T2 / [issue #31](https://github.com/IgnisDevNE/CircuitoNE/issues/31), **sem encerrar a issue nem liberar implementação de regras reais**.
 
 **Resultado: o worktree separado está registrado; isolamento forte do worker, das credenciais e do aceite não está comprovado.** O registro nativo preserva escrita de uma fixture com locks ativos, criação/remoção dos próprios locks e recusas MCP por falta de `working_session`. A conexão aos pipes locais foi relatada pelo worker, mas sua saída não foi preservada. Não houve teste de evasão do guard de commit nem alteração de testes reais.

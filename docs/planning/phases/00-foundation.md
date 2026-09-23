@@ -151,7 +151,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 **Dependência:** F0-T6–T10. **Risco:** alto, transversal.
 
 - Testar primeiro: conteúdo público/metadados no HTML sem JavaScript, 404 HTTP, links profundos, navegação/histórico e renderização sem `window`/`document` disponíveis no servidor.
-- Entrega: entrada/configuração do framework, rotas/layouts, loaders/actions e limites servidor/cliente; preservar componentes de tela e URLs existentes. Rever o plugin Figma e o aviso de configuração Vite apenas conforme a migração exigir.
+- Entrega: entrada/configuração do framework, rotas/layouts, loaders/actions e limites servidor/cliente; preservar componentes de tela e URLs existentes. A configuração Vite simplificada do protótipo será substituída conforme a migração exigir.
 - Aceite: páginas públicas SSR ainda com fixtures, hidratação sem divergência, dois contextos sem vazamento e ausência de segredos no bundle. Migração incremental por grupo de rotas; remover roteador antigo somente quando os consumidores tiverem migrado.
 - Documentação: mapa antigo → novo, composição de módulos, política de cache e configuração de build. Metadados reais serão integrados nas fases 2–4.
 

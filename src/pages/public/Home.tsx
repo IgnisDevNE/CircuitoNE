@@ -55,7 +55,7 @@ export function Home() {
       {/* PRÓXIMOS EVENTOS */}
       <section>
         <div className="mb-6 flex items-end justify-between">
-          <SectionHeading prompt="cat" sub="Os próximos encontros da cena, ordenados por proximidade.">eventos.log</SectionHeading>
+          <SectionHeading as="h2" prompt="cat" sub="Os próximos encontros da cena, ordenados por proximidade.">eventos.log</SectionHeading>
           <Link to="/eventos" className="hidden font-mono text-xs uppercase tracking-widest text-[var(--accent-text)] hover:underline sm:block">todos →</Link>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -77,7 +77,7 @@ export function Home() {
 
       {/* ARTISTAS EM DESTAQUE */}
       <section>
-        <SectionHeading prompt="ls" sub="Produtores, DJs e projetos ao vivo cadastrados no circuito.">artistas/</SectionHeading>
+        <SectionHeading as="h2" prompt="ls" sub="Produtores, DJs e projetos ao vivo cadastrados no circuito.">artistas/</SectionHeading>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {artistas.map((a) => (
             <AccentScope key={a.id} color={a.corPredominante}>

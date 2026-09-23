@@ -27,6 +27,21 @@ function open(path: string) {
 }
 
 describe('jornadas com fixtures — sem prova de Auth, autorização ou persistência', () => {
+  it('usa um título principal e títulos de seção na página inicial', () => {
+    open('/')
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+    expect(screen.getByRole('heading', { level: 2, name: 'eventos.log' })).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 2, name: 'artistas/' })).toBeTruthy()
+  })
+
+  it('apresenta compra de ingresso como um único link acessível', () => {
+    open('/eventos/ev-porto')
+    const ingresso = screen.getByRole('link', { name: 'Comprar ingresso ↗' })
+    expect(ingresso.getAttribute('href')).toBe('https://ingressos.exemplo/porto-noturno')
+    expect(ingresso.querySelector('button')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Comprar ingresso ↗' })).toBeNull()
+  })
+
   it('busca artistas por nome e bio, combina estilo e recupera o estado vazio', async () => {
     open('/artistas')
     const user = userEvent.setup()

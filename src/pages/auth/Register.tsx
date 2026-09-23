@@ -9,6 +9,7 @@ import { Checkbox, Input, RadioCards, Select, Textarea } from '../../components/
 import { Stepper } from '../../components/ui/Stepper'
 import { AccentScope } from '../../components/ui/AccentScope'
 import { contrastRatio, maskCPF, maskCache, parseCacheCents } from '../../lib/utils'
+import { birthdateStatus, normalizeCpf, validEmail } from '../../lib/registration-validation'
 
 const GENEROS = ['Homem', 'Mulher', 'Não-Binário']
 
@@ -50,11 +51,16 @@ export function Register({ mode = 'cadastro' }: { mode?: 'cadastro' | 'nova-atua
   const validar = (): boolean => {
     const e: Record<string, string> = {}
     if (stepReal === 0) {
-      if (!geral.nome) e.nome = 'Informe seu nome.'
-      if (!geral.email) e.email = 'Informe um e-mail válido.'
+      const birthStatus = geral.nascimento && birthdateStatus(geral.nascimento)
+      if (!geral.nome.trim()) e.nome = 'Informe seu nome.'
+      if (!validEmail(geral.email)) e.email = 'Informe um e-mail válido.'
       if (!geral.nascimento) e.nascimento = 'Informe a data de nascimento.'
+      else if (birthStatus === 'invalid') e.nascimento = 'Informe uma data de nascimento válida.'
+      else if (birthStatus === 'underage') e.nascimento = 'É necessário ter 18 anos completos.'
       if (!geral.cpf) e.cpf = 'Informe o CPF.'
-      if (!geral.cidade) e.cidade = 'Informe a cidade.'
+      else if (!normalizeCpf(geral.cpf)) e.cpf = 'Informe um CPF válido.'
+      if (!geral.cidade.trim()) e.cidade = 'Informe a cidade.'
+      if (!tipo) e.tipo = 'Escolha um tipo de cadastro.'
     }
     if (stepReal === 2) {
       if (!tipo) e.tipo = 'Escolha um tipo de cadastro.'

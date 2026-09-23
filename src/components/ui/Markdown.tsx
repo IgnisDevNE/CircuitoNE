@@ -3,7 +3,7 @@ import { cx } from '../../lib/utils'
 
 /** Tiny, safe markdown renderer (headings, bold, italic, lists, links). */
 export function Markdown({ source, className }: { source: string; className?: string }) {
-  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
   const inline = (s: string) =>
     esc(s)
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')

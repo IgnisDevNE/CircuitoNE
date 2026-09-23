@@ -16,7 +16,7 @@ Fronteiras: navegador não confiável → Node/SSR e API/Auth/Storage → banco;
 | A02 — Configuração | Sem grants/RLS/SMTP de aplicação ainda. HTTP local é só preview. | Menor privilégio, schemas expostos explícitos, callbacks restritos, TLS em produção, headers/CSP compatíveis testados, nenhum segredo VITE_. | 0, 1, 6 |
 | A03 — Cadeia de dependências | Auditoria inicial completa encontrou 9 vulnerabilidades, 6 altas; Vite/transitivas atualizados, nova auditoria limpa. | Lockfile, Node/pnpm fixados, imagens/Actions por digest/SHA, Dependabot e revisão de atualizações. Avaliar também imagem final antes de release. | 0 e todas |
 | A04 — Criptografia | CPF/nascimento planejados privados; senha gerenciada por Auth. | TLS, secrets fora do repositório/logs, acesso mínimo a backups; decisão documentada sobre criptografia adicional de identidade e retenção. Não inventar criptografia própria. | 1, 6 |
-| A05 — Injeção | Markdown interpola URL em atributo HTML sem escape de aspas; risco estático de XSS. P1 antes de conteúdo real. | Payloads de aspas, atributos, esquemas perigosos e HTML; saída segura; queries parametrizadas; RPC com validação e search_path fixo. | 0–5 |
+| A05 — Injeção | O risco do renderizador Markdown do protótipo foi tratado na [PR #82](https://github.com/IgnisDevNE/CircuitoNE/pull/82), com saída React e política restrita; banco/API de produto ainda não existem. | Regressões SSR/navegador e QA canônico passaram para Markdown. Nas fases de dados reais: queries parametrizadas e RPC com validação e `search_path` fixo. | 0–5 |
 | A06 — Desenho inseguro | Mock libera o antigo administrador N2 sem aprovação editorial; RN-30 exige aprovação do site antes de funções. CPF único não comprova identidade; a propriedade única/transferível ainda não existe. | Implementar RN-30 e #66, resolver D-03, testar transferência concorrente, abuso e cotas de mídia/mensagens. | 0, 1, 3, 5 |
 | A07 — Autenticação | Login/cadastro/alteração de senha são mocks. | Confirmação, recuperação, sessão expirada/revogada, reautenticação, rate limit, respostas que não exponham dados de terceiros. MFA operacional. | 1, 6 |
 | A08 — Integridade | App implementador separado por comando, mas QA/verificador e isolamento de credenciais ainda pendentes; mock aceita mutações locais. | QA sob autoridade separada, SHA de teste/candidato, verificador confiável, artefato homologado, idempotência e dados atômicos. | 0, 1–5 |
@@ -27,7 +27,7 @@ Fronteiras: navegador não confiável → Node/SSR e API/Auth/Storage → banco;
 
 P0/P1 impedem promoção para ambiente com dados reais. A classificação considera contexto: o protótipo local com seeds pode continuar sendo usado para desenho; ligar dados privados muda a exposição. Não dar aceite global enquanto identidade/testes/autorizações não estiverem implementados e demonstrados.
 
-Esta preparação inclui testes HTTP e proteção básica de entrega, mas não testa RLS (não há schema), não testa exploração XSS ativa, não examina cada tela com ferramenta de acessibilidade e não executa DAST. A suíte de aceite separada ainda é pendente. Isso é registrado como trabalho restante, não como “sem achados”.
+Esta preparação inclui testes HTTP, regressões de conteúdo malicioso em Markdown e proteção básica de entrega, mas não testa RLS (não há schema), não examina cada tela com ferramenta de acessibilidade e não executa DAST. A suíte de aceite separada está operacional; seu isolamento final de credenciais continua pendente na #31. Isso é registrado como trabalho restante, não como “sem achados”.
 
 ## Modelo do relatório por fase
 

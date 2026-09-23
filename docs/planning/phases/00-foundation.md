@@ -94,7 +94,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 ## F0-T7 — Corrigir renderização de Markdown e URLs
 
-**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) antes da implementação do contrato de segurança.
+**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) antes de conectar dados reais; a correção isolada do renderizador do protótipo foi integrada na [PR #82](https://github.com/IgnisDevNE/CircuitoNE/pull/82) com aceite canônico. O isolamento final de credenciais permanece na #31.
 
 **Issues tratadas:** [#11](https://github.com/IgnisDevNE/CircuitoNE/issues/11) integralmente, incluindo renderização segura no servidor/navegador.
 
@@ -102,8 +102,10 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 - Testar primeiro: aspas, atributos/eventos, HTML, esquemas perigosos, links malformados e texto escapado, tanto no servidor quanto no navegador.
 - Entrega: renderização segura com formatação necessária preservada. Preferir biblioteca mantida se o conjunto de recursos exigir parser/sanitização; não construir outro parser por substituições inseguras.
-- Aceite: nenhum conteúdo de usuário cria código executável; prévia/editor e página pública têm a mesma política. Links externos recebem tratamento coerente.
+- Aceite: nenhum conteúdo de usuário cria código executável; o editor atual é texto simples, e qualquer prévia renderizada futura usa a mesma política da página pública. Links externos recebem tratamento coerente.
 - Documentação: formatos permitidos, exemplos de ataque bloqueados e tradeoffs registrados no PR/spec pertinente.
+
+**Evidência de F0-T7:** [spec](../../specs/event-description-markdown.md), [CI de `main`](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/35923075988) e [promoção QA](https://github.com/IgnisDevNE/CircuitoNE-QA/actions/runs/35923261808) verdes após o merge da #82. Isso resolve o caminho Markdown do protótipo; não libera conteúdo real antes dos gates de identidade, autorização e dados.
 
 ## F0-T8 — Separar validação, dinheiro e datas do JSX
 

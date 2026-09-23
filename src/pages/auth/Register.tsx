@@ -8,7 +8,7 @@ import { Button, Panel } from '../../components/ui/primitives'
 import { Checkbox, Input, RadioCards, Select, Textarea } from '../../components/ui/form'
 import { Stepper } from '../../components/ui/Stepper'
 import { AccentScope } from '../../components/ui/AccentScope'
-import { contrastRatio, maskCPF, maskCache } from '../../lib/utils'
+import { contrastRatio, maskCPF, maskCache, parseCacheCents } from '../../lib/utils'
 
 const GENEROS = ['Homem', 'Mulher', 'Não-Binário']
 
@@ -59,6 +59,7 @@ export function Register({ mode = 'cadastro' }: { mode?: 'cadastro' | 'nova-atua
     if (stepReal === 2) {
       if (!tipo) e.tipo = 'Escolha um tipo de cadastro.'
       if (tipo === 'artista' && !artista.nome) e.artistaNome = 'Informe o nome artístico.'
+      if (tipo === 'artista' && artista.mediaCache && parseCacheCents(artista.mediaCache) === null) e.mediaCache = 'Informe um cachê válido.'
       if (tipo === 'servicos' && !servico.contato) e.servcontato = 'Informe um contato.'
       if (tipo === 'audiovisual' && !av.contato) e.avcontato = 'Informe um contato.'
       if (tipo === 'integrante') {
@@ -215,7 +216,7 @@ export function Register({ mode = 'cadastro' }: { mode?: 'cadastro' | 'nova-atua
                   )}
                 </div>
                 <Input label="Presskit (URL)" value={artista.presskit} onChange={(e) => setArtista({ ...artista, presskit: e.target.value })} placeholder="https://" />
-                <Input label="Média de cachê" value={artista.mediaCache} onChange={(e) => setArtista({ ...artista, mediaCache: e.target.value })} onBlur={(e) => setArtista({ ...artista, mediaCache: maskCache(e.target.value) })} placeholder="R$ 0,00" inputMode="decimal" hint="por apresentação" />
+                <Input label="Média de cachê" value={artista.mediaCache} onChange={(e) => setArtista({ ...artista, mediaCache: e.target.value })} onBlur={(e) => setArtista({ ...artista, mediaCache: maskCache(e.target.value) })} placeholder="R$ 0,00" inputMode="decimal" hint="por apresentação" error={errors.mediaCache} />
                 <Input label="CNPJ (facultativo)" value={artista.cnpj} onChange={(e) => setArtista({ ...artista, cnpj: e.target.value })} />
               </div>
             )}

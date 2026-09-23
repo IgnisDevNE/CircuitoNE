@@ -57,6 +57,8 @@ O acesso comum ao banco usa a identidade autenticada do usuário, inclusive no N
 
 Usar o SDK Supabase com tipos gerados e migrações SQL em [docs/migrations/](../migrations/README.md). Não introduzir ORM, API separada, GraphQL, microserviços, Redis ou filas sem requisito concreto.
 
+Na criação de atuação artística do protótipo, uma quantia única de cachê usa formato brasileiro (`R$ 1.500,00`) e entrada inválida não é convertida em zero. A fronteira de dados converterá a quantia em centavos inteiros e guardará centavos no banco quando a persistência profissional for implementada em F2. Os mocks atuais com faixas de valores não são quantias únicas; a tela de edição ainda não persiste alterações e será alinhada com o contrato em [#15](https://github.com/IgnisDevNE/CircuitoNE/issues/15)/[#20](https://github.com/IgnisDevNE/CircuitoNE/issues/20). A validação no navegador não substitui a validação no servidor.
+
 ## Renderização e experiência pública
 
 Páginas públicas de artistas, coletivos e eventos devem entregar conteúdo e metadados relevantes no HTML inicial: título, descrição, URL canônica e informações de compartilhamento. Audiovisual, serviços e integrantes têm perfis somente no catálogo interno autenticado, sem página aberta a visitantes; campos restritos seguem RN-07. Recurso inexistente ou não publicável deve ter resposta HTTP apropriada, sem expor conteúdo restrito. Prerender pode atender páginas estáveis quando fizer sentido.

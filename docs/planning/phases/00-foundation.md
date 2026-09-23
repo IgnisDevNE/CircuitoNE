@@ -29,7 +29,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 **Issues tratadas:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31); sua conclusão libera os trabalhos que exigem autoridade independente.
 
-**Estado:** parcial; aceite canônico obrigatório e promoção pós-merge operacionais, isolamento forte pendente na #31. A retomada após aprovação e o fechamento pós-promoção aguardam ensaio real ([#58](https://github.com/IgnisDevNE/CircuitoNE/issues/58)). **Dependência:** F0-T1. **Risco:** alto.
+**Estado:** parcial; aceite canônico, retomada após aprovação, promoção e fechamento pós-merge validados na [#58](https://github.com/IgnisDevNE/CircuitoNE/issues/58). Isolamento forte pendente na #31. **Dependência:** F0-T1. **Risco:** alto.
 
 - Entrega: emissor da chave do App fora do implementador; ambiente sem credencial humana/admin, inclusive acessos temporários de manutenção de SSH/Codecov; QA canônico fora das instalações desse App; verificador com comando, dependências e identidade próprios.
 - Testar primeiro: a identidade implementadora não escreve QA, não altera sua versão aprovada, settings/secrets, aprovações ou promoção. Usar recursos de teste controlados para provas negativas, sem mutações destrutivas em produção.

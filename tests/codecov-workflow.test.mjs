@@ -15,7 +15,7 @@ test('coverage is informational and cannot replace application checks or the ind
   assert.match(config, /project:\s+default:\s+informational: true/);
   assert.match(config, /patch:\s+default:\s+informational: true/);
   assert.doesNotMatch(config, /comment:\s*false/);
-  assert.match(config, /comment:\s*\n\s+layout: reach,diff,flags,files/);
+  assert.match(config, /comment:\s*\n\s+layout: header,diff,files,footer/);
   assert.doesNotMatch(config, /\bignore:|\btarget:|\bthreshold:/);
   const owners = readFileSync(new URL('../.github/CODEOWNERS', import.meta.url), 'utf8');
   assert.match(owners, /^\/codecov\.yml @magalz$/m);

@@ -26,7 +26,7 @@
 
 - Testar primeiro: HTML inicial com título/conteúdo/metadados; perfil inexistente/indisponível; busca e paginação estáveis; nenhuma resposta anônima inclui CPF, nascimento, contato, cachê, presskit, portfólio audiovisual ou lista de serviços/equipamentos (link externo, caminho do PDF ou URL de acesso); publicar somente links sociais da atuação consultada, sem herdar redes pessoais ou incluir os materiais restritos.
 - Entrega: listas e detalhes com dados reais em loaders públicos, estados vazio/erro e URLs preservadas. Aplicar a política de publicação também no banco/API.
-- Aceite: resultados corretos sem executar JavaScript; mudanças de publicação não mantêm conteúdo privado em cache; imagens quebradas têm fallback acessível. Diretório restrito de N2 só entra em F3-T4.
+- Aceite: resultados corretos sem executar JavaScript; mudanças de publicação não mantêm conteúdo privado em cache; imagens quebradas têm fallback acessível. Diretório restrito de proprietário elegível só entra em F3-T4; perfis delegados dependem de decisão explícita na #66.
 - Documentação: payload/projeção pública, metadados e política de invalidação de cache.
 
 ## F2-T3 — Upload, galeria e substituição
@@ -39,7 +39,7 @@
 
 - Testar primeiro: imagem válida JPG/PNG/WebP de 5.000.000 bytes aceita e de 5.000.001 bytes recusada; foto principal mais 10 imagens permitidas e 11ª imagem da galeria recusada, inclusive em concorrência. Para ambos os PDFs de RN-35: PDF válido de 10.000.000 bytes aceito e de 10.000.001 bytes recusado; múltiplos PDFs ativos no mesmo campo recusados; presskit com link e PDF simultâneos recusado. Recusar upload de portfólio audiovisual e tentativa de usar campo/caminho de outro tipo de atuação, inclusive via Storage. Cobrir extensão/MIME enganosos, formato executável, PDF inválido/malicioso, caminho de outro usuário, substituição concorrente, upload interrompido e arquivo referenciado por outro registro. Testar negação de leitura de ambos os PDFs por anônimo e conta alheia.
 - Entrega: Storage, autorização por proprietário, limites/formato real verificados, galeria ordenada e remoção/substituição com tratamento de órfãos. Storage e Postgres exigem compensação explícita em falha parcial.
-- Aceite: cumprir RN-09/35; rascunhos e PDFs fora de buckets públicos; URLs privadas expiram e não contornam revogação; arquivos não são salvos no container Node. Materiais de RN-35, incluindo link de portfólio audiovisual, só são acessíveis ao titular nesta fase; acesso por N2 depende de F3-T4. Links de presskit artístico e portfólio audiovisual limitados a HTTP(S), sem busca automática de conteúdo pelo servidor. Não anunciar privacidade do destino externo nem recolhimento de cópias já baixadas.
+- Aceite: cumprir RN-09/35; rascunhos e PDFs fora de buckets públicos; URLs privadas expiram e não contornam revogação; arquivos não são salvos no container Node. Materiais de RN-35, incluindo link de portfólio audiovisual, só são acessíveis ao titular nesta fase; acesso por proprietário elegível depende de F3-T4. Links de presskit artístico e portfólio audiovisual limitados a HTTP(S), sem busca automática de conteúdo pelo servidor. Não anunciar privacidade do destino externo nem recolhimento de cópias já baixadas.
 - Segurança de ambos os PDFs: validar conteúdo, não apenas extensão/MIME; manter upload indisponível até concluir a validação e tratar falhas sem liberar o objeto. Definir e testar tratamento de conteúdo ativo e arquivos que não podem ser inspecionados antes de habilitar o upload; documentar a solução em F2-T3/#21 conforme a [orientação OWASP para uploads](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html). Não enviar arquivos privados a serviços públicos de análise.
 - Documentação: buckets/políticas, cotas, ciclo de vida dos objetos e recuperação de upload.
 
@@ -47,4 +47,4 @@
 
 Review normal por tarefa; review completo + OWASP em `docs/reviews/phase-2.md`. Jornadas: criar atuação → editar → publicar → consultar anonimamente → substituir imagem, incluindo duas contas e REST/Storage negativos.
 
-Validar páginas em mobile/teclado, consultas paginadas com volume representativo e arquivos sem execução. Homologar migrations/políticas no SHA final. A leitura profissional por N2 permanece bloqueada até existir vínculo aprovado na fase 3.
+Validar páginas em mobile/teclado, consultas paginadas com volume representativo e arquivos sem execução. Homologar migrations/políticas no SHA final. A leitura profissional por proprietário de coletivo permanece bloqueada até existir vínculo aprovado na fase 3.

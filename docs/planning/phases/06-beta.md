@@ -17,13 +17,13 @@
 
 ## F6-T2 — Privacidade, suporte e ciclo de vida da conta
 
-**Bloqueios por issue:** [#38](https://github.com/IgnisDevNE/CircuitoNE/issues/38) para identidade/retenção; [#40](https://github.com/IgnisDevNE/CircuitoNE/issues/40) para último N2; [#42](https://github.com/IgnisDevNE/CircuitoNE/issues/42) para moderação/retenção; [#16](https://github.com/IgnisDevNE/CircuitoNE/issues/16)/[#23](https://github.com/IgnisDevNE/CircuitoNE/issues/23) para fluxos correspondentes.
+**Bloqueios por issue:** [#38](https://github.com/IgnisDevNE/CircuitoNE/issues/38) para identidade/retenção; [#40](https://github.com/IgnisDevNE/CircuitoNE/issues/40)/[#66](https://github.com/IgnisDevNE/CircuitoNE/issues/66) para propriedade única/transferência e perfis; [#42](https://github.com/IgnisDevNE/CircuitoNE/issues/42) para moderação/retenção; [#16](https://github.com/IgnisDevNE/CircuitoNE/issues/16)/[#23](https://github.com/IgnisDevNE/CircuitoNE/issues/23) para fluxos correspondentes.
 
 **Issues tratadas:** Revalidar critérios de ciclo de vida de [#38](https://github.com/IgnisDevNE/CircuitoNE/issues/38)/[#42](https://github.com/IgnisDevNE/CircuitoNE/issues/42) na operação; decisões aprovadas não substituem os testes de execução.
 
 **Dependência:** políticas F1-T4 e F5-T3, decisões de retenção aprovadas.
 
-- Testar primeiro: exportação só do titular, solicitação de exclusão autenticada, conta que é último N2, mensagens preservadas sem identificar o remetente também na API, ausência de restauração de dados/permissões ao recadastrar o CPF, prazo de expurgo de backups e recuperação indevida por CPF alegado.
+- Testar primeiro: exportação só do titular, solicitação de exclusão autenticada, conta que é proprietário único, mensagens preservadas sem identificar o remetente também na API, ausência de restauração de dados/permissões ao recadastrar o CPF, prazo de expurgo de backups e recuperação indevida por CPF alegado.
 - Entrega: processos executáveis de suporte, suspensão, exclusão/exportação e retenção, incluindo arquivos e backups, conforme RN-32–34. Backup diário com expurgo de dados excluídos em até 7 dias foi aprovado; verificar todas as cópias relevantes e divulgar o prazo nos termos/privacidade. Uma restauração não pode reativar contas excluídas.
 - Aceite: responsável/canal definidos, textos de privacidade coerentes com a operação e sem dados reais em seeds/logs. Não incorporar dados de terceiros na exportação por associação de conversa/coletivo.
 - Documentação: política publicada, procedimento interno, prazos e evidência de execução com dados sintéticos.

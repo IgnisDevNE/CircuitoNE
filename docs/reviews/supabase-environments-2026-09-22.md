@@ -1,5 +1,7 @@
 # Auditoria dos ambientes Supabase — 22/09/2026
 
+**Registro histórico:** a produção em Oregon desta auditoria foi removida vazia e substituída em 22/09/2026 por `CircuitoNE` (`ukyoyrmebwadmuzkswdw`, São Paulo). O estado atual e a integração pendente estão em [ambientes e dados de teste](../specs/environments-and-test-data.md).
+
 Estado: **configuração inicial confirmada; sem liberação para integração ou produção**. Inspeção somente leitura por conector Supabase, painel web após login do responsável e App do GitHub. Nenhuma migração, usuário, bucket, chave ou configuração remota foi criada ou alterada.
 
 | Verificação | Homologação | Produção |

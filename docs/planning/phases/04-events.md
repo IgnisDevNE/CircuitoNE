@@ -4,26 +4,26 @@
 
 ## F4-T1 — Evento e lineup transacionais
 
-**Bloqueios por issue:** [#16](https://github.com/IgnisDevNE/CircuitoNE/issues/16) e aprovação operacional das partes de [#12](https://github.com/IgnisDevNE/CircuitoNE/issues/12)/[#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14); [#41](https://github.com/IgnisDevNE/CircuitoNE/issues/41) para datas/estados.
+**Bloqueios por issue:** [#16](https://github.com/IgnisDevNE/CircuitoNE/issues/16) e aprovação operacional das partes de [#12](https://github.com/IgnisDevNE/CircuitoNE/issues/12)/[#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14); [#41](https://github.com/IgnisDevNE/CircuitoNE/issues/41) para datas/estados e [#66](https://github.com/IgnisDevNE/CircuitoNE/issues/66) para permissões de eventos.
 
 **Issues tratadas:** [#18](https://github.com/IgnisDevNE/CircuitoNE/issues/18) na temporalidade persistida e [#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14) na autoria/autorização do evento.
 
 **Dependência:** F3-T2/T5 e perfis da fase 2. **Regras:** RN-23–26 e suspensão de RN-30/D-01, aprovada na #40; integrar seu registro revisado antes deste contrato.
 
-- Testar primeiro: N2 de outro coletivo, coletivo pendente ou suspenso, lineup com perfil inválido, artista duplicado, nome livre vazio, tipo “outros” sem descrição, gratuito versus ingresso, fim vazio ou não posterior ao início e o mesmo horário visto em navegadores de fusos diferentes.
+- Testar primeiro: criação permitida ao proprietário do próprio coletivo aprovado mesmo sem permissão no perfil, negada a membro sem permissão de criar e proprietário de outro coletivo; negar coletivo pendente ou suspenso, lineup com perfil inválido, artista duplicado, nome livre vazio, tipo “outros” sem descrição, gratuito versus ingresso, fim vazio ou não posterior ao início e o mesmo horário visto em navegadores de fusos diferentes.
 - Entrega: evento + lineup em transação; cachê/valores quando aplicáveis em centavos, instantes UTC e exibição identificada em `America/Fortaleza` conforme RN-24. Não converter fim vazio em início artificial.
 - Aceite: autoria vem da sessão e do vínculo aprovado; falha não deixa evento parcial; envio repetido é idempotente. Ingresso é link externo HTTP(S), sem módulo de pagamento.
 - Documentação: contrato temporal, validação, atomicidade, payload e migração.
 
 ## F4-T2 — Criar, editar, publicar e cancelar
 
-**Bloqueios por issue:** [#41](https://github.com/IgnisDevNE/CircuitoNE/issues/41); [#18](https://github.com/IgnisDevNE/CircuitoNE/issues/18) na parte de invariantes temporais entregue em F4-T1.
+**Bloqueios por issue:** [#41](https://github.com/IgnisDevNE/CircuitoNE/issues/41); [#66](https://github.com/IgnisDevNE/CircuitoNE/issues/66) para publicar/cancelar/reagendar; [#18](https://github.com/IgnisDevNE/CircuitoNE/issues/18) na parte de invariantes temporais entregue em F4-T1.
 
 **Issues tratadas:** [#18](https://github.com/IgnisDevNE/CircuitoNE/issues/18) e estados de falha de [#28](https://github.com/IgnisDevNE/CircuitoNE/issues/28) no fluxo completo de evento.
 
 **Dependência:** F4-T1; máquina de estados D-05 aprovada.
 
-- Testar primeiro: rascunho lido anonimamente, publicação por não N2, publicação sem campos exigidos, mudança concorrente, cancelamento repetido, reagendamento preservando identidade/aviso e falha no salvamento.
+- Testar primeiro: rascunho lido anonimamente, publicação permitida ao proprietário do coletivo aprovado mesmo sem permissão no perfil, negada ao membro sem permissão específica ou ao evento sem campos exigidos; mudança concorrente, cancelamento repetido, reagendamento preservando identidade/aviso e falha no salvamento.
 - Entrega: jornadas completas, controle de versão/conflito e estados de publicação; cancelamento retira o evento das listagens mas preserva a página de aviso, e reagendamento mantém sua URL.
 - Aceite: editar não sobrescreve silenciosamente outra versão; erro preserva conteúdo digitado; transições inválidas falham no servidor e banco, não apenas no botão.
 - Documentação: estados/transições, recuperação e efeitos de cancelamento/reagendamento.

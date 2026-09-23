@@ -4,15 +4,15 @@
 
 ## F5-T1 — Conversas e envio persistente
 
-**Bloqueios por issue:** [#42](https://github.com/IgnisDevNE/CircuitoNE/issues/42) para participantes, autoria/idempotência e revogação; partes de autorização de [#12](https://github.com/IgnisDevNE/CircuitoNE/issues/12)/[#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14) e [#16](https://github.com/IgnisDevNE/CircuitoNE/issues/16) entregues na fase 3.
+**Bloqueios por issue:** [#42](https://github.com/IgnisDevNE/CircuitoNE/issues/42) para participantes, autoria/idempotência e revogação; [#66](https://github.com/IgnisDevNE/CircuitoNE/issues/66) para permissões de mensagens; partes de autorização de [#12](https://github.com/IgnisDevNE/CircuitoNE/issues/12)/[#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14) e [#16](https://github.com/IgnisDevNE/CircuitoNE/issues/16) entregues na fase 3.
 
 **Issues tratadas:** [#13](https://github.com/IgnisDevNE/CircuitoNE/issues/13)/[#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14)/[#25](https://github.com/IgnisDevNE/CircuitoNE/issues/25) na criação, seleção e envio autorizados; histórico/Realtime ficam em F5-T2.
 
 **Dependência:** F3-T2/T5 e sessão da fase 1.
 
-- Testar primeiro: participante estranho, conta sem e-mail/celular confirmados, membro sem permissão específica, N2 de outro coletivo, coletivo pendente ou suspenso (RN-30), destinatário inválido, autor forjado, representação ambígua e envio repetido após timeout.
+- Testar primeiro: participante estranho, conta sem e-mail/celular confirmados, membro sem permissão específica, proprietário de outro coletivo, coletivo pendente ou suspenso (RN-30), destinatário inválido, autor forjado, representação ambígua e envio repetido após timeout.
 - Entrega: criação/seleção de conversa, remetente pessoal ou coletivo explícito, texto e emoji persistidos sem anexos, e idempotência por envio. Derivar autor e data da sessão/servidor.
-- Aceite: conta pessoal elegível contata artista público ou coletivo aprovado; N2 e delegado autorizado só representam coletivo aprovado com vínculo atual. Administração do site não ganha leitura geral de conversas. UI anuncia sucesso apenas após confirmação.
+- Aceite: conta pessoal elegível contata artista público ou coletivo aprovado; proprietário e membro com perfil autorizado só representam coletivo aprovado com vínculo atual. Administração do site não ganha leitura geral de conversas. UI anuncia sucesso apenas após confirmação.
 - Documentação: contrato de participantes, representação, estados de envio e autorização por operação.
 
 ## F5-T2 — Histórico, leitura individual e Realtime

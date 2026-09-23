@@ -183,6 +183,44 @@ describe('jornadas com fixtures — sem prova de Auth, autorização ou persist�
     expect(screen.getByRole('textbox', { name: 'instagram' })).toBeTruthy()
   })
 
+  it('leva o foco ao primeiro campo inválido e anuncia seu erro', async () => {
+    open('/cadastro')
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: 'avançar →' }))
+    const nome = screen.getByRole('textbox', { name: /Nome completo/ })
+    expect(document.activeElement).toBe(nome)
+    expect(nome.getAttribute('aria-invalid')).toBe('true')
+    expect(document.getElementById(nome.getAttribute('aria-describedby')!)?.textContent).toContain('Informe seu nome.')
+  })
+
+  it('leva o foco ao grupo de atuação quando somente o tipo falta', async () => {
+    open('/cadastro')
+    const user = userEvent.setup()
+    await user.type(screen.getByRole('textbox', { name: /Nome completo/ }), 'Ana Teste')
+    await user.type(screen.getByRole('textbox', { name: /E-mail/ }), 'ana@example.org')
+    fireEvent.change(screen.getByLabelText(/Data de nascimento/), { target: { value: '2000-01-01' } })
+    await user.type(screen.getByRole('textbox', { name: /CPF/ }), '12345678909')
+    await user.type(screen.getByRole('textbox', { name: /Cidade/ }), 'Recife')
+    await user.click(screen.getByRole('button', { name: 'avançar →' }))
+    const artista = screen.getByRole('radio', { name: /^Artista/ })
+    expect(document.activeElement).toBe(artista)
+    expect(artista.getAttribute('aria-invalid')).toBe('true')
+    expect(document.getElementById(artista.getAttribute('aria-describedby')!)?.textContent).toContain('Escolha um tipo de cadastro.')
+  })
+
+  it('foca a escolha de participação inválida na nova atuação', async () => {
+    open('/entrar')
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: '[demo] entrar como Ana' }))
+    await user.click(screen.getByRole('link', { name: 'Editar Dados' }))
+    await user.click(screen.getByRole('link', { name: /nova atuação/i }))
+    await user.click(screen.getByRole('radio', { name: 'Integrante de Coletivo' }))
+    await user.click(screen.getByRole('button', { name: 'avançar →' }))
+    const escolha = screen.getByRole('radio', { name: /Selecionar existente/ })
+    expect(document.activeElement).toBe(escolha)
+    expect(document.getElementById(escolha.getAttribute('aria-describedby')!)?.textContent).toContain('Escolha uma opção.')
+  })
+
   it('rejeita fim anterior e preserva fim vazio ao criar evento em Fortaleza', async () => {
     open('/entrar')
     const user = userEvent.setup()

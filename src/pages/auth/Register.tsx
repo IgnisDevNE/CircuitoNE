@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from '../../router'
 import { useStore } from '../../context/StoreContext'
 import { useToast } from '../../context/ToastContext'
@@ -37,6 +37,13 @@ export function Register({ mode = 'cadastro' }: { mode?: 'cadastro' | 'nova-atua
   const [pub, setPub] = useState<{ bio: string; estilos: string[]; cor: string }>({ bio: '', estilos: [], cor: '#ff2040' })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const formRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (Object.keys(errors).some((key) => key !== 'cor')) {
+      formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
+    }
+  }, [errors])
 
   const temPerfilPublico = tipo === 'artista'
   const steps = useMemo(() => {
@@ -141,7 +148,7 @@ export function Register({ mode = 'cadastro' }: { mode?: 'cadastro' | 'nova-atua
   if (!isCadastro && !user) navigate('/entrar', { replace: true })
 
   return (
-    <div className="mx-auto max-w-2xl py-4">
+    <div ref={formRef} className="mx-auto max-w-2xl py-4">
       <h1 className="mb-1 font-display text-2xl font-bold text-glow">
         <span className="text-[var(--accent-text)]">{isCadastro ? '$ novo_cadastro' : '$ nova_atuacao'}</span>
       </h1>
@@ -167,6 +174,7 @@ export function Register({ mode = 'cadastro' }: { mode?: 'cadastro' | 'nova-atua
               <RadioCards
                 legend="Tipo de cadastro (escolha 1 — adicione outras depois)"
                 required
+                error={errors.tipo}
                 value={tipo}
                 onChange={setTipo}
                 options={[
@@ -176,7 +184,6 @@ export function Register({ mode = 'cadastro' }: { mode?: 'cadastro' | 'nova-atua
                   { value: 'integrante', label: 'Integrante de Coletivo', desc: 'coletivo ou produtora' },
                 ]}
               />
-              {errors.tipo && <p className="mt-1 font-mono text-xs text-[var(--accent-text)]">[erro] {errors.tipo}</p>}
             </div>
           </div>
         )}
@@ -198,6 +205,7 @@ export function Register({ mode = 'cadastro' }: { mode?: 'cadastro' | 'nova-atua
                 <RadioCards
                   legend="Escolha o tipo da nova atuação"
                   required
+                  error={errors.tipo}
                   value={tipo}
                   onChange={setTipo}
                   options={[
@@ -207,7 +215,6 @@ export function Register({ mode = 'cadastro' }: { mode?: 'cadastro' | 'nova-atua
                     { value: 'integrante', label: 'Integrante de Coletivo' },
                   ]}
                 />
-                {errors.tipo && <p className="font-mono text-xs text-[var(--accent-text)]">[erro] {errors.tipo}</p>}
               </>
             )}
 
@@ -254,6 +261,7 @@ export function Register({ mode = 'cadastro' }: { mode?: 'cadastro' | 'nova-atua
                 <RadioCards
                   legend="Como deseja participar?"
                   required
+                  error={errors.escolha}
                   value={integrante.escolha}
                   onChange={(v) => setIntegrante({ ...integrante, escolha: v })}
                   options={[
@@ -261,7 +269,6 @@ export function Register({ mode = 'cadastro' }: { mode?: 'cadastro' | 'nova-atua
                     { value: 'novo', label: 'Criar coletivo/produtora', desc: 'você será administrador' },
                   ]}
                 />
-                {errors.escolha && <p className="font-mono text-xs text-[var(--accent-text)]">[erro] {errors.escolha}</p>}
 
                 {integrante.escolha === 'existente' && (
                   <Select label="Coletivo/Produtora" value={integrante.coletivoId} onChange={(e) => setIntegrante({ ...integrante, coletivoId: e.target.value })} required error={errors.coletivoId}

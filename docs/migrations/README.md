@@ -1,6 +1,6 @@
 # Migrações
 
-Nenhum SQL de negócio foi criado ou aplicado na preparação. Este é o diretório canônico solicitado pelo AGENTS.md.
+Ainda não há SQL de negócio aplicado. Este é o diretório canônico solicitado pelo AGENTS.md. A primeira migração, `20260923160806_restrict_public_defaults.sql`, remove concessões automáticas a novos objetos públicos criados por `postgres`; cada objeto de negócio deve trazer grants e RLS explícitos. Ela não altera privilégios de objetos já existentes nem foi aplicada aos projetos hospedados.
 
 O Supabase CLI procura `supabase/migrations`. `pnpm db:prepare` gera uma árvore temporária `temp/supabase-run-*` contendo `supabase/config.toml` e cópia somente de execução dos SQL de `docs/migrations/`. Essa árvore não é versionada nem editada manualmente. O CLI recebe `--workdir` apontando para ela. O CLI não lê `docs/migrations/` diretamente.
 

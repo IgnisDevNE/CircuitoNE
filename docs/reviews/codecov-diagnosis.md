@@ -1,6 +1,14 @@
 # Codecov — diagnóstico e regularização
 
-**Estado em 22/09/2026:** o responsável voltou a escolher a instância própria e informou que corrigiu a configuração de conta e repositório; falta configurar e verificar o servidor. [ADR 0007](../decisions/0007-codecov-self-hosted-target.md) registra o novo destino. O CI continua publicando no Cloud conforme [ADR 0004](../decisions/0004-codecov-cloud.md) até validar a substituição. O diagnóstico abaixo é histórico do bloqueio OAuth; [#29](https://github.com/IgnisDevNE/CircuitoNE/issues/29) requer nova verificação, e [#30](https://github.com/IgnisDevNE/CircuitoNE/issues/30) acompanha a migração. Nenhum serviço do servidor próprio foi alterado nesta decisão.
+## Reavaliação de 23/09/2026
+
+A conta pessoal autenticada já abre a organização IgnisDevNE e as configurações de CircuitoNE na instância própria. O GitHub App `ignis-dev-codecov` continua instalado com `Pull requests:write`; a chave privada presente no servidor foi aceita pela API do GitHub. A chave local é outra chave válida do mesmo App, portanto a diferença de arquivo não prova falha de integração.
+
+As duas causas imediatas da ausência de cobertura/comentário são verificáveis no repositório: o job `codecov-upload` em `ci.yml` ainda envia para o Codecov Cloud, enquanto a instância própria não recebeu relatório; `codecov.yml` continha `comment: false`. A configuração do servidor agora inclui `setup.codecov_api_url: https://pipeline.magalz.space`, além de `codecov_url`. Antes da alteração, o arquivo foi copiado para um backup de acesso restrito no mesmo diretório; somente os quatro serviços Codecov afetados foram reiniciados. A API voltou a HTTP 200. Isso valida disponibilidade, não comprova upload nem comentário.
+
+O environment GitHub `Codecov Upload` foi criado com regra exclusiva para `main` e recebeu o token de upload **deste repositório**. Após confirmação por passkey, a cópia antiga em secrets gerais foi removida; a lista do repositório ficou vazia. A PR de migração adiciona um publicador `workflow_run` definido em `main`: baixa apenas o LCOV do CI, verifica os jobs `quality` e `database`, identifica o SHA/PR de origem e não executa código candidato. O upload Cloud continua ativo até a instância própria processar um relatório real. Depois serão conferidos baseline, PR e comentário antes de desligá-lo. Forks continuam sem upload nesta etapa, acompanhados pela [#30](https://github.com/IgnisDevNE/CircuitoNE/issues/30).
+
+**Estado em 23/09/2026:** a conta pessoal autenticada mostra IgnisDevNE no seletor e CircuitoNE na lista de repositórios. A [#29](https://github.com/IgnisDevNE/CircuitoNE/issues/29) teve seu critério de acesso verificado; [#30](https://github.com/IgnisDevNE/CircuitoNE/issues/30) continua aberta até processar cobertura e comentar uma PR. [ADR 0007](../decisions/0007-codecov-self-hosted-target.md) registra o destino próprio. O CI continua publicando no Cloud conforme [ADR 0004](../decisions/0004-codecov-cloud.md) até validar a substituição. O diagnóstico abaixo preserva o histórico do bloqueio OAuth.
 
 Data: 22/09/2026. Instância: [pipeline.magalz.space](https://pipeline.magalz.space). **Resultado: correção parcial; autorização OAuth da organização deferida.** Não bloqueia o planejamento nem os testes locais.
 
@@ -24,7 +32,7 @@ Antes da alteração, os campos afetados foram salvos em `/home/magalz/codecov/c
 
 Versão observada na interface: 26.4.1; release da API: `release-66d4494`. Não foi feita atualização de imagens: não corrigiria o bloqueio externo confirmado. A configuração OAuth existente e os demais serviços do servidor foram preservados.
 
-## Pendente — DEF-01
+## Histórico — DEF-01, resolvido em 23/09/2026
 
 Acompanhamento: [issue #29](https://github.com/IgnisDevNE/CircuitoNE/issues/29).
 
@@ -35,7 +43,7 @@ Acompanhamento: [issue #29](https://github.com/IgnisDevNE/CircuitoNE/issues/29).
 3. Refazer o login no Codecov e atualizar/sincronizar organizações e repositórios.
 4. Confirmar IgnisDevNE na conta, associação OAuth sem 403 e CircuitoNE selecionável. Só então registrar DEF-01 como resolvido.
 
-Após o login interativo, a interface administrativa confirmou a conta como **Activated**, com 1 usuário ativo de 99 vagas. O seletor de organizações mostrou apenas a organização pessoal de `magalz`; uma nova consulta confirmou que a associação OAuth à IgnisDevNE continua ausente. A integração de upload de cobertura no CI também está pendente em **F0-T13**, acompanhada pela [issue #30](https://github.com/IgnisDevNE/CircuitoNE/issues/30), incluindo um relatório real no SHA correto. Não tratar a habilitação do repositório como prova de cobertura recebida.
+Na verificação de 22/09, a interface administrativa confirmou a conta como **Activated**, com 1 usuário ativo de 99 vagas, mas o seletor mostrava apenas a organização pessoal de `magalz`. Em 23/09, o seletor passou a mostrar **IgnisDevNE** e a lista da organização exibiu **CircuitoNE** e **CircuitoNE-QA** após login na conta pessoal. O bloqueio de descoberta observado na #29 deixou de se reproduzir. O upload de cobertura continua pendente em **F0-T13/#30**, incluindo relatório real no SHA correto; acesso ao repositório não comprova cobertura recebida.
 
 ## Conta e alternativas de autenticação
 

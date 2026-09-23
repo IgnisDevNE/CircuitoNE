@@ -48,6 +48,8 @@ test(
         "--file",
         resolve("tests/database/post-migration.sql"),
       )
+    const checkDefaults = () =>
+      run("db", "query", "--local", "--file", resolve("tests/database/default-grants.sql"))
     run("migration", "new", "pipeline_probe")
     const dir = join(workdir, "supabase/migrations")
     const file = readdirSync(dir).find((name) =>
@@ -64,6 +66,7 @@ test(
     for (let attempt = 0; attempt < 2; attempt++) {
       run("db", "reset", "--local")
       check()
+      checkDefaults()
     }
     run(
       "db",

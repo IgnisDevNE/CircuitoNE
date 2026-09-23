@@ -9,7 +9,7 @@ export function useColetivo(id?: string) {
   const col = coletivos.find((c) => c.id === id)
   const membro = col?.membros.find((m) => m.userId === user?.id)
   const cargo = col?.cargos.find((c) => c.id === membro?.cargoId)
-  return { col, cargo, nivel: cargo?.nivel ?? 0 }
+  return { col, cargo, nivel: cargo?.nivel ?? -1 }
 }
 
 export function CollectiveLayout({ children }: { children: ReactNode }) {
@@ -17,6 +17,7 @@ export function CollectiveLayout({ children }: { children: ReactNode }) {
   const { col, cargo, nivel } = useColetivo(id)
 
   if (!col) return <Empty>Coletivo não encontrado. <Link to="/painel/coletivos" className="text-[var(--accent-text)] underline">voltar</Link></Empty>
+  if (!cargo) return <Empty>Você está sem vínculo com este coletivo. <Link to={`/coletivos/${col.id}`} className="text-[var(--accent-text)] underline">Ver perfil público</Link></Empty>
 
   // Abas gated por nível: 0 membro / 1 comunicação / 2 admin
   const pendentes = col.solicitacoes?.length ?? 0

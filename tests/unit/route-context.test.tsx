@@ -5,11 +5,13 @@ import App from "../../src/App"
 import { artistas, coletivos, demoUser } from "../../src/data/mock"
 
 const originalAtuacoes = demoUser.atuacoes
+const originalLitoralMembers = coletivos[0].membros
 const originalMembers = coletivos[1].membros
 const originalElementScrollTo = HTMLElement.prototype.scrollTo
 
 afterEach(() => {
   demoUser.atuacoes = originalAtuacoes
+  coletivos[0].membros = originalLitoralMembers
   coletivos[1].membros = originalMembers
   if (originalElementScrollTo)
     HTMLElement.prototype.scrollTo = originalElementScrollTo
@@ -42,6 +44,31 @@ async function login() {
 }
 
 describe("troca de identidade da rota sem desmontar a sessão demo", () => {
+  it("não trata visitante ou ex-membro como membro nível zero", async () => {
+    coletivos[0].membros = originalLitoralMembers.filter((m) => m.userId !== "u-demo")
+    await login()
+
+    go("/coletivo/col-litoral/painel")
+    expect(screen.getByText(/sem vínculo com este coletivo/i)).toBeTruthy()
+    expect(screen.queryByRole("navigation", { name: "Seções do coletivo" })).toBeNull()
+
+    go("/coletivo/col-litoral/editar")
+    expect(screen.getByText(/sem vínculo com este coletivo/i)).toBeTruthy()
+    expect(screen.queryByRole("textbox", { name: /Nome/ })).toBeNull()
+  })
+
+  it("mantém acesso ao painel para membro real de nível zero", async () => {
+    coletivos[0].membros = originalLitoralMembers.map((m) =>
+      m.userId === "u-demo" ? { ...m, cargoId: "c-membro" } : m,
+    )
+    await login()
+    go("/coletivo/col-litoral/painel")
+
+    expect(screen.getByRole("navigation", { name: "Seções do coletivo" })).toBeTruthy()
+    expect(screen.getByText("Membro · nível 0")).toBeTruthy()
+    expect(screen.queryByRole("link", { name: "Criar Evento" })).toBeNull()
+  })
+
   it("descarta o rascunho da atuação anterior", async () => {
     demoUser.atuacoes = [...originalAtuacoes, artistas[1]]
     const user = await login()

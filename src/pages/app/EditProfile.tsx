@@ -9,6 +9,10 @@ import { AccentScope } from '../../components/ui/AccentScope'
 
 export function EditProfile() {
   const { atuacaoId } = useParams()
+  return <EditProfileForm key={atuacaoId} atuacaoId={atuacaoId} />
+}
+
+function EditProfileForm({ atuacaoId }: { atuacaoId: string }) {
   const { user } = useStore()
   const toast = useToast()
   const atuacao = user?.atuacoes.find((a) => a.id === atuacaoId)

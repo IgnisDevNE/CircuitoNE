@@ -16,6 +16,10 @@ const NIVEIS: { value: NivelCargo; label: string }[] = [
 
 export function EditCollective() {
   const { id } = useParams()
+  return <EditCollectiveForm key={id} id={id} />
+}
+
+function EditCollectiveForm({ id }: { id: string }) {
   const { col, nivel } = useColetivo(id)
   const { updateColetivo } = useStore()
   const toast = useToast()

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { runInNewContext } from 'node:vm';
 
 const workflow = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
 const job = workflow.split('\n  codecov:')[1]?.split('\n  homologation_credentials:')[0];
@@ -35,8 +36,57 @@ test('coverage is informational and cannot replace application checks or the ind
   const config = readFileSync(new URL('../codecov.yml', import.meta.url), 'utf8');
   assert.match(config, /project:\s+default:\s+informational: true/);
   assert.match(config, /patch:\s+default:\s+informational: true/);
-  assert.match(config, /comment: false/);
+  assert.doesNotMatch(config, /comment:\s*false/);
+  assert.match(config, /comment:\s*\n\s+layout: reach,diff,flags,files/);
   assert.doesNotMatch(config, /\bignore:|\btarget:|\bthreshold:/);
   const owners = readFileSync(new URL('../.github/CODEOWNERS', import.meta.url), 'utf8');
   assert.match(owners, /^\/codecov\.yml @magalz$/m);
+});
+
+test('self-hosted publisher reads only a CI artifact with passing required jobs from the same repository', () => {
+  const publisher = readFileSync(new URL('../.github/workflows/codecov-publish.yml', import.meta.url), 'utf8');
+  assert.match(publisher, /workflow_run:\s+workflows: \[CI\]\s+types: \[completed\]/);
+  assert.match(publisher, /github\.event\.workflow_run\.conclusion == 'success' \|\| github\.event\.workflow_run\.conclusion == 'failure'/);
+  assert.match(publisher, /head_repository\.full_name == 'IgnisDevNE\/CircuitoNE'/);
+  assert.match(publisher, /environment: Codecov Upload/);
+  assert.match(publisher, /actions: read/);
+  assert.match(publisher, /run-id: \$\{\{ github\.event\.workflow_run\.id \}\}/);
+  assert.match(publisher, /github-token: \$\{\{ github\.token \}\}/);
+  assert.match(publisher, /url: https:\/\/pipeline\.magalz\.space/);
+  assert.match(publisher, /token: \$\{\{ secrets\.CODECOV_TOKEN \}\}/);
+  assert.match(publisher, /override_commit: \$\{\{ github\.event\.workflow_run\.head_sha \}\}/);
+  assert.match(publisher, /override_pr: \$\{\{ steps\.source\.outputs\.pr \}\}/);
+  assert.match(publisher, /actions\/runs\/\$\{run\.id\}\/jobs\?per_page=100&filter=latest/);
+  assert.doesNotMatch(publisher, /pnpm|npm|docker|bash .*\.codecov-reports|use_oidc: true|skip_validation: true/);
+});
+
+test('publisher accepts only the matching PR metadata for the tested source commit', async () => {
+  const publisher = readFileSync(new URL('../.github/workflows/codecov-publish.yml', import.meta.url), 'utf8');
+  const script = publisher.match(/node <<'SOURCE'\r?\n([\s\S]*?)^\s+SOURCE/m)?.[1]?.replace(/^          /gm, '');
+  assert.ok(script);
+  const sha = 'a'.repeat(40);
+  for (const [headSha, qualityConclusion] of [[sha, 'success'], ['b'.repeat(40), 'success'], [sha, 'failure']]) {
+    const output = [];
+    const errors = [];
+    const process = { env: { GITHUB_EVENT_PATH: 'event.json', GITHUB_OUTPUT: 'out', GH_TOKEN: 'read-only-test' }, exitCode: 0 };
+    const run = { id: 123, head_sha: sha, head_branch: 'codex/coverage', event: 'pull_request' };
+    await runInNewContext(`(async () => { ${script} })()`, {
+      require: () => ({ readFileSync: () => JSON.stringify({ workflow_run: run }), appendFileSync: (_path, value) => output.push(value) }),
+      process,
+      fetch: async url => url.includes('/jobs?')
+        ? { ok: true, json: async () => ({ total_count: 2, jobs: [{ name: 'quality', conclusion: qualityConclusion }, { name: 'database', conclusion: 'success' }] }) }
+        : { ok: true, json: async () => [{ number: 81, head: { sha: headSha, repo: { full_name: 'IgnisDevNE/CircuitoNE' }, ref: 'codex/coverage' }, base: { repo: { full_name: 'IgnisDevNE/CircuitoNE' } } }] },
+      AbortSignal,
+      console: { error: value => errors.push(value) },
+    });
+    await new Promise(resolve => setImmediate(resolve));
+    if (headSha === sha && qualityConclusion === 'success') {
+      assert.deepEqual(output, ['pr=81\nbranch=codex/coverage\n']);
+      assert.equal(process.exitCode, 0);
+    } else {
+      assert.deepEqual(output, []);
+      assert.equal(process.exitCode, 1);
+      assert.match(errors[0], qualityConclusion === 'failure' ? /Required CI job did not pass/ : /Expected one PR/);
+    }
+  }
 });

@@ -1,5 +1,13 @@
 # Codecov — diagnóstico e regularização
 
+## Reavaliação de 23/09/2026
+
+A conta pessoal autenticada já abre a organização IgnisDevNE e as configurações de CircuitoNE na instância própria. O GitHub App `ignis-dev-codecov` continua instalado com `Pull requests:write`; a chave privada presente no servidor foi aceita pela API do GitHub. A chave local é outra chave válida do mesmo App, portanto a diferença de arquivo não prova falha de integração.
+
+As duas causas imediatas da ausência de cobertura/comentário são verificáveis no repositório: o job `codecov-upload` em `ci.yml` ainda envia para o Codecov Cloud, enquanto a instância própria não recebeu relatório; `codecov.yml` continha `comment: false`. A configuração do servidor agora inclui `setup.codecov_api_url: https://pipeline.magalz.space`, além de `codecov_url`. Antes da alteração, o arquivo foi copiado para um backup de acesso restrito no mesmo diretório; somente os quatro serviços Codecov afetados foram reiniciados. A API voltou a HTTP 200. Isso valida disponibilidade, não comprova upload nem comentário.
+
+O environment GitHub `Codecov Upload` foi criado com regra exclusiva para `main` e recebeu o token de upload **deste repositório**. A remoção da cópia antiga em secrets gerais do repositório depende da confirmação de passkey exigida pelo GitHub; até ela ocorrer, não afirmar isolamento completo. A PR de migração adiciona um publicador `workflow_run` definido em `main`: baixa apenas o LCOV do CI, verifica os jobs `quality` e `database`, identifica o SHA/PR de origem e não executa código candidato. O upload Cloud continua ativo até a instância própria processar um relatório real. Depois serão conferidos baseline, PR e comentário antes de desligá-lo. Forks continuam sem upload nesta etapa, acompanhados pela [#30](https://github.com/IgnisDevNE/CircuitoNE/issues/30).
+
 **Estado em 22/09/2026:** o responsável voltou a escolher a instância própria e informou que corrigiu a configuração de conta e repositório; falta configurar e verificar o servidor. [ADR 0007](../decisions/0007-codecov-self-hosted-target.md) registra o novo destino. O CI continua publicando no Cloud conforme [ADR 0004](../decisions/0004-codecov-cloud.md) até validar a substituição. O diagnóstico abaixo é histórico do bloqueio OAuth; [#29](https://github.com/IgnisDevNE/CircuitoNE/issues/29) requer nova verificação, e [#30](https://github.com/IgnisDevNE/CircuitoNE/issues/30) acompanha a migração. Nenhum serviço do servidor próprio foi alterado nesta decisão.
 
 Data: 22/09/2026. Instância: [pipeline.magalz.space](https://pipeline.magalz.space). **Resultado: correção parcial; autorização OAuth da organização deferida.** Não bloqueia o planejamento nem os testes locais.

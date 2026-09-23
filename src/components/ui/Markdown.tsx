@@ -1,39 +1,27 @@
 import { useRef } from 'react'
+import ReactMarkdown, { type Components } from 'react-markdown'
 import { cx } from '../../lib/utils'
 
-/** Tiny, safe markdown renderer (headings, bold, italic, lists, links). */
+const components: Components = {
+  h1: ({ children }) => <h3 className="font-display text-xl font-bold mt-4 mb-2">{children}</h3>,
+  h2: ({ children }) => <h4 className="font-display text-lg font-bold mt-3 mb-1">{children}</h4>,
+  p: ({ children }) => <p className="mb-2 leading-relaxed whitespace-pre-line">{children}</p>,
+  ul: ({ children }) => <ul className="list-disc pl-5 space-y-1">{children}</ul>,
+  a: ({ href, children }) => {
+    if (!href || !URL.canParse(href) || !['http:', 'https:'].includes(new URL(href).protocol)) return <>{children}</>
+    return <a href={href} target="_blank" rel="noopener noreferrer" className="text-[var(--accent-text)] underline">{children}</a>
+  },
+}
+
+/** Only text and the formats offered by the editor reach the DOM. */
 export function Markdown({ source, className }: { source: string; className?: string }) {
-  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
-  const inline = (s: string) =>
-    esc(s)
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      .replace(/\[(.+?)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-[var(--accent-text)] underline">$1</a>')
-
-  const lines = source.split('\n')
-  const out: string[] = []
-  let inList = false
-  for (const raw of lines) {
-    const line = raw.trimEnd()
-    if (/^#\s/.test(line)) {
-      if (inList) { out.push('</ul>'); inList = false }
-      out.push(`<h3 class="font-display text-xl font-bold mt-4 mb-2">${inline(line.replace(/^#\s/, ''))}</h3>`)
-    } else if (/^##\s/.test(line)) {
-      if (inList) { out.push('</ul>'); inList = false }
-      out.push(`<h4 class="font-display text-lg font-bold mt-3 mb-1">${inline(line.replace(/^##\s/, ''))}</h4>`)
-    } else if (/^[-*]\s/.test(line)) {
-      if (!inList) { out.push('<ul class="list-disc pl-5 space-y-1">'); inList = true }
-      out.push(`<li>${inline(line.replace(/^[-*]\s/, ''))}</li>`)
-    } else if (line === '') {
-      if (inList) { out.push('</ul>'); inList = false }
-    } else {
-      if (inList) { out.push('</ul>'); inList = false }
-      out.push(`<p class="mb-2 leading-relaxed">${inline(line)}</p>`)
-    }
-  }
-  if (inList) out.push('</ul>')
-
-  return <div className={cx('text-sm text-[var(--foreground)]', className)} dangerouslySetInnerHTML={{ __html: out.join('') }} />
+  return (
+    <div className={cx('text-sm text-[var(--foreground)]', className)}>
+      <ReactMarkdown skipHtml allowedElements={['h1', 'h2', 'p', 'ul', 'li', 'strong', 'em', 'a', 'br']} unwrapDisallowed components={components}>
+        {source}
+      </ReactMarkdown>
+    </div>
+  )
 }
 
 /** Markdown editor with style buttons (WCAG: labelled toolbar buttons). */

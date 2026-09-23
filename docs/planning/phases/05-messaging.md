@@ -1,6 +1,6 @@
 # Fase 5 — Mensagens e abuso
 
-**Estado:** planejada. **Entrada:** identidade/coletivos aprovados e decisões restantes da #42 integradas a RN-28/RN-29. A fase pode ocorrer independentemente de eventos após o gate da fase 3. **Riscos:** leitura cruzada, representação indevida e spam. [Índice e gates comuns](../implementation-plan.md).
+**Estado:** planejada. **Entrada:** identidade/coletivos aprovados e decisões da #42 integradas a RN-28/RN-29/RN-34/RN-37. A fase pode ocorrer independentemente de eventos após o gate da fase 3. **Riscos:** leitura cruzada, representação indevida e spam. [Índice e gates comuns](../implementation-plan.md).
 
 ## F5-T1 — Conversas e envio persistente
 
@@ -10,9 +10,9 @@
 
 **Dependência:** F3-T2/T5 e sessão da fase 1.
 
-- Testar primeiro: participante estranho, conta sem e-mail/celular confirmados, membro sem permissão específica, proprietário de outro coletivo, coletivo pendente ou suspenso (RN-30), destinatário inválido, autor forjado, representação ambígua e envio repetido após timeout.
+- Testar primeiro: participante estranho, conta sem e-mail/celular confirmados ou suspensa, membro sem permissão de envio, proprietário de outro coletivo, coletivo pendente ou suspenso (RN-30), atuação destinatária de outra conta confundida com projeto irmão, destinatário inválido, autor forjado, representação ambígua e envio repetido após timeout.
 - Entrega: criação/seleção de conversa, remetente pessoal ou coletivo explícito, texto e emoji persistidos sem anexos, e idempotência por envio. Derivar autor e data da sessão/servidor.
-- Aceite: conta pessoal elegível contata artista público ou coletivo aprovado; proprietário e membro com perfil autorizado só representam coletivo aprovado com vínculo atual. Administração do site não ganha leitura geral de conversas. UI anuncia sucesso apenas após confirmação.
+- Aceite: conta pessoal elegível contata qualquer atuação do catálogo interno ou coletivo aprovado; a conversa profissional mantém a atuação destinatária específica. Proprietário e membro com permissão de envio só representam coletivo aprovado com vínculo atual e podem contatar atuações ou outros coletivos aprovados. Administração do site não ganha leitura geral de conversas. UI anuncia sucesso apenas após confirmação.
 - Documentação: contrato de participantes, representação, estados de envio e autorização por operação.
 
 ## F5-T2 — Histórico, leitura individual e Realtime
@@ -23,7 +23,7 @@
 
 **Dependência:** F5-T1; política de revogação aprovada.
 
-- Testar primeiro: duas sessões, ordenação com mesmo timestamp, paginação sem lacunas, evento duplicado, desconexão/reconexão, marcação de leitura de outro usuário, revogação de permissão e suspensão durante assinatura aberta, cancelamento/exclusão do coletivo sem acesso residual, sem afetar conversas pessoais ou de outros coletivos elegíveis.
+- Testar primeiro: duas sessões, ordenação com mesmo timestamp, paginação sem lacunas, evento duplicado, desconexão/reconexão, marcação de leitura de outro usuário, perfil com enviar sem ler e vice-versa, revogação de permissão e suspensão durante assinatura aberta, cancelamento/exclusão do coletivo sem acesso residual, sem afetar conversas pessoais ou de outros coletivos elegíveis.
 - Entrega: cursor estável, leitura por usuário/conversa, contador derivado e Realtime autorizado. Banco é a fonte do histórico; reconexão recupera mensagens perdidas.
 - Aceite: revogação da permissão impede novas leituras/envios; suspensão mantém apenas histórico para membros ainda autorizados e impede novos envios; cancelamento/exclusão retira todo acesso da identidade coletiva. Encerrar ou revalidar o canal segundo comportamento demonstrado do Supabase, sem presumir revogação imediata de assinatura sem teste. Troca de coletivo limpa conversa anterior.
 - Documentação: cursor/idempotência, semântica de leitura, reconexão e limite de exposição durante revogação.
@@ -36,8 +36,8 @@
 
 **Dependência:** F5-T1/T2 e D-07; governança operacional definida.
 
-- Testar primeiro: rajada de mensagens, payload grande, emoji, tentativa de anexo, cadastro abusivo, bloqueio de usuário, tentativa de contornar limites pela API direta e falha do serviço de comunicação.
-- Entrega: limites iniciais de tamanho/frequência no ponto efetivo da operação, bloqueio de novos envios, denúncia com trecho selecionado e contexto mínimo, e análise manual auditável. Começar sem fila/worker ou funções de chat completo.
+- Testar primeiro: 2.000/2.001 caracteres, 10/11 envios por minuto, 20/21 novas conversas por dia, emoji, tentativa de anexo, cadastro abusivo, bloqueio bilateral e desbloqueio só por quem bloqueou, tentativa de contornar limites pela API direta, denúncia com contexto mínimo, exclusão pedida durante denúncia e falha do serviço de comunicação.
+- Entrega: até 2.000 caracteres, 10 envios/minuto e 20 conversas novas/dia por conta/coletivo no ponto efetivo da operação; bloqueio bilateral de novos envios, denúncia com mensagem selecionada e contexto mínimo, e análise manual auditável. Cópia isolada é apagada até 90 dias após encerrar o caso; pedido de exclusão com denúncia aberta bloqueia a conta e retém identidade por no máximo 30 dias até conclusão da análise. Começar sem fila/worker ou funções de chat completo.
 - Aceite: abuso falha de forma controlada; nenhuma dependência de esconder botão ou limitar só o proxy Node; administração não ganha acesso indiscriminado a conversas para moderar.
 - Documentação: valores iniciais de limites e critérios de ajuste, escalonamento de denúncia, responsável, evidências permitidas e retenção aprovada na #42.
 

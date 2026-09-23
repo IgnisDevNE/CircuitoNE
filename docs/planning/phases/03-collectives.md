@@ -1,6 +1,6 @@
 # Fase 3 — Coletivos, aprovação e autorização
 
-**Estado:** planejada. **Entrada:** fases 1–2 aprovadas e registros revisados de D-01/D-09/RN-20/RN-21 e [#66](https://github.com/IgnisDevNE/CircuitoNE/issues/66) integrados antes dos contratos correspondentes. A direção de perfis por permissões foi aprovada em 22/09/2026; catálogo e limites ainda não. **Risco principal:** elevação de privilégio entre coletivos. [Índice e gates comuns](../implementation-plan.md).
+**Estado:** planejada. **Entrada:** fases 1–2 aprovadas e registros revisados de D-01/D-09/RN-20/RN-21 e [#66](https://github.com/IgnisDevNE/CircuitoNE/issues/66) integrados antes dos contratos correspondentes. O catálogo e o perfil Membro foram aprovados em 23/09/2026; implementação e homologação ainda faltam. **Risco principal:** elevação de privilégio entre coletivos. [Índice e gates comuns](../implementation-plan.md).
 
 **Ordem:** T1 → T2 → T5 → T3/T4. Os IDs preservam a correspondência do backlog anterior, mas a aprovação operacional precisa existir antes de liberar gestão/diretório.
 
@@ -26,8 +26,8 @@
 **Dependência:** F3-T1; contrato RN-21 revisado.
 
 - Testar primeiro: perfil inicial, proprietário, perfil com todas as permissões delegáveis, perfis parciais, visitante, conta removida, proprietário de outro coletivo, perfil de A atribuído em B, alteração/revogação concorrente, transferências simultâneas e tentativa de remover o proprietário. Transferir antes da saída/exclusão ou encerrar pelo suporte sem coletivo ativo órfão.
-- Entrega: perfis pertencentes a um coletivo, catálogo aprovado de permissões, FKs compostas, grants/RLS, operações atômicas e validação de vínculo/permissão atual no banco. Conta criadora ou nome do perfil não é atalho permanente de autorização.
-- Aceite: coletivo ativo tem exatamente um proprietário; perfil com todas as permissões não transfere propriedade nem exclui o coletivo. Saída/exclusão do proprietário segue transferência concluída ou encerramento pelo suporte (RN-21), sem conservar conta indefinidamente por falta de sucessor. Impedir autoelevação e concessão fora do catálogo; não confiar em contagem sem trava. Funções privilegiadas têm justificativa, `search_path` fixo e `EXECUTE` restrito. Dados compartilhados após encerramento seguem #42/F6-T2, sem exclusão automática inferida.
+- Entrega: perfis pertencentes a um coletivo, perfil inicial Membro sem permissões, oito ações delegáveis de RN-19, FKs compostas, grants/RLS, operações atômicas e validação de vínculo/permissão atual no banco. Só o proprietário cria/edita/atribui perfis; conta criadora ou nome do perfil não é atalho permanente de autorização.
+- Aceite: coletivo ativo tem exatamente um proprietário; perfil com todas as permissões não transfere propriedade, exclui o coletivo, atribui perfis nem consulta dados profissionais restritos. Transferência exige MFA dos envolvidos e rebaixa o antigo proprietário a Membro na mesma transação. Saída/exclusão do proprietário segue transferência concluída ou encerramento pelo suporte (RN-21), sem conservar conta indefinidamente por falta de sucessor. Impedir autoelevação e concessão fora do catálogo; não confiar em contagem sem trava. Funções privilegiadas têm justificativa, `search_path` fixo e `EXECUTE` restrito. Dados compartilhados após encerramento seguem #42/F6-T2, sem exclusão automática inferida.
 - Documentação: matriz operação × ator, invariantes concorrentes e revisão de cada exceção a RLS.
 
 ## F3-T3 — Solicitar entrada e decidir
@@ -40,7 +40,7 @@
 
 - Testar primeiro: pedido duplicado, cancelamento, decisões simultâneas, retry, decisão em coletivo pendente, tentativa de decisão por membro sem permissão, por portador de perfil amplo de outro coletivo e leitura de solicitações alheias.
 - Entrega: solicitação, aprovação/recusa/retirada, vínculo com perfil inicial sem propriedade e histórico na mesma transação; retomar o ramo de ingresso do cadastro.
-- Aceite: aprovação não escolhe perfil por nome/ordem nem concede privilégios acima do perfil inicial aprovado; pedidos concluídos não viram membros duplicados; solicitante vê apenas seu estado/motivo permitido.
+- Aceite: aprovação atribui sempre Membro sem permissões, inclusive quando delegada; não escolhe perfil por nome/ordem nem concede privilégios acima do inicial. Pedidos concluídos não viram membros duplicados; solicitante vê apenas seu estado/motivo permitido.
 - Documentação: estados e transições, auditoria de decisão e contrato de visibilidade.
 
 ## F3-T4 — Gestão, perfil público e diretório restrito
@@ -51,8 +51,8 @@
 
 **Dependência:** F3-T2/T5 e F2-T2. **Regras:** RN-07/18/20/22/30; D-09 e seleção de atuação pública de membro definidas.
 
-- Testar primeiro: dados de todos os formulários persistem; HTML público só de aprovado; diretório restrito negado a conta inativa, e-mail ou celular não confirmado, membro sem propriedade, ex-membro e proprietário apenas de coletivos pendentes/recusados/suspensos; proprietário com outro vínculo aprovado continua elegível pelo vínculo válido. Demais membros acessam exploração, mas recebem somente projeções públicas, inclusive com perfil de todas as permissões delegáveis. Revogação é considerada sem esperar novo login. Testar link para o perfil padrão da conta em dois coletivos e ausência de link quando o padrão não existir ou deixar de ser público.
-- Entrega: dashboard, cargos/membros, perfil SSR e diretório profissional paginado. Contexto de coletivo não mantém dados do anterior.
+- Testar primeiro: dados de todos os formulários persistem; HTML público só de aprovado; diretório restrito negado a conta inativa, e-mail ou celular não confirmado, sem MFA, membro sem propriedade, ex-membro e proprietário apenas de coletivos pendentes/recusados/suspensos; proprietário com outro vínculo aprovado continua elegível pelo vínculo válido. Demais membros acessam exploração interna, mas recebem somente projeções não restritas, inclusive com perfil de todas as permissões delegáveis. Revogação é considerada sem esperar novo login. Testar link para o perfil padrão da conta em dois coletivos e ausência de link quando o padrão não existir ou deixar de ser público.
+- Entrega: dashboard, perfis/membros, perfil SSR e diretório profissional paginado. Membro inicial vê apenas informação pública; última atividade dos membros é exclusiva do proprietário. Contexto de coletivo não mantém dados do anterior.
 - Aceite: contatos, presskit, portfólio audiovisual, cachê e lista de serviços/equipamentos disponíveis apenas ao titular e proprietário elegível conforme RN-07; CPF/nascimento fora desse acesso. Menus de exploração permanecem acessíveis aos demais membros sem enviar dados restritos. Coletivos/produtoras consultam materiais dos profissionais quando autorizados, mas não cadastram presskit, portfólio ou lista próprios. Perfil de membro aponta apenas para a atuação artística padrão da conta, escolhida pelo membro e atualmente pública (RN-20); público não recebe dados privados. Um vínculo elegível em outro coletivo preserva acesso ao diretório, sem restaurar poderes no coletivo suspenso.
 - Documentação: projeções públicas/restritas, consultas/índices e controles de coleta abusiva de dados.
 

@@ -1,16 +1,18 @@
 # Estilos musicais — taxonomia condensada
 
-**Estado:** proposta editorial para revisão; não é uma regra aprovada de cadastro ou filtro do MVP.
+**Estado:** catálogo aprovado pelo responsável em 23/09/2026 para cadastro e filtro do MVP; interface e persistência ainda não implementadas.
 
 Fonte: https://everynoise.com/engenremap.html
 
 Consulta: 22/09/2026. Foram extraídos 6.291 rótulos do mapa.
 
-O arquivo `estilos-musicais.json` contém 51 estilos ou famílias principais e 179 estilos secundários. Vinte categorias principais não têm subdivisões.
+O arquivo [estilos-musicais.json](estilos-musicais.json) contém 51 estilos ou famílias principais e 179 estilos secundários. Vinte categorias principais não têm subdivisões. Ele é a referência normativa desta taxonomia no MVP; não manter uma segunda lista editável no código ou em testes.
 
 ## Formato
 
 Cada chave é uma categoria principal. Seu valor é a lista de estilos secundários. Uma lista vazia significa que a categoria pode ser usada diretamente, sem selecionar um subestilo. Não existe terceiro nível.
+
+No cadastro/edição da atuação artística, apresentar dois seletores vinculados: **estilo** obrigatório e **subestilo** opcional, limitado aos itens do estilo escolhido. Um artista pode adicionar mais de um par estilo/subestilo, sem duplicatas. Ao trocar o estilo, limpar subestilo incompatível. O filtro usa a taxonomia aprovada: selecionar estilo inclui seus subestilos; selecionar subestilo restringe ao par escolhido. Uma categoria sem subestilos mostra apenas o primeiro seletor. Validar os valores contra o catálogo no servidor, não apenas na interface.
 
 ## Critérios
 

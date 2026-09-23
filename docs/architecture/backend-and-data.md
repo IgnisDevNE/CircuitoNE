@@ -32,7 +32,7 @@ UUIDs em entidades, `timestamptz` para instantes, `date` para nascimento, `creat
 |---|---|---|
 | `auth.users` | identidade, e-mail, credenciais gerenciadas por Auth | Não duplicar senha. E-mail de login tem Auth como fonte. |
 | `private.account_details` | `user_id`, nome, CPF normalizado, nascimento, gênero, cidade, UF, estado da conta | PK/FK `user_id`; CPF `NOT NULL UNIQUE`, 11 dígitos + verificação; nascimento obrigatório. Sem acesso público ou de administradores de coletivos. |
-| `profiles` | id, `owner_id`, tipo de atuação, nome, redes | Conta 1:N atuações; sem unicidade por proprietário para artista. Tipo entre artista/serviços/audiovisual/integrante. Proprietário imutável via cliente. |
+| `profiles` | id, `owner_id`, tipo de atuação, nome, descrição, cidade, redes | Conta 1:N atuações; sem unicidade por proprietário para artista. Tipo entre artista/serviços/audiovisual/integrante. Catálogo interno autenticado expõe somente nome/descrição/cidade e início de mensagem; proprietário imutável via cliente. |
 | `artist_profiles` | `profile_id`, bio, estilos, cor, foto, status público | 1:1 atuação artista; leitura pública apenas de perfil publicado. Não contém contatos profissionais/CPF. |
 | `professional_details` | `profile_id`, booking, contato, material restrito por tipo de atuação, `fee_cents`, CNPJ, tipo serviço | 1:1 perfil profissional; titular mantém, apenas proprietário elegível consulta conforme RN-07. `fee_cents >= 0`; material coerente com RN-35. CNPJ fica privado. |
 | `profile_images` | id, `profile_id`, caminho Storage, ordem, texto alternativo | 1:N; índice `(profile_id, position)`; limite por perfil definido na fase 2. |
@@ -40,15 +40,16 @@ UUIDs em entidades, `timestamptz` para instantes, `date` para nascimento, `creat
 | `private.collective_reviews` | coletivo, decisão, motivo, decisor, data | Histórico de verificação editorial; somente administração do site decide. Criador recebe somente o estado/motivo apropriado da própria solicitação. |
 | `private.site_admins` | `user_id`, concedido por/em | Papel operacional separado da propriedade de coletivos; provisionado por procedimento administrativo controlado. Cliente não se promove nem altera a lista. |
 | `private.collective_details` | `collective_id`, CNPJ | 1:1; criação/alteração de produtora exige CNPJ na mesma transação. Não embutir CNPJ em resposta pública. |
-| `collective_roles` | id, `collective_id`, nome, indicador de perfil inicial | Único `(collective_id, name)`; chave `(collective_id,id)` referenciável. Sem nível numérico nem sinalizador de proprietário delegável. |
-| `collective_role_permissions` | `collective_id`, `role_id`, chave de permissão | FK composta para perfil do mesmo coletivo; chave pertence ao catálogo fechado aprovado na #66. Transferir/excluir coletivo não entram nesse catálogo. |
+| `collective_roles` | id, `collective_id`, nome, indicador de perfil inicial | Único `(collective_id, name)`; chave `(collective_id,id)` referenciável. Perfil inicial Membro sem permissões operacionais. Sem nível numérico nem sinalizador de proprietário delegável. |
+| `collective_role_permissions` | `collective_id`, `role_id`, chave de permissão | FK composta para perfil do mesmo coletivo; oito chaves aprovadas na #66: pedidos.gerir, membros.remover, eventos.criar/editar/publicar/cancelar, mensagens.ler/enviar. Perfis/atribuições, transferência, exclusão e diretório restrito não são delegáveis. |
 | `collective_memberships` | `collective_id`, `user_id`, `role_id`, `artist_profile_id`, entrada, última atividade | PK `(collective_id,user_id)`; FK composta `(collective_id,role_id)` impede perfil de outro coletivo. Proprietário deve manter vínculo; perfil vinculado pertence ao membro. |
 | `membership_requests` | id, coletivo, usuário, atuação desejada, mensagem, status, decisão/decisor/data | Índice único parcial `(collective_id,user_id)` onde status pendente. Estados pendente/aprovada/recusada/cancelada; histórico não é apagado ao decidir. |
-| `events` | id, coletivo, nome, tipo/outro, Markdown, início, fim opcional, fuso, local, gratuito/link, capa, status | `ends_at IS NULL OR ends_at > starts_at`; ingresso gratuito XOR link; tipo outros exige texto. Status depende de D-05. |
+| `events` | id, coletivo, nome, tipo/outro, Markdown, início, fim opcional, fuso, local, gratuito/link, capa, status | `ends_at IS NULL OR ends_at > starts_at`; ingresso gratuito XOR link; tipo outros exige texto. Rascunho, publicado e cancelado seguem RN-27; editar publicado requer também permissão de publicar. |
 | `event_lineup` | id, evento, artista opcional, nome exibido, ordem | Evento 1:N; FK artista; texto obrigatório para nome livre; único `(event_id,artist_profile_id)` quando não nulo. |
-| `conversations` | id, tipo pessoal/coletivo, coletivo opcional, criado por, estado | Tipo coletivo exige coletivo; modelo de destinatário externo aguarda D-06. |
+| `conversations` | id, remetente/representação pessoal ou coletivo, destino atuação ou coletivo, criado por, estado | Identidade coletiva exige coletivo aprovado e permissão atual. Destino profissional referencia uma atuação específica; projetos do mesmo titular não se misturam. Bloqueio bilateral impede novos envios, sem apagar histórico. |
 | `conversation_participants` | conversa, usuário, última mensagem lida/data | PK composta. Conversas pessoais autorizadas por participação. Registro nesta tabela não concede permissão coletiva por si só. |
 | `messages` | id, conversa, autor, conteúdo, criado em, `client_message_id`, representação opcional | Autor da sessão; único `(author_id,client_message_id)` para retry; limite de tamanho; mensagens não reescritas livremente. |
+| `private.message_reports` | mensagem, contexto mínimo, estado, decisor, prazo de expurgo | Só equipe designada lê a cópia isolada; identidade de conta em exclusão pendente dura até conclusão da análise, no máximo 30 dias. Cópia sem identificação é expurgada até 90 dias após encerramento. |
 | `private.audit_events` | ator, ação, recurso, instante, resultado, referência de correlação | Somente append pelo servidor; não registrar corpo de chat, CPF, senha, token ou dados completos de formulário. |
 
 O esquema `private` não será exposto pela Data API. A leitura/edição dos próprios dados de conta passa por operações específicas com autorização explícita. Caso se use view pública, `security_invoker=true`; não criar view que junte dados privados para depois “filtrar no frontend”.
@@ -60,13 +61,14 @@ O esquema `private` não será exposto pela Data API. A leitura/edição dos pr�
 | Recurso / operação | Autorização |
 |---|---|
 | Artistas/coletivos/eventos publicados | Leitura anônima somente das projeções públicas e de coletivos aprovados não suspensos. |
+| Catálogo das quatro atuações | Leitura apenas por conta autenticada das projeções internas não restritas; somente artista publicado possui página individual anônima. |
 | CPF, nascimento, e-mail de autenticação e dados de conta | Somente o próprio titular e operações estritamente autorizadas; perfil de coletivo não concede acesso. |
 | Editar perfil pessoal/profissional | Somente o titular; propriedade do coletivo não altera isso. |
-| Ler contatos/presskit/cachê e materiais restritos | Titular ou proprietário elegível de coletivo aprovado, com conta ativa e e-mail/celular confirmados. Outros membros exploram somente projeções públicas, inclusive quando seu perfil tem todas as permissões operacionais delegáveis. |
-| Dashboard interno | Membro atual de coletivo aprovado; ações dentro dele exigem permissões efetivas. |
+| Ler contatos/presskit/cachê e materiais restritos | O titular lê os próprios dados; o proprietário de coletivo aprovado lê os dados de terceiros somente com conta ativa, e-mail/celular confirmados e MFA. Outros membros exploram somente projeções internas não restritas, inclusive quando seu perfil tem todas as permissões operacionais delegáveis. |
+| Dashboard interno | Membro atual de coletivo aprovado vê resumo com informações públicas e áreas conforme permissões efetivas. Última atividade dos membros é exclusiva do proprietário. |
 | Chat pessoal | Participantes autorizados da conversa; papel coletivo não concede leitura. |
 | Histórico e envio do coletivo | Proprietário ou membro atual com a permissão correspondente no coletivo aprovado. Suspenso: apenas histórico para autorizados, sem envio. Cancelado/excluído: nenhum acesso coletivo. |
-| Eventos, perfis de acesso, solicitações e gestão | Proprietário ou membro atual com permissão específica no próprio coletivo aprovado. |
+| Eventos, perfis de acesso, solicitações e gestão | Proprietário executa ações operacionais; membro atual usa as oito permissões separadas no próprio coletivo aprovado. Só proprietário cria/edita/atribui perfis. Gerir pedidos admite apenas como Membro. Editar evento publicado exige editar e publicar. |
 | Excluir coletivo ou transferir propriedade | Exclusivamente o proprietário atual, em operação transacional; nunca delegável por perfil. |
 
 Propriedade ou perfil de A jamais autoriza agir em B. O diretório profissional é a exceção de leitura global já confirmada, não uma permissão administrativa global. CPF e nascimento continuam fora dessa exceção.
@@ -81,8 +83,8 @@ Políticas verificam relações atuais no banco, conta ativa e e-mail/celular co
 
 1. **Concluir cadastro:** após Auth, gravar conta privada + primeira atuação em transação. CPF duplicado deixa onboarding recuperável; não declara sucesso nem cria perfil público órfão. Reenvios têm chave de idempotência. Definir expiração de contas Auth abandonadas.
 2. **Criar coletivo:** dados públicos/privados + estado pendente + perfil inicial + proprietário único vinculado na mesma transação. Produtora sem CNPJ falha sem efeitos parciais. Aprovar/recusar é outra transação, exclusiva da administração do site, com decisão auditada e proteção contra decisões concorrentes. Proprietário do coletivo nunca altera aprovação.
-3. **Decidir solicitação:** travar a solicitação, verificar permissão efetiva no coletivo aprovado, exigir pedido pendente, inserir vínculo com perfil inicial sem privilégios de propriedade e registrar decisão. Duplo clique/duas aprovações não duplicam membro.
-4. **Transferir propriedade:** somente o proprietário atual inicia; serializar por coletivo, verificar sucessor membro elegível e trocar o único `owner_user_id` e vínculos afetados na mesma transação. Remoção, saída e exclusão de conta não deixam coletivo ativo sem proprietário. Um trigger simples de contagem sem trava não resolve concorrência.
+3. **Decidir solicitação:** travar a solicitação, verificar permissão efetiva no coletivo aprovado, exigir pedido pendente, inserir vínculo com Membro sem permissões operacionais e registrar decisão. Duplo clique/duas aprovações não duplicam membro.
+4. **Transferir propriedade:** somente o proprietário atual com MFA inicia; serializar por coletivo, verificar sucessor membro elegível e com MFA, trocar o único `owner_user_id` e rebaixar o antigo proprietário a Membro na mesma transação. Remoção, saída e exclusão de conta não deixam coletivo ativo sem proprietário. Um trigger simples de contagem sem trava não resolve concorrência.
 5. **Publicar evento:** evento + lineup validado, mesma transação; edição compete por versão/`updated_at`, sem sobrescrever alteração recente silenciosamente.
 6. **Enviar mensagem:** verificar acesso no momento do envio, autor da sessão, persistir antes de emitir atualização. Retry não duplica; queda de Realtime recupera mensagens por cursor no banco.
 
@@ -96,7 +98,7 @@ Preferir RPC `SECURITY INVOKER` quando as políticas bastarem. Operações que p
 - CAPTCHA e limites nas rotas de cadastro/recuperação conforme risco; SMTP próprio com remetente e domínio verificados antes do beta externo. O SMTP padrão não será critério de prontidão de produção.
 - URL de retorno permitida por ambiente; sem wildcard aberto em produção. Testar link usado/expirado e redirect malicioso.
 - Revogação de participação tem efeito no banco imediatamente. Logout/exclusão não deve depender de supor que todo access token expira instantaneamente. Para operação especialmente sensível, validar sessão atual conforme necessidade.
-- MFA obrigatório para administração do site, conforme arquitetura aprovada, e recomendado para administradores de infraestrutura. A política de MFA do proprietário do coletivo continua pendente.
+- MFA obrigatório para administração do site e para proprietários de coletivos antes de consultar o diretório restrito ou transferir a propriedade; recomendado para administradores de infraestrutura. O sucessor deve concluir MFA antes da transferência.
 
 ## Storage e consultas
 

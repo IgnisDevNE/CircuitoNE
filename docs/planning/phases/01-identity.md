@@ -38,7 +38,7 @@
 
 - Testar primeiro: login correto/incorreto, refresh concorrente, sessão expirada, link de recuperação inválido, redirect externo malicioso, CSRF, logout e duas contas em requisições/cache distintos.
 - Entrega: integração oficial Supabase SSR, cliente por requisição, validação de identidade no servidor, callbacks restritos e jornadas de recuperação. Celular obrigatório/único/previamente confirmado segue RN-32; sem acesso aos contatos, o suporte aplica conferência documental privada conforme RN-33, sem transferir conta por CPF alegado. Não autorizar apenas com `getSession()` nem manter sessão global no Node.
-- Aceite: recarga e navegação funcionam; resposta privada/`Set-Cookie` não é compartilhada em cache; conta suspensa falha de forma segura. Definir e testar o efeito esperado de revogação de sessão, sem presumir invalidação imediata de todo JWT.
+- Aceite: recarga e navegação funcionam; resposta privada/`Set-Cookie` não é compartilhada em cache; conta suspensa só vê motivo e suporte, sem mensagens, coletivo ou diretório (RN-37). Definir e testar o efeito esperado de revogação de sessão, sem presumir invalidação imediata de todo JWT.
 - Documentação: ciclo de sessão, URLs por ambiente, política de cookies/CSRF, limites de abuso e casos de falha.
 
 ## F1-T4 — Alterar dados e proteger operações sensíveis

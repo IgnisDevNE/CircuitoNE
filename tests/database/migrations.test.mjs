@@ -48,8 +48,15 @@ test(
         "--file",
         resolve("tests/database/post-migration.sql"),
       )
-    run("migration", "new", "pipeline_probe")
+    const checkDefaults = () =>
+      run("db", "query", "--local", "--file", resolve("tests/database/default-grants.sql"))
     const dir = join(workdir, "supabase/migrations")
+    // Apenas no banco descartável: simula default legado antes da migração real.
+    writeFileSync(
+      join(dir, "20260922000000_legacy_default_grants.sql"),
+      readFileSync("tests/database/legacy-default-grants.sql"),
+    )
+    run("migration", "new", "pipeline_probe")
     const file = readdirSync(dir).find((name) =>
       name.endsWith("_pipeline_probe.sql"),
     )
@@ -64,6 +71,7 @@ test(
     for (let attempt = 0; attempt < 2; attempt++) {
       run("db", "reset", "--local")
       check()
+      checkDefaults()
     }
     run(
       "db",

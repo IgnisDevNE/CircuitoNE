@@ -22,3 +22,4 @@
 /deploy/ @magalz
 /scripts/github-app.mjs @magalz
 /scripts/prepare-local-db.mjs @magalz
+/scripts/validate-homologation.mjs @magalz

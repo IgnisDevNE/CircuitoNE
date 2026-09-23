@@ -1,4 +1,5 @@
--- Executado somente no banco descartável após aplicar as migrações canônicas.
+-- Também usado em homologação: cria e remove objetos de ensaio na mesma instrução
+-- atômica. Qualquer falha reverte a instrução inteira.
 do $test$
 declare
   api_role text;

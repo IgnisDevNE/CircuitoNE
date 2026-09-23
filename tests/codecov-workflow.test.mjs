@@ -57,6 +57,7 @@ test('self-hosted publisher reads only a CI artifact with passing required jobs 
   assert.match(publisher, /override_commit: \$\{\{ github\.event\.workflow_run\.head_sha \}\}/);
   assert.match(publisher, /override_pr: \$\{\{ steps\.source\.outputs\.pr \}\}/);
   assert.match(publisher, /actions\/runs\/\$\{run\.id\}\/jobs\?per_page=100&filter=latest/);
+  assert.match(publisher, /run\.path\?\.split\('@', 1\)\[0\] !== '\.github\/workflows\/ci\.yml'/);
   assert.doesNotMatch(publisher, /pnpm|npm|docker|bash .*\.codecov-reports|use_oidc: true|skip_validation: true/);
 });
 
@@ -65,11 +66,11 @@ test('publisher accepts only the matching PR metadata for the tested source comm
   const script = publisher.match(/node <<'SOURCE'\r?\n([\s\S]*?)^\s+SOURCE/m)?.[1]?.replace(/^          /gm, '');
   assert.ok(script);
   const sha = 'a'.repeat(40);
-  for (const [headSha, qualityConclusion] of [[sha, 'success'], ['b'.repeat(40), 'success'], [sha, 'failure']]) {
+  for (const [headSha, qualityConclusion, path] of [[sha, 'success', '.github/workflows/ci.yml@main'], ['b'.repeat(40), 'success', '.github/workflows/ci.yml'], [sha, 'failure', '.github/workflows/ci.yml'], [sha, 'success', '.github/workflows/other.yml@main']]) {
     const output = [];
     const errors = [];
     const process = { env: { GITHUB_EVENT_PATH: 'event.json', GITHUB_OUTPUT: 'out', GH_TOKEN: 'read-only-test' }, exitCode: 0 };
-    const run = { id: 123, head_sha: sha, head_branch: 'codex/coverage', event: 'pull_request' };
+    const run = { id: 123, path, head_sha: sha, head_branch: 'codex/coverage', event: 'pull_request' };
     await runInNewContext(`(async () => { ${script} })()`, {
       require: () => ({ readFileSync: () => JSON.stringify({ workflow_run: run }), appendFileSync: (_path, value) => output.push(value) }),
       process,
@@ -80,13 +81,13 @@ test('publisher accepts only the matching PR metadata for the tested source comm
       console: { error: value => errors.push(value) },
     });
     await new Promise(resolve => setImmediate(resolve));
-    if (headSha === sha && qualityConclusion === 'success') {
+    if (headSha === sha && qualityConclusion === 'success' && path.startsWith('.github/workflows/ci.yml')) {
       assert.deepEqual(output, ['pr=81\nbranch=codex/coverage\n']);
       assert.equal(process.exitCode, 0);
     } else {
       assert.deepEqual(output, []);
       assert.equal(process.exitCode, 1);
-      assert.match(errors[0], qualityConclusion === 'failure' ? /Required CI job did not pass/ : /Expected one PR/);
+      assert.match(errors[0], path.includes('other.yml') ? /Unexpected source workflow/ : qualityConclusion === 'failure' ? /Required CI job did not pass/ : /Expected one PR/);
     }
   }
 });

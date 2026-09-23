@@ -32,8 +32,9 @@ jobs:
           const { appendFileSync, readFileSync } = require('node:fs');
           const run = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8')).workflow_run;
           const sha = run.head_sha;
-          if (!/^[a-f0-9]{40}$/.test(sha)) throw new Error('Invalid source SHA');
           async function resolve() {
+            if (run.path?.split('@', 1)[0] !== '.github/workflows/ci.yml') throw new Error('Unexpected source workflow');
+            if (!/^[a-f0-9]{40}$/.test(sha)) throw new Error('Invalid source SHA');
             if (!Number.isSafeInteger(run.id) || run.id < 1) throw new Error('Invalid source run');
             const jobsResponse = await fetch(`https://api.github.com/repos/IgnisDevNE/CircuitoNE/actions/runs/${run.id}/jobs?per_page=100&filter=latest`, {
               headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${process.env.GH_TOKEN}` },

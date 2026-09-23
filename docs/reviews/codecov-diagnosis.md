@@ -1,6 +1,6 @@
 # Codecov — diagnóstico e regularização
 
-**Atualização de destino em 22/09/2026:** o responsável instalou o App oficial e solicitou Codecov Cloud para o repositório público. O painel Cloud confirmou IgnisDevNE/CircuitoNE após login GitHub. A integração vigente está descrita na [ADR 0004](../decisions/0004-codecov-cloud.md), com evidências de upload em [#30](https://github.com/IgnisDevNE/CircuitoNE/issues/30). O diagnóstico abaixo descreve a instância própria; DEF-01/#29 permanece uma pendência dela, sem bloquear o novo destino. Nenhum serviço/configuração do servidor próprio foi alterado nesta troca.
+**Estado em 22/09/2026:** o responsável voltou a escolher a instância própria e informou que corrigiu a configuração de conta e repositório; falta configurar e verificar o servidor. [ADR 0007](../decisions/0007-codecov-self-hosted-target.md) registra o novo destino. O CI continua publicando no Cloud conforme [ADR 0004](../decisions/0004-codecov-cloud.md) até validar a substituição. O diagnóstico abaixo é histórico do bloqueio OAuth; [#29](https://github.com/IgnisDevNE/CircuitoNE/issues/29) requer nova verificação, e [#30](https://github.com/IgnisDevNE/CircuitoNE/issues/30) acompanha a migração. Nenhum serviço do servidor próprio foi alterado nesta decisão.
 
 Data: 22/09/2026. Instância: [pipeline.magalz.space](https://pipeline.magalz.space). **Resultado: correção parcial; autorização OAuth da organização deferida.** Não bloqueia o planejamento nem os testes locais.
 

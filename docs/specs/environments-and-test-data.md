@@ -8,6 +8,8 @@ Data: 22/09/2026. **Requisitos confirmados pelo responsável; implantação e in
 | Dev/homologação | `https://circuitone-dev.magalz.space` | `CircuitoNE-dev` (`odphoxozclrshqjgwbqk`) | Muitos cenários sintéticos persistidos; contas de teste identificadas e Supabase Auth ao integrar |
 | Testes de PR | Runner descartável sem domínio público | Supabase local descartável | Migrações, fixtures e Playwright sem credenciais de ambientes compartilhados |
 
+**Região ainda pendente em #43:** na última auditoria, produção estava em São Paulo e dev em Oregon. A escolha entre manter o projeto dev ou recriá-lo na mesma região da produção precisa preceder a integração compartilhada; não há migração de região in-place no Supabase. [Procedimento oficial](https://supabase.com/docs/guides/troubleshooting/change-project-region-eWJo5Z).
+
 ## Isolamento obrigatório
 
 Dois serviços/containers de aplicação distintos, atrás do proxy HTTPS, com configuração e limites separados. Nomes propostos: `circuitone-prod` e `circuitone-dev`. Reutilizar a mesma imagem homologada por digest; configuração de ambiente no runtime SSR. Não produzir dois forks de código.
@@ -37,6 +39,8 @@ Relatórios/screenshots/traces de CI devem conter apenas dados sintéticos e nen
 Decisão do responsável em 22/09/2026: backup diário e eliminação dos dados de contas excluídas das cópias de segurança em até 7 dias. O prazo deve ser divulgado nos termos e na política de privacidade. A restauração ocorre em ambiente isolado, acessível apenas ao processo de saneamento; reaplicar e verificar exclusões antes de liberar consultas, jobs, integrações ou acesso operacional normal. Novo cadastro com o mesmo CPF não recupera a conta anterior. Regras canônicas e exceção para mensagens: [RN-31–34](../business-rules/mvp.md).
 
 O plano informado é gratuito. Preparar e validar backup próprio, armazenamento restrito, expiração de cópias e cobertura dos arquivos em #43/F6-T4; não presumir backup diário gerenciado. O [backup de banco não inclui objetos do Storage](https://supabase.com/docs/guides/platform/backups). Essas decisões não declaram a rotina implantada nem definem ainda o tempo máximo de recuperação.
+
+Antes da integração de Auth, definir SMTP próprio para produção e destino de teste controlado em dev; o serviço SMTP padrão do Supabase restringe destinatários e não serve como entrega pública do produto. Site URLs, callbacks e remetentes continuam por configurar e verificar em cada projeto. [Limites e configuração oficial](https://supabase.com/docs/guides/auth/auth-smtp). Provedor, metas RPO/RTO e ensaio de restauração seguem pendentes em #43; backup de banco e cópia de objetos precisam de verificação separada.
 
 ## Dependências de implantação
 

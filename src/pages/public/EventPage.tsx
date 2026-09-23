@@ -1,7 +1,7 @@
 import { Link, useParams } from '../../router'
 import { useStore } from '../../context/StoreContext'
 import { usePageTitle } from '../../lib/usePageTitle'
-import { Badge, Button, Empty, Panel } from '../../components/ui/primitives'
+import { Badge, Button, Empty, Panel, btnClass } from '../../components/ui/primitives'
 import { DuotoneImage } from '../../components/ui/DuotoneImage'
 import { AccentScope } from '../../components/ui/AccentScope'
 import { Markdown } from '../../components/ui/Markdown'
@@ -69,8 +69,8 @@ export function EventPage() {
                     Entrada gratuita
                   </Button>
                 ) : (
-                  <a href={ev.ingressoLink} target="_blank" rel="noopener noreferrer" className="block">
-                    <Button variant="solid" className="w-full">Comprar ingresso ↗</Button>
+                  <a href={ev.ingressoLink} target="_blank" rel="noopener noreferrer" className={btnClass('solid', 'md', 'w-full')}>
+                    Comprar ingresso ↗
                   </a>
                 )}
               </div>

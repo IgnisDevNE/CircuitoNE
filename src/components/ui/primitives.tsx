@@ -51,7 +51,7 @@ type BtnBase = {
   className?: string
 }
 
-function btnClass(variant: BtnBase['variant'] = 'outline', size: BtnBase['size'] = 'md', className?: string) {
+export function btnClass(variant: BtnBase['variant'] = 'outline', size: BtnBase['size'] = 'md', className?: string) {
   const sizes = { sm: 'px-3 py-1.5 text-xs', md: 'px-4 py-2 text-sm', lg: 'px-5 py-2.5 text-base' }
   const base =
     'inline-flex items-center justify-center gap-2 font-mono uppercase tracking-wider transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer select-none'
@@ -116,13 +116,13 @@ export function Kbd({ children }: { children: ReactNode }) {
   return <kbd className="border border-[var(--color-line)] bg-[var(--color-bg-elev)] px-1.5 py-0.5 font-mono text-[0.65rem]">{children}</kbd>
 }
 
-export function SectionHeading({ prompt = '~/', children, sub }: { prompt?: string; children: ReactNode; sub?: string }) {
+export function SectionHeading({ prompt = '~/', children, sub, as: Heading = 'h1' }: { prompt?: string; children: ReactNode; sub?: string; as?: 'h1' | 'h2' }) {
   return (
     <div className="mb-6">
-      <h1 className="font-display text-2xl font-bold tracking-tight text-glow sm:text-3xl">
+      <Heading className="font-display text-2xl font-bold tracking-tight text-glow sm:text-3xl">
         <span aria-hidden className="text-[var(--accent-text)]">{prompt} </span>
         {children}
-      </h1>
+      </Heading>
       {sub && <p className="mt-1 max-w-2xl text-sm text-[var(--color-muted)]">{sub}</p>}
     </div>
   )

@@ -5,33 +5,62 @@ export function cx(...parts: (string | false | null | undefined)[]) {
 }
 
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
+const eventZone = 'America/Fortaleza'
+const eventParts = new Intl.DateTimeFormat('en-US', {
+  timeZone: eventZone, year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+})
+const eventOffset = new Intl.DateTimeFormat('en-US', { timeZone: eventZone, timeZoneName: 'longOffset' })
+
+function fortalezaParts(date: Date) {
+  return Object.fromEntries(eventParts.formatToParts(date).map(({ type, value }) => [type, value]))
+}
+
+/** Interpreta datetime-local no fuso do evento, nunca no fuso do navegador. */
+export function parseFortalezaDateTime(value: string): string | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value)
+  if (!match) return null
+  const guess = new Date(`${value}:00Z`)
+  if (Number.isNaN(guess.getTime())) return null
+  const zoneName = eventOffset.formatToParts(guess).find(({ type }) => type === 'timeZoneName')?.value
+  const offset = zoneName?.replace(/^GMT/, '') || '+00:00'
+  const date = new Date(`${value}:00${offset}`)
+  if (Number.isNaN(date.getTime())) return null
+  const p = fortalezaParts(date)
+  if ([p.year, p.month, p.day, p.hour, p.minute].some((part, i) => part !== match[i + 1])) return null
+  return date.toISOString()
+}
 
 export function fmtData(iso: string) {
-  const d = new Date(iso)
-  return `${String(d.getDate()).padStart(2, '0')} ${MESES[d.getMonth()]} ${d.getFullYear()}`
+  const p = fortalezaParts(new Date(iso))
+  return `${p.day} ${MESES[Number(p.month) - 1]} ${p.year}`
 }
 
 export function fmtDataHora(iso: string) {
-  const d = new Date(iso)
-  const hh = String(d.getHours()).padStart(2, '0')
-  const mm = String(d.getMinutes()).padStart(2, '0')
-  return `${fmtData(iso)} · ${hh}:${mm}`
+  const p = fortalezaParts(new Date(iso))
+  return `${fmtData(iso)} · ${p.hour}:${p.minute} (Fortaleza)`
 }
 
-export function isFuturo(iso: string) {
-  return new Date(iso).getTime() >= Date.now()
+function fortalezaDay(date: Date) {
+  const p = fortalezaParts(date)
+  return `${p.year}-${p.month}-${p.day}`
+}
+
+export function eventoNaoEncerrado(evento: Evento) {
+  if (evento.fim) return Date.parse(evento.fim) > Date.now()
+  return fortalezaDay(new Date(evento.inicio)) >= fortalezaDay(new Date())
 }
 
 export function porProximidade(a: Evento, b: Evento) {
   const ta = new Date(a.inicio).getTime()
   const tb = new Date(b.inicio).getTime()
-  const fa = ta >= Date.now()
-  const fb = tb >= Date.now()
-  // Futuros primeiro (mais próximos antes); passados por último (cronológico reverso)
-  if (fa && fb) return ta - tb
+  const fa = eventoNaoEncerrado(a)
+  const fb = eventoNaoEncerrado(b)
+  // Em andamento primeiro; futuros por proximidade; passados do mais recente para o mais antigo.
+  if (fa && fb) return Math.max(ta, Date.now()) - Math.max(tb, Date.now()) || ta - tb || a.id.localeCompare(b.id)
   if (fa) return -1
   if (fb) return 1
-  return tb - ta
+  return tb - ta || a.id.localeCompare(b.id)
 }
 
 export function tipoEventoLabel(e: Evento) {

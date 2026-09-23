@@ -8,6 +8,7 @@ import { Badge, Button, Empty, Panel } from '../../components/ui/primitives'
 import { Checkbox, ImageField, Input, Select } from '../../components/ui/form'
 import { MarkdownEditor } from '../../components/ui/Markdown'
 import { ESTADOS, EVENTO_TIPO_LABEL, type Estado, type EventoTipo } from '../../data/types'
+import { parseFortalezaDateTime } from '../../lib/utils'
 
 export function CreateEvent() {
   const { id } = useParams()
@@ -45,18 +46,22 @@ export function CreateEvent() {
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     const errs: Record<string, string> = {}
+    const inicio = parseFortalezaDateTime(form.inicio)
+    const fim = form.fim ? parseFortalezaDateTime(form.fim) : null
     if (!form.nome.trim()) errs.nome = 'Informe o nome do evento.'
     if (form.tipo === 'outros' && !form.tipoOutro.trim()) errs.tipoOutro = 'Descreva o tipo do evento.'
-    if (!form.inicio) errs.inicio = 'Informe a data/hora de início.'
+    if (!inicio) errs.inicio = form.inicio ? 'Informe uma data/hora de início válida.' : 'Informe a data/hora de início.'
+    if (form.fim && !fim) errs.fim = 'Informe uma data/hora de fim válida.'
+    else if (inicio && fim && fim <= inicio) errs.fim = 'O fim deve ser posterior ao início.'
     if (!form.cidade.trim()) errs.cidade = 'Informe a cidade.'
     if (!form.local.trim()) errs.local = 'Informe o local.'
     if (!form.gratuito && !form.ingressoLink.trim()) errs.ingressoLink = 'Adicione um link de ingresso ou marque como gratuito.'
     setErros(errs)
-    if (Object.keys(errs).length) { toast('Corrija os campos destacados', 'warn'); return }
+    if (Object.keys(errs).length || !inicio) { toast('Corrija os campos destacados', 'warn'); return }
 
     addEvento({
       id: '', nome: form.nome.trim(), tipo: form.tipo, tipoOutro: form.tipo === 'outros' ? form.tipoOutro.trim() : undefined,
-      descricao: form.descricao, inicio: new Date(form.inicio).toISOString(), fim: form.fim ? new Date(form.fim).toISOString() : new Date(form.inicio).toISOString(),
+      descricao: form.descricao, inicio, fim,
       estado: form.estado, cidade: form.cidade.trim(), local: form.local.trim(), coletivoId: col.id,
       lineup, ingressoLink: form.gratuito ? undefined : form.ingressoLink.trim(), gratuito: form.gratuito,
       capa: form.capa.trim() || 'https://images.unsplash.com/photo-1571266028243-e4733b0f3a0e?auto=format&fit=crop&w=1200&q=60',
@@ -78,8 +83,8 @@ export function CreateEvent() {
             )}
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input label="Início" type="datetime-local" value={form.inicio} onChange={(e) => setForm({ ...form, inicio: e.target.value })} required error={erros.inicio} />
-            <Input label="Fim" type="datetime-local" value={form.fim} onChange={(e) => setForm({ ...form, fim: e.target.value })} hint="opcional" />
+            <Input label="Início (Fortaleza)" type="datetime-local" value={form.inicio} onChange={(e) => setForm({ ...form, inicio: e.target.value })} required error={erros.inicio} />
+            <Input label="Fim (Fortaleza)" type="datetime-local" value={form.fim} onChange={(e) => setForm({ ...form, fim: e.target.value })} hint="opcional" error={erros.fim} />
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
             <Select label="Estado" value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value as Estado })} options={ESTADOS.map((s) => ({ value: s.value, label: s.label }))} />

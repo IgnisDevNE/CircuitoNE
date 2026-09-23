@@ -7,6 +7,7 @@ import { Input } from '../../components/ui/form'
 import { DuotoneImage } from '../../components/ui/DuotoneImage'
 import { AccentScope } from '../../components/ui/AccentScope'
 import { Social } from '../../components/ui/Social'
+import { eventoNaoEncerrado, porProximidade } from '../../lib/utils'
 
 export function ArtistsHub() {
   usePageTitle('Artistas')
@@ -24,8 +25,8 @@ export function ArtistsHub() {
 
   const proximoEvento = (artistaId: string) =>
     eventos
-      .filter((e) => new Date(e.inicio).getTime() >= Date.now() && e.lineup.some((l) => l.artistaId === artistaId))
-      .sort((x, y) => new Date(x.inicio).getTime() - new Date(y.inicio).getTime())[0]
+      .filter((e) => eventoNaoEncerrado(e) && e.lineup.some((l) => l.artistaId === artistaId))
+      .sort(porProximidade)[0]
 
   return (
     <div>

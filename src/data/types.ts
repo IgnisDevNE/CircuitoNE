@@ -130,7 +130,7 @@ export interface Evento {
   tipoOutro?: string
   descricao: string // markdown
   inicio: string // ISO
-  fim: string // ISO
+  fim: string | null // ISO; ausente não implica horário fictício
   estado: Estado
   cidade: string
   local: string

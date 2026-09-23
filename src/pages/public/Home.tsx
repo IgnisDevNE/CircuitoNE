@@ -1,7 +1,7 @@
 import { Link } from '../../router'
 import { useStore } from '../../context/StoreContext'
 import { usePageTitle } from '../../lib/usePageTitle'
-import { fmtData, isFuturo, porProximidade, tipoEventoLabel } from '../../lib/utils'
+import { eventoNaoEncerrado, fmtData, porProximidade, tipoEventoLabel } from '../../lib/utils'
 import { BootLog, Cursor, GlitchText, ScanBeam, TypeText } from '../../components/ui/anim'
 import { Badge, LinkButton, SectionHeading } from '../../components/ui/primitives'
 import { DuotoneImage } from '../../components/ui/DuotoneImage'
@@ -10,7 +10,7 @@ import { AccentScope } from '../../components/ui/AccentScope'
 export function Home() {
   usePageTitle('Início')
   const { artistas, coletivos, eventos } = useStore()
-  const proximos = [...eventos].filter((e) => isFuturo(e.inicio)).sort(porProximidade).slice(0, 3)
+  const proximos = [...eventos].filter((e) => eventoNaoEncerrado(e)).sort(porProximidade).slice(0, 3)
 
   return (
     <div className="space-y-16">

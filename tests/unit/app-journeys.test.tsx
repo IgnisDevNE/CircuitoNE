@@ -72,6 +72,14 @@ describe('jornadas com fixtures — sem prova de Auth, autorização ou persist�
     expect(screen.queryAllByRole('heading', { level: 3 })).toHaveLength(0)
   })
 
+  it('mantém o evento em andamento no cartão da artista', () => {
+    vi.setSystemTime(new Date(fixedTime.getTime() + 6.5 * 86400000))
+    open('/artistas')
+    const card = screen.getByRole('heading', { name: 'ANERIE' }).closest('article')
+    expect(card).toBeTruthy()
+    expect(within(card!).getByRole('link', { name: 'PORTO NOTURNO — TECHNO NA ORLA' })).toBeTruthy()
+  })
+
   it.each([
     ['/artistas/ausente', 'Artista não encontrado.'],
     ['/coletivos/ausente', 'Coletivo não encontrado.'],
@@ -134,5 +142,27 @@ describe('jornadas com fixtures — sem prova de Auth, autorização ou persist�
     await user.click(screen.getByRole('button', { name: 'avançar →' }))
     expect(screen.getByText('[erro] Informe um cachê válido.')).toBeTruthy()
     expect(screen.getByRole('textbox', { name: 'Média de cachê' })).toBeTruthy()
+  })
+
+  it('rejeita fim anterior e preserva fim vazio ao criar evento em Fortaleza', async () => {
+    open('/entrar')
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: '[demo] entrar como Ana' }))
+    window.history.pushState({}, '', '/coletivo/col-litoral/eventos/novo')
+    fireEvent(window, new PopStateEvent('popstate'))
+    await user.type(await screen.findByRole('textbox', { name: /Nome do evento/ }), 'Evento horário teste')
+    fireEvent.change(screen.getByLabelText(/Início/), { target: { value: '2026-09-24T19:30' } })
+    fireEvent.change(screen.getByLabelText(/Fim/), { target: { value: '2026-09-24T18:30' } })
+    await user.type(screen.getByRole('textbox', { name: /Cidade/ }), 'Recife')
+    await user.type(screen.getByRole('textbox', { name: /Local/ }), 'Praça')
+    await user.click(screen.getByRole('checkbox', { name: 'Evento gratuito' }))
+    await user.click(screen.getByRole('button', { name: 'publicar evento' }))
+    expect(screen.getByText('[erro] O fim deve ser posterior ao início.')).toBeTruthy()
+
+    fireEvent.change(screen.getByLabelText(/Fim/), { target: { value: '' } })
+    await user.click(screen.getByRole('button', { name: 'publicar evento' }))
+    await user.click(screen.getByRole('link', { name: /Evento horário teste/ }))
+    expect(screen.getByText('24 set 2026 · 19:30 (Fortaleza)')).toBeTruthy()
+    expect(screen.getByText('Não informado')).toBeTruthy()
   })
 })

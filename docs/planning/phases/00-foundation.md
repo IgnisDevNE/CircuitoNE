@@ -72,7 +72,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 **Dependência:** F0-T2/T4/T12. **Risco:** alto.
 
-- Entrega: fluxo de homologação no `CircuitoNE-dev`, registro de SHA/checksum/artefato, smoke test e promoção protegida do artefato homologado. Workflows são preparados/aplicados pelo mantenedor, pois o App não tem permissão de escrita neles.
+- Entrega: fluxo de homologação no `CircuitoNE-dev`, registro de SHA/checksum/artefato, smoke test e promoção protegida do artefato homologado. Mudanças de workflow passam por PR, revisão independente e proteção de branch; o App possui `Workflows:write` na instalação atual, mas tokens do helper só pedem essa permissão quando explicitamente habilitados para a operação autorizada. Retirar a permissão ampla ao final do housekeeping conforme #31.
 - Testar primeiro: projeto errado, migração concorrente, falha de smoke, artefato de outro SHA e falta de aprovação impedem promoção. Ensaio de promoção usa destino de teste, sem deploy de produção nesta fase.
 - Aceite: secrets somente no contexto necessário; código de PR não roda no host pessoal/produção nem junto de credenciais privilegiadas. Rollback de container demonstrado; migrações têm recuperação própria.
 - Documentação: sequência de release, responsáveis, logs/evidências, comportamento para PR só documental e plano de recuperação. CI verde não substitui homologação.
@@ -105,7 +105,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 ## F0-T8 — Separar validação, dinheiro e datas do JSX
 
-**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31); integrar registros revisados de [#38](https://github.com/IgnisDevNE/CircuitoNE/issues/38) para idade/CPF/recuperação e de RN-36 na [#40](https://github.com/IgnisDevNE/CircuitoNE/issues/40) para contato WhatsApp; [#41](https://github.com/IgnisDevNE/CircuitoNE/issues/41) para contrato temporal definitivo. Dinheiro e validações já decididas podem avançar independentemente.
+**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31); integrar registros revisados de [#38](https://github.com/IgnisDevNE/CircuitoNE/issues/38) para idade/CPF/recuperação e de RN-36 na [#40](https://github.com/IgnisDevNE/CircuitoNE/issues/40) para contato WhatsApp; [#41](https://github.com/IgnisDevNE/CircuitoNE/issues/41) até integrar o contrato temporal RN-24 revisado. Dinheiro e validações já decididas podem avançar independentemente.
 
 **Issues tratadas:** [#17](https://github.com/IgnisDevNE/CircuitoNE/issues/17) e partes de [#18](https://github.com/IgnisDevNE/CircuitoNE/issues/18)/[#19](https://github.com/IgnisDevNE/CircuitoNE/issues/19); manter aberto o que ainda depender de integração/validação definitiva no servidor.
 
@@ -113,7 +113,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 - Testar primeiro: CPF normalizado e dígitos, nascimento inválido, CNPJ numérico/alfanumérico, URL/e-mail, valor `R$ 1.500,00` reformatado, centavos, fim anterior ao início e conversão de fuso. Máscara não equivale a validação.
 - Entrega: funções pequenas e schemas Zod nas fronteiras. Extrair validação por etapa de `Register` e dados de evento, preservando os dois modos de cadastro/nova atuação; não reescrever o wizard inteiro.
-- Aceite: testes por tipo de atuação e etapa, erros associados aos campos. Aplicar as decisões de RN-31–34: 18 anos completos, celular obrigatório/único/confirmado e CPF corrigido pelo suporte. Cadastro aceita todas as 27 UFs e gênero vazio ou “não informar” (RN-04); informa se o celular é WhatsApp e permite número adicional opcional se diferente (RN-36). Recuperação/exclusão reais permanecem na fase 1; fim/fuso definitivo continua pendente em #41.
+- Aceite: testes por tipo de atuação e etapa, erros associados aos campos. Aplicar as decisões de RN-31–34: 18 anos completos, celular obrigatório/único/confirmado e CPF corrigido pelo suporte. Cadastro aceita todas as 27 UFs e gênero vazio ou “não informar” (RN-04); informa se o celular é WhatsApp e permite número adicional opcional se diferente (RN-36). Recuperação/exclusão reais permanecem na fase 1. Evento aceita fim vazio sem copiá-lo do início, rejeita fim não posterior e preserva o instante de `America/Fortaleza` entre navegadores (RN-24/#41).
 - Documentação: contratos de entrada e decisões pendentes relacionadas. Adaptar apenas os consumidores alcançados pela mudança.
 
 ## F0-T9 — Conter o mock e corrigir escopos de interface
@@ -124,7 +124,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 **Dependência:** F0-T2/T6. **Risco:** alto; UI-02/03/04/12/18.
 
-- Testar primeiro: visitante não vira N0; usuário/coletivo A não herda conversa ou formulário de B; troca de identidade limpa estado; datas de seed não variam com o relógio real.
+- Testar primeiro: visitante não vira membro; usuário/coletivo A não herda conversa, perfil de permissões ou formulário de B; troca de identidade limpa estado; datas de seed não variam com o relógio real.
 - Entrega: separar fixtures e mutações de demonstração do futuro acesso a dados; reduzir o uso de estado global nas áreas já tocadas. Não introduzir repositório genérico ou nova biblioteca global de estado.
 - Aceite: mock identificado, dados fictícios apenas, nenhuma sessão mutável compartilhada entre requisições SSR. Build integrado futuro rejeita login demo. A autorização definitiva fica no Supabase nas fases seguintes.
 - Documentação: limites do mock e caminho de substituição por domínio, sem manter indefinidamente implementações duplicadas.
@@ -201,12 +201,12 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 **Bloqueios por issue:** Nenhum para preparar decisões; [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) antes da preparação que use credenciais de ambiente.
 
-**Issues tratadas:** [#38](https://github.com/IgnisDevNE/CircuitoNE/issues/38)/[#39](https://github.com/IgnisDevNE/CircuitoNE/issues/39)/[#40](https://github.com/IgnisDevNE/CircuitoNE/issues/40)/[#41](https://github.com/IgnisDevNE/CircuitoNE/issues/41)/[#42](https://github.com/IgnisDevNE/CircuitoNE/issues/42)/[#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43); decisão só encerra após aprovação, pré-requisito operacional após verificação.
+**Issues tratadas:** [#38](https://github.com/IgnisDevNE/CircuitoNE/issues/38)/[#39](https://github.com/IgnisDevNE/CircuitoNE/issues/39)/[#40](https://github.com/IgnisDevNE/CircuitoNE/issues/40)/[#41](https://github.com/IgnisDevNE/CircuitoNE/issues/41)/[#42](https://github.com/IgnisDevNE/CircuitoNE/issues/42)/[#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43)/[#66](https://github.com/IgnisDevNE/CircuitoNE/issues/66); decisão só encerra após aprovação, pré-requisito operacional após verificação.
 
 **Dependência:** regras/propostas já inventariadas; decisões de produto podem avançar sem código. **Responsáveis:** produto e mantenedor. A preparação com credenciais depende do isolamento de F0-T2.
 
-- Resolver na fase zero: idade/CPF/recuperação/retenção, arquivos e dados sociais, verificação/suspensão e invariantes de coletivos, tempo/publicação/agenda de eventos, iniciação/moderação de mensagens. Propostas continuam propostas até aprovação; não inventar resposta para encerrar issue.
-- Preparar: decisão de região/destinos, SMTP de homologação e callbacks, domínio/DNS/TLS planejados, capacidade e responsabilidades, RPO/RTO e escopo de backup. A preparação não autoriza migrar produção nem enviar mensagens a usuários reais.
+- Resolver na fase zero: idade/CPF/recuperação/retenção, arquivos e dados sociais, verificação/suspensão e invariantes de coletivos, catálogo de perfis e permissões (#66), tempo/publicação/agenda de eventos, iniciação/moderação de mensagens. Propostas continuam propostas até aprovação; não inventar resposta para encerrar issue.
+- Preparar: a produção vazia de Oregon já foi substituída por projeto em São Paulo (`ukyoyrmebwadmuzkswdw`), mantendo dev em São Paulo. Referência, URL e chave publicável do environment GitHub `Producao` foram atualizadas e conferidas pela conta humana autorizada; falta nova senha do banco, validação de conexão e callbacks. O App implementador recebeu HTTP 403 ao ler variables/secrets. Preparar SMTP gerenciado com dev restrito a destinatários de teste, domínio/DNS/TLS, capacidade e responsáveis. RPO 24h, RTO 48h e backup diário de banco/objetos são metas aprovadas, ainda não implantadas ou ensaiadas. A criação do projeto não autoriza enviar mensagens a usuários reais.
 - Aceite: cada decisão tem responsável, registro aprovado e exemplos de aceite/negação nos contratos afetados; SMTP é validado com destino de teste controlado. Marcar evidências por pré-requisito e remover apenas o bloqueio correspondente.
 - Documentação: atualizar regras canônicas, ambiente/spec pertinente e issues; implementação persistente, deploy final e ensaio completo de restauração continuam nas fases correspondentes. Sem testes artificiais para decisões documentais.
 
@@ -215,7 +215,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 | Grupo | Meta na fase 0 | Condição para permanecer aberto |
 |---|---|---|
 | Defeitos autônomos de Markdown, dinheiro, estado de rota e semântica (#11/#17/#22/#27) | Corrigir e encerrar com evidência de todos os critérios aplicáveis ao protótipo | Critério ainda não demonstrado, explicitamente atribuído a uma tarefa; não fechar só porque o exemplo deixou de falhar |
-| Dependências (#34–#37), decisões e pré-requisitos (#38–#43) | Resolver antes de estabilizar a base e antes das tarefas dependentes | Incompatibilidade externa demonstrada ou decisão humana pendente, com responsável e impacto exato |
+| Dependências (#34–#37), decisões e pré-requisitos (#38–#43/#66) | Resolver antes de estabilizar a base e antes das tarefas dependentes | Incompatibilidade externa demonstrada ou decisão humana pendente, com responsável e impacto exato |
 | Infraestrutura (#29–#32) | Manter a cobertura Cloud vigente até verificar e migrar para a instância própria; concluir isolamento e homologação | #29 requer verificar o acesso corrigido; #30, configurar o servidor e comprovar upload no destino próprio. #31/#32 bloqueiam integração real e saída correspondente da fase |
 | Achados que incluem persistência/autorizações e funcionalidades ainda inexistentes | Antecipar na F0 validação, testes, contenção do mock, estados de falha e correções independentes | Manter a issue aberta até o aceite integral nas fases 1–5; não inventar backend provisório ou mover todo o produto para F0 só para zerar a lista |
 | SEO e qualidade integrada (#26/#28 e validação final) | Corrigir metadados estáticos, SSR com fixtures, determinismo e estados já testáveis | Consultas/paginação/dados reais e validação do produto final permanecem nas tarefas de domínio e F6-T3 |

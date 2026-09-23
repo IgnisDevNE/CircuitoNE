@@ -4,7 +4,7 @@ Referência: [OWASP Top 10:2025](https://top10.owasp.org/2025/), verificada em 2
 
 ## Fronteiras e ameaças
 
-Ativos: CPF/nascimento, identidade/sessão, contatos/presskit/cachê, conversas, cargos administrativos, arquivos e cadeia de entrega. Atacantes relevantes: anônimo, cadastrado, membro N0, comunicação N1, N2 de outro coletivo, conta removida, conteúdo enviado por usuário e código de PR que tenta alterar o próprio oráculo.
+Ativos: CPF/nascimento, identidade/sessão, contatos/presskit/cachê, conversas, propriedade/perfis de coletivos, arquivos e cadeia de entrega. Atacantes relevantes: anônimo, cadastrado, membro sem permissão, membro com permissão parcial, proprietário de outro coletivo, conta removida, conteúdo enviado por usuário e código de PR que tenta alterar o próprio oráculo. Os níveis N0/N1/N2 ainda existem no mock, mas foram substituídos como contrato pela [ADR 0008](../decisions/0008-collective-permission-profiles.md).
 
 Fronteiras: navegador não confiável → Node/SSR e API/Auth/Storage → banco; PR não confiável → executor descartável → publicador confiável de resultado; conta implementadora → responsável humano. Testes negativos devem cruzar essas fronteiras diretamente, não apenas procurar menus escondidos.
 
@@ -12,12 +12,12 @@ Fronteiras: navegador não confiável → Node/SSR e API/Auth/Storage → banco;
 
 | Categoria 2025 | Situação e ameaça concreta | Evidência/aceite requerido | Fase |
 |---|---|---|---|
-| A01 — Controle de acesso | Mock não distingue visitante de N0; conversas globais; edição só protegida por UI. P1 antes de dados reais. | REST com anônimo, titular, terceiro, N0/N1/N2, N2 de outro coletivo e removido; RLS/Storage, troca de IDs e revogação. Nenhum CPF/dado profissional fora do escopo. | 0, 1–5 |
+| A01 — Controle de acesso | Mock não distingue visitante de membro; conversas globais; edição só protegida por UI. P1 antes de dados reais. | REST com anônimo, titular, terceiro, membro sem permissão, perfis com poderes parciais, proprietário de outro coletivo e removido; RLS/Storage, troca de IDs, perfis e revogação. Nenhum CPF/dado profissional fora do escopo. | 0, 1–5 |
 | A02 — Configuração | Sem grants/RLS/SMTP de aplicação ainda. HTTP local é só preview. | Menor privilégio, schemas expostos explícitos, callbacks restritos, TLS em produção, headers/CSP compatíveis testados, nenhum segredo VITE_. | 0, 1, 6 |
 | A03 — Cadeia de dependências | Auditoria inicial completa encontrou 9 vulnerabilidades, 6 altas; Vite/transitivas atualizados, nova auditoria limpa. | Lockfile, Node/pnpm fixados, imagens/Actions por digest/SHA, Dependabot e revisão de atualizações. Avaliar também imagem final antes de release. | 0 e todas |
 | A04 — Criptografia | CPF/nascimento planejados privados; senha gerenciada por Auth. | TLS, secrets fora do repositório/logs, acesso mínimo a backups; decisão documentada sobre criptografia adicional de identidade e retenção. Não inventar criptografia própria. | 1, 6 |
 | A05 — Injeção | Markdown interpola URL em atributo HTML sem escape de aspas; risco estático de XSS. P1 antes de conteúdo real. | Payloads de aspas, atributos, esquemas perigosos e HTML; saída segura; queries parametrizadas; RPC com validação e search_path fixo. | 0–5 |
-| A06 — Desenho inseguro | Mock libera N2 sem aprovação editorial; RN-30 agora exige aprovação do site antes de dashboard/funções. CPF único não comprova identidade; último N2 removível. | Implementar RN-30, resolver D-03, testes de abuso, invariantes transacionais e concorrência, cotas de mídia/mensagens. | 0, 1, 3, 5 |
+| A06 — Desenho inseguro | Mock libera o antigo administrador N2 sem aprovação editorial; RN-30 exige aprovação do site antes de funções. CPF único não comprova identidade; a propriedade única/transferível ainda não existe. | Implementar RN-30 e #66, resolver D-03, testar transferência concorrente, abuso e cotas de mídia/mensagens. | 0, 1, 3, 5 |
 | A07 — Autenticação | Login/cadastro/alteração de senha são mocks. | Confirmação, recuperação, sessão expirada/revogada, reautenticação, rate limit, respostas que não exponham dados de terceiros. MFA operacional. | 1, 6 |
 | A08 — Integridade | App implementador separado por comando, mas QA/verificador e isolamento de credenciais ainda pendentes; mock aceita mutações locais. | QA sob autoridade separada, SHA de teste/candidato, verificador confiável, artefato homologado, idempotência e dados atômicos. | 0, 1–5 |
 | A09 — Logs e alertas | Sem trilha real de operações sensíveis ou monitoramento. | Ator/ação/recurso/resultado/correlação para cargos e solicitações; falhas de Auth e abuso monitoradas; excluir CPF, tokens e corpo de mensagem dos logs. Ensaiar alerta. | 1, 3, 5, 6 |

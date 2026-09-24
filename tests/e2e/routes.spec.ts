@@ -124,7 +124,9 @@ test('parâmetro com escape inválido é rejeitado sem quebrar a página', async
   // Um histórico manipulado também deve oferecer caminho de recuperação.
   const response = await page.goto('/artistas/%E0%A4%A')
   expect(response?.status()).toBe(400)
-  await page.goto('/artistas')
+  await page.goto('/')
+  await page.getByRole('link', { name: 'Explorar artistas', exact: true }).click()
+  await expect(page).toHaveURL(/\/artistas$/)
   await page.evaluate(() => {
     window.history.pushState({}, '', '/artistas/%E0%A4%A')
     window.dispatchEvent(new PopStateEvent('popstate'))

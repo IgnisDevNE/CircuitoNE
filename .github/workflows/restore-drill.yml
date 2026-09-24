@@ -1,0 +1,78 @@
+name: Isolated dev restore drill
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  restore:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    environment: Backup Dev
+    concurrency:
+      group: circuitone-backup-dev
+      cancel-in-progress: false
+    steps:
+      - name: Reject stale main before using backup secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          main_head="$(git ls-remote https://github.com/IgnisDevNE/CircuitoNE.git refs/heads/main | cut -f 1)"
+          if [[ ! "$main_head" =~ ^[0-9a-f]{40}$ || "$main_head" != "$GITHUB_SHA" ]]; then
+            echo '::error::Source main advanced after dispatch; run again at the current SHA.'
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24.21.0'
+      - name: Download the sole verified dev backup
+        shell: bash
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_EC2_METADATA_DISABLED: 'true'
+          AWS_PAGER: ''
+        run: |
+          set -euo pipefail
+          endpoint='https://8ef7263b062ec08db392a2ef585cad86.r2.cloudflarestorage.com'
+          bucket='circuitone-backup-dev'
+          work="$RUNNER_TEMP/restore-drill-$GITHUB_RUN_ID"
+          mkdir -m 700 "$work"
+          listing="$(aws s3api list-objects-v2 --bucket "$bucket" --endpoint-url "$endpoint" --region auto)"
+          if [[ "$(jq -r '.IsTruncated // false' <<< "$listing")" != false ]]; then
+            echo '::error::Backup listing was incomplete.'
+            exit 1
+          fi
+          mapfile -t keys < <(jq -r '.Contents[]? | select(.Key | startswith("backups/")) | .Key' <<< "$listing")
+          if [[ "${#keys[@]}" != 1 || ! "${keys[0]}" =~ ^backups/[0-9]{8}-[0-9]+-[0-9]+\.tar\.gz$ ]]; then
+            echo '::error::Expected exactly one recognized dev backup.'
+            exit 1
+          fi
+          aws s3api get-object --bucket "$bucket" --key "${keys[0]}" --endpoint-url "$endpoint" --region auto "$work/backup.tar.gz" >/dev/null
+          chmod 600 "$work/backup.tar.gz"
+      - name: Verify archive and restore in a network-isolated database
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/restore-drill-$GITHUB_RUN_ID"
+          image='docker.io/library/postgres@sha256:0b6698eaf9d5c65fd1b5ffe23cd27d2ad959feb1e3bc283a980c0c6d7ac66310'
+          name="circuitone-restore-$GITHUB_RUN_ID"
+          trap 'docker rm -f "$name" >/dev/null 2>&1 || true; rm -rf -- "$work"' EXIT
+          mkdir -m 700 "$work/extracted"
+          docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --user "$(id -u):$(id -g)" --mount "type=bind,src=$work,dst=/work" "$image" tar -xzf /work/backup.tar.gz -C /work/extracted --no-same-owner --no-same-permissions
+          node scripts/verify-backup.mjs "$work/extracted"
+          docker run -d --name "$name" --network none --mount "type=bind,src=$work/extracted,dst=/backup,readonly" -e POSTGRES_HOST_AUTH_METHOD=trust "$image" >/dev/null
+          for attempt in {1..30}; do
+            if docker exec "$name" pg_isready -U postgres >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          docker exec "$name" pg_restore --exit-on-error --no-owner --no-acl --username=postgres --dbname=postgres /backup/db.dump
+          docker exec "$name" psql -U postgres -d postgres -Atqc "select count(*) from pg_namespace where nspname = 'storage'" | grep -qx 1
+          echo 'Isolated dev database restore succeeded; no Supabase project was modified.'

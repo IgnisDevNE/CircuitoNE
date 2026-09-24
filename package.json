@@ -11,7 +11,7 @@
     "dev": "react-router dev",
     "build": "react-router build",
     "preview": "react-router-serve build/server/index.js",
-    "start": "react-router-serve build/server/index.js",
+    "start": "node scripts/start-runtime.mjs",
     "typegen": "react-router typegen",
     "format": "oxfmt",
     "typecheck": "react-router typegen && tsc --noEmit",

@@ -10,5 +10,7 @@
 !public/**
 !src/
 !src/**
+!scripts/
+!scripts/start-runtime.mjs
 !deploy/
 !deploy/Caddyfile

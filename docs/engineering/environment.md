@@ -37,7 +37,7 @@ Imagens base são fixadas por digest; Dependabot propõe atualizações revisáv
 
 ## Ferramentas e CI
 
-Node **22.23.2**, pnpm **10.34.3**. `pnpm-workspace.yaml` seleciona esse Node para os comandos do projeto sem substituir o Node global do Windows. `.mise.toml` documenta as mesmas versões. O container usa Node 22.23.2 por digest; CI e pnpm também fixam esse patch. [Decisão e limites](../decisions/0003-phase-zero-toolchain.md).
+Node **24.21.0 LTS**, pnpm **10.34.3**. `pnpm-workspace.yaml` seleciona esse Node para os comandos do projeto sem substituir o Node global do Windows. `.mise.toml` documenta as mesmas versões. A imagem de build usa Node 24.21.0 por digest; CI e pnpm fixam esse patch. O teste de toolchain verifica o alinhamento. [Decisão e limites](../decisions/0003-phase-zero-toolchain.md).
 
 `pnpm check` executa testes de infraestrutura/unidade, TypeScript, regressão de build CSS e build final. `pnpm audit --audit-level=high` inclui dependências de desenvolvimento. CI também constrói a imagem e executa os testes HTTP no container. Actions fixadas por SHA e token somente leitura. O runner é hospedado no GitHub; não instalar runner de PR neste host nem no Debian de produção.
 

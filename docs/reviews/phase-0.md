@@ -2,6 +2,8 @@
 
 **Atualização após PRs #45–#49:** CI, banco descartável, artefatos, Codecov Cloud e CodeQL foram validados no GitHub; a verificação protegida de credenciais dev também passou, sem migrar ou implantar aplicação. Após as PRs #56, #57 e #59, o [aceite canônico e a promoção pós-merge](../controls/change-control.md) passaram na esteira; o [controle de acesso](../controls/access-control.md) registra os limites ainda existentes. O texto abaixo preserva o checkpoint original; referências ao “último administrador” foram substituídas no contrato vigente pela propriedade única/transferível da [ADR 0008](../decisions/0008-collective-permission-profiles.md). Estado atual, ampliação dos testes, correções e pendências por issue: [revisão de cobertura/backlog](coverage-backlog-2026-09-22.md). Homologação integrada e saída da fase continuam bloqueadas por #31/#32/#43.
 
+**Atualização da toolchain em 23/09/2026:** a [PR #93](https://github.com/IgnisDevNE/CircuitoNE/pull/93) integrou Node 24.21.0 em `main` (`3c0a94b`). O [CI pós-merge](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/35939124272) passou com typecheck, banco descartável, Playwright, auditoria e container; a [promoção canônica](https://github.com/IgnisDevNE/CircuitoNE-QA/actions/runs/35939270368) também passou. A tabela abaixo continua descrevendo o checkpoint original em Node 22. A [#35](https://github.com/IgnisDevNE/CircuitoNE/issues/35) permanece aberta para validar o futuro SSR nessa linha.
+
 Data: 22/09/2026. **Resultado: preparação parcial revisável; saída da fase bloqueada, sem homologação concluída.** Branch `codex/phase-zero-foundation`, base `44d1632`. Nenhum schema/dado/configuração remota foi alterado. O preview existente foi preservado.
 
 ## Entrega e verificação

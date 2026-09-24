@@ -194,6 +194,8 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 **Dependência:** F0-T1. **Risco:** médio/alto; [revisão dos oito PRs](../../reviews/dependabot-2026-09-22.md). Executar em incrementos revisáveis, sem misturar a migração do compilador com a do framework.
 
+**Estado em 23/09/2026:** a [PR #93](https://github.com/IgnisDevNE/CircuitoNE/pull/93) alinhou Node 24.21.0 em host, CI e container; CI pós-merge e QA canônico passaram. A #35 continua aberta apenas para comprovar o SSR futuro nessa linha. Os itens abaixo preservam as decisões e os critérios usados na seleção da toolchain.
+
 - Prioridade imediata: revisar/integrar Actions e Caddy elegíveis (#4/#5/#6), mantendo o CI no SHA atualizado. Substituir o candidato antigo de pnpm/action-setup por versão mantida com runtime Node 24; não mudar pnpm 10.34.3 incidentalmente. Workflows são aplicados pelo mantenedor.
 - Node: resolver a divergência do PR #7. Avaliar Node 24 LTS; manter a linha 22 até validar a mudança. Alinhar engines, mise, tipos, CI e imagens por digest; Node 26 Current não entra apenas por ser mais novo.
 - TypeScript: reproduzir TS5102 do PR #8, adaptar configuração/aliases e verificar compilador/editor/tooling nas plataformas usadas. Não enfraquecer typecheck; conferir compatibilidade com React Router Framework ao executar F0-T11.

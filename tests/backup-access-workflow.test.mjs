@@ -23,8 +23,17 @@ test("backup credential probe runs only on reviewed main with isolated environme
   )
   assert.match(
     workflow,
+    /ref: odphoxozclrshqjgwbqk[\s\S]*?pooler_host: aws-0-sa-east-1\.pooler\.supabase\.com/,
+  )
+  assert.match(
+    workflow,
     /environment: Backup Producao[\s\S]*?ref: ukyoyrmebwadmuzkswdw[\s\S]*?bucket: circuitone-backup-prod/,
   )
+  assert.match(
+    workflow,
+    /ref: ukyoyrmebwadmuzkswdw[\s\S]*?pooler_host: aws-0-sa-east-1\.pooler\.supabase\.com/,
+  )
+  assert.match(workflow, /POOLER_HOST: \$\{\{ matrix\.pooler_host \}\}/)
   assert.match(workflow, /secrets\.SUPABASE_S3_ACCESS_KEY_ID/)
   assert.match(workflow, /secrets\.SUPABASE_S3_SECRET_ACCESS_KEY/)
   assert.match(workflow, /other_ref: ukyoyrmebwadmuzkswdw/)
@@ -32,6 +41,14 @@ test("backup credential probe runs only on reviewed main with isolated environme
   assert.match(workflow, /\$OTHER_PROJECT_REF\.storage\.supabase\.co/)
   assert.match(workflow, /secrets\.R2_ACCESS_KEY_ID/)
   assert.match(workflow, /secrets\.R2_SECRET_ACCESS_KEY/)
+  assert.match(workflow, /secrets\.SUPABASE_DB_PASSWORD/)
+  assert.match(workflow, /PGSSLMODE: 'verify-full'/)
+  assert.match(workflow, /BEGIN READ ONLY;/)
+  assert.match(workflow, /ON_ERROR_STOP=1/)
+  assert.match(
+    workflow,
+    /700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7/,
+  )
   assert.match(workflow, /head-bucket[\s\S]*?\$OTHER_BUCKET/)
   assert.match(
     workflow,
@@ -42,6 +59,6 @@ test("backup credential probe runs only on reviewed main with isolated environme
   assert.doesNotMatch(workflow, /delete-object[^\n]*\|\| true/)
   assert.doesNotMatch(
     workflow,
-    /SUPABASE_DB_PASSWORD|SUPABASE_ACCESS_TOKEN|upload-artifact/,
+    /SUPABASE_ACCESS_TOKEN|upload-artifact|db dump|pg_dump/,
   )
 })

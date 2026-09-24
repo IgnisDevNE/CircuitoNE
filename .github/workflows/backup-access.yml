@@ -23,12 +23,14 @@ jobs:
             environment: Backup Dev
             ref: odphoxozclrshqjgwbqk
             other_ref: ukyoyrmebwadmuzkswdw
+            pooler_host: aws-0-sa-east-1.pooler.supabase.com
             bucket: circuitone-backup-dev
             other_bucket: circuitone-backup-prod
           - name: production
             environment: Backup Producao
             ref: ukyoyrmebwadmuzkswdw
             other_ref: odphoxozclrshqjgwbqk
+            pooler_host: aws-0-sa-east-1.pooler.supabase.com
             bucket: circuitone-backup-prod
             other_bucket: circuitone-backup-dev
     steps:
@@ -41,6 +43,46 @@ jobs:
             echo '::error::Source main advanced after this run was dispatched.'
             exit 1
           fi
+      - name: Prepare pinned Supabase CA
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl --disable --fail --silent --show-error --proto '=https' --connect-timeout 10 --max-time 20 --max-filesize 65536 --output supabase-ca.crt https://supabase-downloads.s3-ap-southeast-1.amazonaws.com/prod/ssl/prod-ca-2021.crt
+          echo '700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7  supabase-ca.crt' | sha256sum --check --status
+      - name: Verify database password over TLS in a read-only transaction
+        env:
+          BACKUP_ENV: ${{ matrix.name }}
+          SUPABASE_PROJECT_REF: ${{ matrix.ref }}
+          POOLER_HOST: ${{ matrix.pooler_host }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          node <<'BACKUP_DB'
+          const { execFileSync } = require('node:child_process');
+          try {
+            const { BACKUP_ENV: name, SUPABASE_PROJECT_REF: ref, POOLER_HOST: host, SUPABASE_DB_PASSWORD: password } = process.env;
+            const expected = { dev: 'odphoxozclrshqjgwbqk', production: 'ukyoyrmebwadmuzkswdw' };
+            if (!Object.hasOwn(expected, name) || expected[name] !== ref ||
+                !/^aws-[0-9]+-sa-east-1\.pooler\.supabase\.com$/.test(host) || !password) {
+              throw new Error('Invalid backup database destination');
+            }
+            const sql = "BEGIN READ ONLY; SELECT current_database() = 'postgres' AND current_setting('transaction_read_only') = 'on'; ROLLBACK;";
+            const result = execFileSync('psql', ['-X', '-w', '-A', '-t', '-q', '-v', 'ON_ERROR_STOP=1', '-c', sql], {
+              env: {
+                PATH: process.env.PATH,
+                PGHOST: host, PGPORT: '5432', PGDATABASE: 'postgres',
+                PGUSER: `postgres.${ref}`, PGPASSWORD: password,
+                PGSSLMODE: 'verify-full', PGSSLROOTCERT: `${process.env.RUNNER_TEMP}/supabase-ca.crt`,
+                PGCONNECT_TIMEOUT: '10', PGOPTIONS: '-c default_transaction_read_only=on -c statement_timeout=10000',
+                PGAPPNAME: 'circuitone-backup-credential-check',
+              },
+              stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8', timeout: 20000, maxBuffer: 4096,
+            });
+            if (result.trim() !== 't') throw new Error('Unexpected database result');
+            console.log(`Backup database credential verified for ${name}; no data exported.`);
+          } catch {
+            console.error('::error::Backup database credential, destination or TLS verification failed; details omitted.');
+            process.exitCode = 1;
+          }
+          BACKUP_DB
       - name: Verify isolated S3 credentials with a disposable R2 object
         id: storage
         shell: bash

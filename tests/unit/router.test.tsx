@@ -1,5 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { StaticRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 import { Link, RouterProvider, Routes, useParams } from '../../src/router'
 
@@ -21,6 +23,20 @@ function Journey() {
 }
 
 describe('roteador do protótipo — caracterização, sem autorização real', () => {
+  it('renderiza a rota profunda no contexto do servidor', () => {
+    vi.stubGlobal('window', undefined)
+    try {
+      const html = renderToStaticMarkup(
+        <StaticRouter location="/artistas/joao">
+          <Journey />
+        </StaticRouter>,
+      )
+      expect(html).toContain('Artista joao')
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
   it('navega pelo link e lê o parâmetro da rota', async () => {
     render(<Journey />)
     await userEvent.click(screen.getByRole('link', { name: 'Ver artista' }))

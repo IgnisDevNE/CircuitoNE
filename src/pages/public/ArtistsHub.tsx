@@ -11,7 +11,7 @@ import { eventoNaoEncerrado, porProximidade } from '../../lib/utils'
 
 export function ArtistsHub() {
   usePageTitle('Artistas')
-  const { artistas, eventos } = useStore()
+  const { artistas, eventos, now } = useStore()
   const [q, setQ] = useState('')
   const [estilo, setEstilo] = useState<string | null>(null)
 
@@ -25,8 +25,8 @@ export function ArtistsHub() {
 
   const proximoEvento = (artistaId: string) =>
     eventos
-      .filter((e) => eventoNaoEncerrado(e) && e.lineup.some((l) => l.artistaId === artistaId))
-      .sort(porProximidade)[0]
+      .filter((e) => eventoNaoEncerrado(e, now) && e.lineup.some((l) => l.artistaId === artistaId))
+      .sort((a, b) => porProximidade(a, b, now))[0]
 
   return (
     <div>

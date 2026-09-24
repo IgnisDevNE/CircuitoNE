@@ -129,7 +129,8 @@ export const audiovisuais: AVProfile[] = [
   { id: 'av-flash', tipo: 'audiovisual', nome: 'Flash Litoral', tipoServico: 'fotografia', contato: 'ola@flashlitoral.com · (85) 98444-2211', portfolio: 'https://flashlitoral.com', social: { instagram: '@flashlitoral' } },
 ]
 
-const now = Date.now()
+// Fixtures must render identically on the server and during browser hydration.
+const now = Date.parse('2026-09-22T15:00:00.000Z')
 const days = (n: number) => new Date(now + n * 86400000).toISOString()
 
 // ---- Eventos ----

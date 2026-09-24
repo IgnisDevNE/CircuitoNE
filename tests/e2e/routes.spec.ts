@@ -72,6 +72,15 @@ test('link direto do artista mantém o perfil público após recarga', async ({ 
   expect(errors).toEqual([])
 })
 
+test('hidrata a agenda com o relógio do servidor mesmo se o navegador estiver em outra data', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2030-01-01T12:00:00.000Z'))
+  const errors: string[] = []
+  page.on('pageerror', (error) => errors.push(error.message))
+  await page.goto('/eventos')
+  await expect(page.getByText('PORTO NOTURNO — TECHNO NA ORLA').first()).toBeVisible()
+  expect(errors).toEqual([])
+})
+
 for (const [path, title] of privateRoutes) {
   test(`rota com sessão mock ${path}`, async ({ page }) => {
     const errors: string[] = []
@@ -114,7 +123,7 @@ test('parâmetro com escape inválido é rejeitado sem quebrar a página', async
   // O preview responde 404; o Caddy de produção responde 400 para HTTP malformado.
   // O histórico ainda pode apresentar esse pathname ao roteador React.
   const response = await page.goto('/artistas/%E0%A4%A')
-  expect(response?.status()).toBe(process.env.QA_TEST_DIR ? 400 : 404)
+  expect(response?.status()).toBe(400)
   await page.goto('/artistas')
   await page.evaluate(() => {
     window.history.pushState({}, '', '/artistas/%E0%A4%A')

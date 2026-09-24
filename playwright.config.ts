@@ -19,7 +19,8 @@ export default defineConfig({
     { name: 'mobile', use: { browserName: 'chromium', viewport: { width: 390, height: 844 } } },
   ],
   webServer: {
-    command: 'pnpm build && pnpm preview --host 127.0.0.1 --port 5182 --strictPort',
+    command: 'pnpm build && pnpm preview',
+    env: { HOST: '127.0.0.1', PORT: '5182' },
     url: 'http://127.0.0.1:5182',
     reuseExistingServer: false,
     timeout: 120_000,

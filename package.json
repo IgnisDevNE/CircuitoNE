@@ -8,30 +8,36 @@
     "node": ">=24.21.0 <25"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
+    "dev": "react-router dev",
+    "build": "react-router build",
+    "preview": "react-router-serve build/server/index.js",
+    "start": "react-router-serve build/server/index.js",
+    "typegen": "react-router typegen",
     "format": "oxfmt",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "react-router typegen && tsc --noEmit",
     "test": "pnpm test:infra && pnpm test:unit",
     "test:infra": "node --test tests/*.test.mjs",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "test:coverage": "vitest run --coverage",
-    "test:build": "node --test tests/assets/*.test.mjs",
+    "test:build": "node --test --test-concurrency=1 tests/assets/*.test.mjs",
     "test:hosting": "node --test tests/hosting/*.test.mjs",
     "db:prepare": "node scripts/prepare-local-db.mjs",
     "test:database": "node --test tests/database/*.test.mjs",
     "check": "pnpm test && pnpm typecheck && pnpm test:build && pnpm build"
   },
   "dependencies": {
+    "@react-router/node": "8.4.0",
+    "@react-router/serve": "8.4.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-markdown": "10.1.0",
-    "react-router": "8.4.0"
+    "react-router": "8.4.0",
+    "isbot": "^5"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
+    "@react-router/dev": "8.4.0",
     "@tailwindcss/vite": "4.3.3",
     "@testing-library/dom": "10.4.2",
     "@testing-library/react": "16.3.3",

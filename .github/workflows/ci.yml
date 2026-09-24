@@ -56,10 +56,14 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
       - name: Build container
-        run: docker build -t circuitone-ci .
+        run: |
+          docker build -t circuitone-app-ci .
+          docker build -f deploy/Caddy.Dockerfile -t circuitone-proxy-ci .
       - name: Test container routes
         run: |
-          docker run --detach --name circuitone-ci --read-only --cap-drop ALL --security-opt no-new-privileges --memory 128m -p 127.0.0.1:5176:8080 circuitone-ci
+          docker network create circuitone-ci
+          docker run --detach --name circuitone-app-ci --network circuitone-ci --network-alias app --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges --memory 512m circuitone-app-ci
+          docker run --detach --name circuitone-proxy-ci --network circuitone-ci --read-only --cap-drop ALL --security-opt no-new-privileges --memory 128m -p 127.0.0.1:5176:8080 circuitone-proxy-ci
           for attempt in {1..20}; do
             if curl --fail --silent http://127.0.0.1:5176/ > /dev/null; then break; fi
             sleep 1

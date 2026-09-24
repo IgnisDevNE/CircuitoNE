@@ -3,6 +3,7 @@ import { artistas as seedArtistas, audiovisuais as seedAudiovisuais, coletivos a
 import type { ArtistProfile, AVProfile, Collective, Evento, ServiceProfile, Thread, User } from '../data/types'
 
 interface Store {
+  now: number
   // sessão
   user: User | null
   login: () => void
@@ -29,7 +30,8 @@ const Ctx = createContext<Store | null>(null)
 
 let evCounter = 100
 
-export function StoreProvider({ children }: { children: ReactNode }) {
+export function StoreProvider({ children, initialNow = Date.now() }: { children: ReactNode; initialNow?: number }) {
+  const [now] = useState(initialNow)
   const [user, setUser] = useState<User | null>(null)
   const [artistas] = useState<ArtistProfile[]>(seedArtistas)
   const [servicos] = useState<ServiceProfile[]>(seedServicos)
@@ -40,6 +42,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<Store>(
     () => ({
+      now,
       user,
       login: () => setUser(demoUser),
       logout: () => setUser(null),
@@ -92,7 +95,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       recusarSolicitacao: (colId, solId) =>
         setColetivos((s) => s.map((c) => (c.id === colId ? { ...c, solicitacoes: c.solicitacoes?.filter((x) => x.id !== solId) } : c))),
     }),
-    [user, artistas, servicos, audiovisuais, coletivos, eventos, threads],
+    [now, user, artistas, servicos, audiovisuais, coletivos, eventos, threads],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

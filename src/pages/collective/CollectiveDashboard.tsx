@@ -9,11 +9,11 @@ import { eventoNaoEncerrado, fmtDataHora, porProximidade } from '../../lib/utils
 export function CollectiveDashboard() {
   const { id } = useParams()
   const { col, nivel } = useColetivo(id)
-  const { eventos, threads } = useStore()
+  const { eventos, threads, now } = useStore()
   usePageTitle(col ? `${col.nome} · Dashboard` : 'Coletivo')
 
   if (!col) return null
-  const eventosCol = eventos.filter((e) => e.coletivoId === col.id).sort(porProximidade)
+  const eventosCol = eventos.filter((e) => e.coletivoId === col.id).sort((a, b) => porProximidade(a, b, now))
   const naoLidas = threads.filter((t) => t.coletivoId === col.id).reduce((n, t) => n + t.naoLidas, 0)
 
   return (
@@ -24,7 +24,7 @@ export function CollectiveDashboard() {
         ) : (
           <ul className="space-y-2">
             {eventosCol.map((e) => {
-              const naoEncerrado = eventoNaoEncerrado(e)
+              const naoEncerrado = eventoNaoEncerrado(e, now)
               return (
                 <li key={e.id}>
                   <Link to={`/eventos/${e.id}`} className="flex items-center justify-between gap-4 border border-[var(--color-line)] p-3 hover:border-[var(--accent)]">

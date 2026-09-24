@@ -71,4 +71,10 @@ describe('roteador do protótipo — caracterização, sem autorização real', 
     render(<Journey />)
     expect(screen.getByRole('heading').textContent).toBe('Artista joão')
   })
+
+  it('preserva um escape literal codificado sem tentar decodificá-lo duas vezes', () => {
+    window.history.replaceState({}, '', '/artistas/%25E0%25A4%25A')
+    render(<Journey />)
+    expect(screen.getByRole('heading').textContent).toBe('Artista %E0%A4%A')
+  })
 })

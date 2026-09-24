@@ -42,9 +42,9 @@ const col = (el: ReactNode) => (
   </AppShell>
 )
 
-export default function App() {
+export default function App({ initialNow }: { initialNow?: number } = {}) {
   return (
-    <StoreProvider>
+    <StoreProvider initialNow={initialNow}>
       <ToastProvider>
         <RouterProvider>
           <Routes

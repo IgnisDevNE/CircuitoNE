@@ -6,6 +6,7 @@
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
+    "rootDirs": [".", "./.react-router/types"],
     "paths": {
       "@/*": ["./src/*"]
     },
@@ -18,5 +19,5 @@
     "strict": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "vite.config.ts", "vitest.config.ts", "playwright.config.ts", "tests/**/*.ts", "tests/**/*.tsx"]
+  "include": ["src", ".react-router/types/**/*", "react-router.config.ts", "vite.config.ts", "vitest.config.ts", "playwright.config.ts", "tests/**/*.ts", "tests/**/*.tsx"]
 }

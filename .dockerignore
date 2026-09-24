@@ -5,8 +5,9 @@
 !index.html
 !tsconfig.json
 !vite.config.ts
+!react-router.config.ts
 !public/
-!public/robots.txt
+!public/**
 !src/
 !src/**
 !deploy/

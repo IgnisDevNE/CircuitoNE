@@ -8,15 +8,15 @@ import { eventoNaoEncerrado, fmtDataHora, porProximidade, tipoEventoLabel } from
 
 export function EventsList() {
   usePageTitle('Eventos Programados')
-  const { eventos } = useStore()
+  const { eventos, now } = useStore()
   const [estado, setEstado] = useState<string | null>(null)
 
   const futuros = eventos
-    .filter((e) => eventoNaoEncerrado(e))
+    .filter((e) => eventoNaoEncerrado(e, now))
     .filter((e) => !estado || e.estado === estado)
-    .sort(porProximidade)
+    .sort((a, b) => porProximidade(a, b, now))
 
-  const estados = [...new Set(eventos.filter((e) => eventoNaoEncerrado(e)).map((e) => e.estado))]
+  const estados = [...new Set(eventos.filter((e) => eventoNaoEncerrado(e, now)).map((e) => e.estado))]
 
   return (
     <div>

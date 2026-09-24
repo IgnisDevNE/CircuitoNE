@@ -46,18 +46,18 @@ function fortalezaDay(date: Date) {
   return `${p.year}-${p.month}-${p.day}`
 }
 
-export function eventoNaoEncerrado(evento: Evento) {
-  if (evento.fim) return Date.parse(evento.fim) > Date.now()
-  return fortalezaDay(new Date(evento.inicio)) >= fortalezaDay(new Date())
+export function eventoNaoEncerrado(evento: Evento, now = Date.now()) {
+  if (evento.fim) return Date.parse(evento.fim) > now
+  return fortalezaDay(new Date(evento.inicio)) >= fortalezaDay(new Date(now))
 }
 
-export function porProximidade(a: Evento, b: Evento) {
+export function porProximidade(a: Evento, b: Evento, now = Date.now()) {
   const ta = new Date(a.inicio).getTime()
   const tb = new Date(b.inicio).getTime()
-  const fa = eventoNaoEncerrado(a)
-  const fb = eventoNaoEncerrado(b)
+  const fa = eventoNaoEncerrado(a, now)
+  const fb = eventoNaoEncerrado(b, now)
   // Em andamento primeiro; futuros por proximidade; passados do mais recente para o mais antigo.
-  if (fa && fb) return Math.max(ta, Date.now()) - Math.max(tb, Date.now()) || ta - tb || a.id.localeCompare(b.id)
+  if (fa && fb) return Math.max(ta, now) - Math.max(tb, now) || ta - tb || a.id.localeCompare(b.id)
   if (fa) return -1
   if (fb) return 1
   return tb - ta || a.id.localeCompare(b.id)

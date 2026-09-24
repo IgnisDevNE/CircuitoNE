@@ -1,10 +1,9 @@
-import { useEffect, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, type ReactNode } from 'react'
 import {
   BrowserRouter,
   Link as ReactRouterLink,
   NavLink as ReactRouterNavLink,
-  Route,
-  Routes as ReactRouterRoutes,
+  matchPath,
   useInRouterContext,
   useLocation as useReactRouterLocation,
   useNavigate,
@@ -15,8 +14,10 @@ import {
 
 export { useReactRouterLocation as useLocation, useNavigate }
 
+const ParamsContext = createContext<Record<string, string> | null>(null)
+
 export function useParams() {
-  return useReactRouterParams() as Record<string, string>
+  return useContext(ParamsContext) ?? useReactRouterParams() as Record<string, string>
 }
 
 function ScrollReset() {
@@ -40,12 +41,14 @@ export function Routes({ routes, notFound }: { routes: RouteDef[]; notFound?: Re
   } catch {
     return <>{notFound ?? null}</>
   }
-  return (
-    <ReactRouterRoutes>
-      {routes.map(({ path, element }) => <Route key={path} path={path} element={element} />)}
-      {notFound && <Route path="*" element={notFound} />}
-    </ReactRouterRoutes>
-  )
+  for (const { path, element } of routes) {
+    const match = matchPath({ path, end: true }, pathname)
+    if (match) {
+      const params = Object.fromEntries(Object.entries(match.params).map(([key, value]) => [key, decodeURIComponent(value ?? '')]))
+      return <ParamsContext.Provider key={path} value={params}>{element}</ParamsContext.Provider>
+    }
+  }
+  return <>{notFound ?? null}</>
 }
 
 export function Link({ to, download, replace, ...props }: Omit<ReactRouterLinkProps, 'to'> & { to: string }) {

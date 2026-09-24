@@ -1,2 +1,2 @@
 # Runtime local do projeto; não altera o Node instalado no Windows.
-useNodeVersion: 22.23.2
+useNodeVersion: 24.21.0

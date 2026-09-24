@@ -1,4 +1,4 @@
-FROM docker.io/library/node:22-alpine@sha256:b64da1de5a51067ab8e75f0bc8dbd0905d8894baa22261f439a4572f41291e50 AS build
+FROM docker.io/library/node:24.21.0-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS build
 WORKDIR /app
 RUN npm install --global pnpm@10.34.3
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./

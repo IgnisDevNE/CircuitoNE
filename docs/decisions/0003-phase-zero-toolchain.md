@@ -1,12 +1,12 @@
 # ADR 0003 — Toolchain e testes da preparação
 
-Data: 22/09/2026. Estado: decisão implementada e CI validado pelo PR #45; homologação integrada ainda pendente. Não altera a arquitetura aprovada na [ADR 0002](0002-modular-monolith-ssr.md).
+Data: 22/09/2026; revisão em 23/09/2026. Estado: atualização coordenada de Node 24 proposta na fase 0; CI e homologação integrada ainda pendentes. Não altera a arquitetura aprovada na [ADR 0002](0002-modular-monolith-ssr.md).
 
 ## Contexto e decisão
 
-O host usa Node 26, enquanto CI e container usam Node 22. Manter **Node 22.23.2** nesta etapa e fixá-lo também para os comandos locais do pnpm (`useNodeVersion`). Preservar pnpm 10.34.3. Isso permite validar a mesma linha de runtime sem mudar o Node global do Windows. A action de instalação do pnpm usa seu próprio runtime: sua atualização para Node 24 não obriga a aplicação a usar Node 24.
+O checkpoint do PR #45 manteve Node 22.23.2 em comandos locais, CI e container, enquanto o host usa Node 26. Em 23/09/2026, selecionar **Node 24.21.0 LTS** para os três ambientes antes do SSR, preservando pnpm 10.34.3 e sem alterar o Node global do Windows. Alinhar também `engines`, `@types/node` e imagem por digest. A [lista oficial de versões](https://nodejs.org/en/about/previous-releases) classifica Node 24 como LTS e Node 26 como Current nesta data.
 
-Não aceitar a atualização isolada do container para Node 26 Current. A seleção coordenada de Node 24 LTS pertence a F0-T14, antes da entrada no runtime SSR de F0-T11/T12; esses consumidores completam a evidência de compatibilidade. Atualizar comandos locais, CI, imagem e testes em conjunto ([#35](https://github.com/IgnisDevNE/CircuitoNE/issues/35), responsável: implementação/mantenedor). A manutenção de Node 22 aqui é temporária, não promessa de suporte indefinido.
+Não aceitar a atualização isolada do container para Node 26 Current. A seleção de Node 24 resolve a divergência da [#35](https://github.com/IgnisDevNE/CircuitoNE/issues/35); a issue só encerra após CI e runtime SSR de F0-T11/T12 confirmarem compatibilidade. A action de instalação do pnpm tem runtime próprio e não determina a versão da aplicação.
 
 Adotar TypeScript 7.0.2 removendo `baseUrl`, incompatibilidade reproduzida antes da correção; preservar aliases e checagem estrita. Atualizar Tailwind e seu plugin juntos para 4.3.3, agrupando futuras atualizações minor/patch no Dependabot. Restringir a descoberta de classes à pasta `src`; documentos locais estavam alterando o CSS do build.
 

@@ -15,7 +15,7 @@ Regras ativas: [main 23916588](https://github.com/IgnisDevNE/CircuitoNE-QA/rules
 ## Consequências
 
 - Os testes são legíveis publicamente. A garantia buscada é integridade da referência e separação da autoridade de publicação, não sigilo dos testes.
-- O App promotor tem bypass deliberado somente em `accepted`; sua chave e o workflow confiável que a usa são ativos críticos. Um ensaio positivo de promoção após a ativação das regras e os testes negativos restantes ainda são necessários.
+- O App promotor tem bypass deliberado somente em `accepted`; sua chave e o workflow confiável que a usa são ativos críticos. A [promoção pós-merge da PR #99](https://github.com/IgnisDevNE/CircuitoNE-QA/actions/runs/35953491763) passou sob as regras ativas e gravou `source_main_sha=9cfc669186345bc97519e4fc9f671a727d13ec96` na referência aceita. Os testes negativos restantes ainda são necessários.
 - Admins e credenciais humanas acessíveis ao ambiente do agente continuam fora da fronteira de isolamento até a limpeza final da #31. Mudanças futuras no verificador de `main` exigem PR, check e revisor independente; a própria conta autora não pode aprová-las.
 
 ## Alternativas

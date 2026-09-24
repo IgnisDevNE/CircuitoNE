@@ -69,10 +69,18 @@ jobs:
           docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --user "$(id -u):$(id -g)" --mount "type=bind,src=$work,dst=/work" "$image" tar -xzf /work/backup.tar.gz -C /work/extracted --no-same-owner --no-same-permissions
           node scripts/verify-backup.mjs "$work/extracted"
           docker run -d --name "$name" --network none --mount "type=bind,src=$work/extracted,dst=/backup,readonly" -e POSTGRES_HOST_AUTH_METHOD=trust "$image" >/dev/null
+          ready=false
           for attempt in {1..30}; do
-            if docker exec "$name" pg_isready -U postgres >/dev/null 2>&1; then break; fi
+            if [[ "$(docker logs "$name" 2>&1)" == *'PostgreSQL init process complete; ready for start up.'* ]] && docker exec "$name" pg_isready -U postgres >/dev/null 2>&1; then
+              ready=true
+              break
+            fi
             sleep 1
           done
+          if [[ "$ready" != true ]]; then
+            echo '::error::Isolated PostgreSQL did not finish initialization.'
+            exit 1
+          fi
           docker exec "$name" pg_restore --exit-on-error --no-owner --no-acl --username=postgres --dbname=postgres /backup/db.dump
           docker exec "$name" psql -U postgres -d postgres -Atqc "select count(*) from pg_namespace where nspname = 'storage'" | grep -qx 1
           echo 'Isolated dev database restore succeeded; no Supabase project was modified.'

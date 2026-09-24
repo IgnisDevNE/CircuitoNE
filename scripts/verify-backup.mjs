@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto"
 import {
   closeSync,
+  constants,
+  fstatSync,
   lstatSync,
   openSync,
   readFileSync,
@@ -10,28 +12,38 @@ import {
 import { join, relative } from "node:path"
 import { fileURLToPath } from "node:url"
 
-function digest(path) {
+function inspectFile(path, magic = false) {
   const hash = createHash("sha256")
-  const file = openSync(path, "r")
+  const file = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW)
   const chunk = Buffer.allocUnsafe(1024 * 1024)
   try {
+    const stat = fstatSync(file)
+    if (!stat.isFile()) throw new Error("Backup entry is not a regular file")
+    const header = Buffer.alloc(5)
+    if (magic) readSync(file, header, 0, header.length, 0)
     let size
-    while ((size = readSync(file, chunk, 0, chunk.length, null)) > 0)
+    let offset = 0
+    while ((size = readSync(file, chunk, 0, chunk.length, offset)) > 0) {
       hash.update(chunk.subarray(0, size))
+      offset += size
+    }
+    return {
+      size: stat.size,
+      sha256: hash.digest("hex"),
+      header: header.toString(),
+    }
   } finally {
     closeSync(file)
   }
-  return hash.digest("hex")
 }
 
 function files(root, dir = root) {
   const output = []
-  for (const name of readdirSync(dir)) {
-    const path = join(dir, name)
-    const stat = lstatSync(path)
-    if (stat.isDirectory()) output.push(...files(root, path))
-    else if (stat.isFile())
-      output.push({ path: relative(root, path).replaceAll("\\", "/"), stat })
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name)
+    if (entry.isDirectory()) output.push(...files(root, path))
+    else if (entry.isFile())
+      output.push({ path: relative(root, path).replaceAll("\\", "/") })
     else throw new Error("Storage contains an unsupported entry")
   }
   return output
@@ -45,9 +57,18 @@ export function verifyBackupContents(root) {
     JSON.stringify(["db.dump", "manifest.json", "storage"])
   )
     throw new Error("Backup root inventory differs from manifest")
-  if (!lstatSync(join(root, "manifest.json")).isFile())
-    throw new Error("Invalid backup manifest")
-  const manifest = JSON.parse(readFileSync(join(root, "manifest.json"), "utf8"))
+  const manifestFile = openSync(
+    join(root, "manifest.json"),
+    constants.O_RDONLY | constants.O_NOFOLLOW,
+  )
+  let manifest
+  try {
+    if (!fstatSync(manifestFile).isFile())
+      throw new Error("Invalid backup manifest")
+    manifest = JSON.parse(readFileSync(manifestFile, "utf8"))
+  } finally {
+    closeSync(manifestFile)
+  }
   if (
     manifest.version !== 1 ||
     manifest.environment !== "dev" ||
@@ -59,20 +80,11 @@ export function verifyBackupContents(root) {
   )
     throw new Error("Backup manifest identifies an unexpected source")
 
-  const dump = join(root, "db.dump")
-  const dbStat = lstatSync(dump)
-  if (!dbStat.isFile()) throw new Error("Invalid database dump")
-  const magic = Buffer.alloc(5)
-  const handle = openSync(dump, "r")
-  try {
-    readSync(handle, magic, 0, 5, 0)
-  } finally {
-    closeSync(handle)
-  }
+  const database = inspectFile(join(root, "db.dump"), true)
   if (
-    magic.toString() !== "PGDMP" ||
-    dbStat.size !== manifest.database?.size ||
-    digest(dump) !== manifest.database?.sha256
+    database.header !== "PGDMP" ||
+    database.size !== manifest.database?.size ||
+    database.sha256 !== manifest.database?.sha256
   )
     throw new Error("Database dump failed integrity validation")
 
@@ -94,10 +106,11 @@ export function verifyBackupContents(root) {
   for (let index = 0; index < actual.length; index++) {
     const file = actual[index]
     const item = expected[index]
+    const inspected = inspectFile(join(storage, file.path))
     if (
       file.path !== item.path ||
-      file.stat.size !== item.size ||
-      digest(join(storage, file.path)) !== item.sha256
+      inspected.size !== item.size ||
+      inspected.sha256 !== item.sha256
     )
       throw new Error("Storage object failed integrity validation")
   }

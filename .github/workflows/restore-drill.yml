@@ -84,6 +84,6 @@ jobs:
             echo '::error::Isolated PostgreSQL did not finish initialization.'
             exit 1
           fi
-          docker run --rm --network "$network" --read-only --cap-drop ALL --security-opt no-new-privileges --mount "type=bind,src=$work/extracted,dst=/backup,readonly" -e "PGHOST=$name" -e PGPASSWORD=synthetic-restore-only "$client" pg_restore --exit-on-error --clean --if-exists --no-owner --no-acl --username=supabase_admin --dbname=postgres /backup/db.dump
+          docker run --rm --network "$network" --read-only --cap-drop ALL --security-opt no-new-privileges --user "$(id -u):$(id -g)" --mount "type=bind,src=$work/extracted,dst=/backup,readonly" -e "PGHOST=$name" -e PGPASSWORD=synthetic-restore-only "$client" pg_restore --exit-on-error --clean --if-exists --no-owner --no-acl --username=supabase_admin --dbname=postgres /backup/db.dump
           docker run --rm --network "$network" --read-only --cap-drop ALL --security-opt no-new-privileges -e "PGHOST=$name" -e PGPASSWORD=synthetic-restore-only "$client" psql -U supabase_admin -d postgres -Atqc "select count(*) from pg_namespace where nspname = 'storage'" | grep -qx 1
           echo 'Isolated dev database restore succeeded; no Supabase project was modified.'

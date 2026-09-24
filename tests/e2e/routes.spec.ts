@@ -120,8 +120,8 @@ test('rota desconhecida permite voltar ao início', async ({ page }) => {
 test('parâmetro com escape inválido é rejeitado sem quebrar a página', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
-  // O preview responde 404; o Caddy de produção responde 400 para HTTP malformado.
-  // O histórico ainda pode apresentar esse pathname ao roteador React.
+  // O runtime SSR rejeita a URL malformada com 400.
+  // Um histórico manipulado também deve oferecer caminho de recuperação.
   const response = await page.goto('/artistas/%E0%A4%A')
   expect(response?.status()).toBe(400)
   await page.goto('/artistas')
@@ -129,7 +129,7 @@ test('parâmetro com escape inválido é rejeitado sem quebrar a página', async
     window.history.pushState({}, '', '/artistas/%E0%A4%A')
     window.dispatchEvent(new PopStateEvent('popstate'))
   })
-  await expect(page.getByText('404 — página não encontrada.', { exact: false })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'voltar ao início', exact: true })).toBeVisible()
   await page.getByRole('link', { name: 'voltar ao início', exact: true }).click()
   await expect(page).toHaveTitle('Início · CIRCUITO NE')
   expect(errors).toEqual([])

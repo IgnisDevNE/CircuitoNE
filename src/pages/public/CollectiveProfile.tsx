@@ -10,13 +10,13 @@ import { eventoNaoEncerrado, fmtDataHora } from '../../lib/utils'
 
 export function CollectiveProfile() {
   const { id } = useParams()
-  const { coletivos, eventos, artistas } = useStore()
+  const { coletivos, eventos, artistas, now } = useStore()
   const col = coletivos.find((c) => c.id === id)
   usePageTitle(col ? col.nome : 'Coletivo')
 
   if (!col) return <Empty>Coletivo não encontrado. <Link to="/coletivos" className="text-[var(--accent-text)] underline">Voltar</Link></Empty>
 
-  const proximos = eventos.filter((e) => e.coletivoId === col.id && eventoNaoEncerrado(e))
+  const proximos = eventos.filter((e) => e.coletivoId === col.id && eventoNaoEncerrado(e, now))
   const cargoNome = (cargoId: string) => col.cargos.find((c) => c.id === cargoId)?.nome ?? '—'
 
   return (

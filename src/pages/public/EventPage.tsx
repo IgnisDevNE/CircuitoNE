@@ -10,7 +10,7 @@ import { eventoNaoEncerrado, fmtDataHora, tipoEventoLabel } from '../../lib/util
 
 export function EventPage() {
   const { id } = useParams()
-  const { eventos, coletivos } = useStore()
+  const { eventos, coletivos, now } = useStore()
   const toast = useToast()
   const ev = eventos.find((e) => e.id === id)
   usePageTitle(ev ? ev.nome : 'Evento')
@@ -18,7 +18,7 @@ export function EventPage() {
   if (!ev) return <Empty>Evento não encontrado. <Link to="/eventos" className="text-[var(--accent-text)] underline">Voltar</Link></Empty>
 
   const col = coletivos.find((c) => c.id === ev.coletivoId)
-  const naoEncerrado = eventoNaoEncerrado(ev)
+  const naoEncerrado = eventoNaoEncerrado(ev, now)
 
   return (
     <AccentScope color={col?.corPredominante ?? '#ff2040'}>

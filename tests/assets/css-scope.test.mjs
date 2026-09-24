@@ -1,18 +1,15 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync, unlinkSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { resolve, join, dirname, basename } from 'node:path'
+import { readFileSync, readdirSync, writeFileSync, unlinkSync } from 'node:fs'
+import { resolve, join } from 'node:path'
 import { randomUUID, createHash } from 'node:crypto'
 
 test('documentos e ferramentas locais não alteram o CSS distribuído', () => {
-  const output = mkdtempSync(join(tmpdir(), 'circuitone-css-'))
-  assert.equal(dirname(resolve(output)), resolve(tmpdir()))
-  assert.ok(basename(output).startsWith('circuitone-css-'))
+  const output = join('build', 'client')
   const probe = resolve('docs', `css-probe-${randomUUID()}.txt`)
   const buildCSS = () => {
-    execFileSync(process.execPath, ['node_modules/vite/bin/vite.js', 'build', '--configLoader', 'native', '--outDir', output, '--emptyOutDir'], { stdio: 'pipe' })
+    execFileSync(process.execPath, ['node_modules/@react-router/dev/bin.cjs', 'build'], { stdio: 'pipe' })
     const css = readdirSync(join(output, 'assets')).filter(name => name.endsWith('.css')).sort()
       .map(name => readFileSync(join(output, 'assets', name), 'utf8')).join('\n')
     assert.ok(css.length > 0)
@@ -24,6 +21,5 @@ test('documentos e ferramentas locais não alteram o CSS distribuído', () => {
     assert.equal(buildCSS(), baseline)
   } finally {
     try { unlinkSync(probe) } catch (error) { if (error.code !== 'ENOENT') throw error }
-    rmSync(output, { recursive: true, force: true })
   }
 })

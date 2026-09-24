@@ -8,13 +8,13 @@ import { TIPO_LABEL } from '../../data/types'
 
 export function Dashboard() {
   usePageTitle('Dashboard')
-  const { user, eventos, threads, coletivos } = useStore()
+  const { user, eventos, threads, coletivos, now } = useStore()
   if (!user) return null
 
   const meusColetivos = coletivos.filter((c) => c.membros.some((m) => m.userId === user.id))
   const proximos = eventos
-    .filter((e) => eventoNaoEncerrado(e) && meusColetivos.some((c) => c.id === e.coletivoId))
-    .sort(porProximidade)
+    .filter((e) => eventoNaoEncerrado(e, now) && meusColetivos.some((c) => c.id === e.coletivoId))
+    .sort((a, b) => porProximidade(a, b, now))
   const ultimasMensagens = threads
     .flatMap((t) => t.mensagens.map((m) => ({ ...m, thread: t.titulo, threadId: t.id })))
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())

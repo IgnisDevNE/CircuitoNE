@@ -9,13 +9,13 @@ import { eventoNaoEncerrado, fmtDataHora } from '../../lib/utils'
 
 export function ArtistProfile() {
   const { id } = useParams()
-  const { artistas, eventos } = useStore()
+  const { artistas, eventos, now } = useStore()
   const artista = artistas.find((a) => a.id === id)
   usePageTitle(artista ? artista.nome : 'Artista')
 
   if (!artista) return <Empty>Artista não encontrado. <Link to="/artistas" className="text-[var(--accent-text)] underline">Voltar ao hub</Link></Empty>
 
-  const proximos = eventos.filter((e) => eventoNaoEncerrado(e) && e.lineup.some((l) => l.artistaId === artista.id))
+  const proximos = eventos.filter((e) => eventoNaoEncerrado(e, now) && e.lineup.some((l) => l.artistaId === artista.id))
 
   return (
     <AccentScope color={artista.corPredominante}>

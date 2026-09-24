@@ -9,8 +9,8 @@ import { AccentScope } from '../../components/ui/AccentScope'
 
 export function Home() {
   usePageTitle('Início')
-  const { artistas, coletivos, eventos } = useStore()
-  const proximos = [...eventos].filter((e) => eventoNaoEncerrado(e)).sort(porProximidade).slice(0, 3)
+  const { artistas, coletivos, eventos, now } = useStore()
+  const proximos = [...eventos].filter((e) => eventoNaoEncerrado(e, now)).sort((a, b) => porProximidade(a, b, now)).slice(0, 3)
 
   return (
     <div className="space-y-16">

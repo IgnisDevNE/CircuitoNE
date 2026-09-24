@@ -2,7 +2,7 @@
 
 **Estado:** arquitetura aprovada pelo responsável em 22/09/2026. **Revisão:** 2, com adaptação da stack incorporada à fase zero conforme o plano detalhado.
 
-Este documento registra a arquitetura acordada para implementação posterior. O sistema atual continua sendo um protótipo React/Vite com dados em memória, roteador próprio e container estático Caddy. A aprovação desta spec não significa que SSR, backend, autenticação ou persistência já estejam implementados.
+Este documento registra a arquitetura acordada. A primeira fatia de SSR com React Router Framework, Node e Caddy está em validação na fase zero, ainda com dados fictícios. Isso não significa que backend de negócio, autenticação ou persistência estejam implementados.
 
 ## Objetivo e escopo
 

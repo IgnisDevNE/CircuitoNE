@@ -3,17 +3,30 @@ import { test } from 'node:test'
 
 const base = process.env.HOSTING_URL || 'http://127.0.0.1:5176'
 
-test('o container serve a SPA também em links profundos e entrega os assets', async () => {
+test('o container renderiza páginas públicas no servidor e entrega os assets', async () => {
   const home = await fetch(base)
   assert.equal(home.status, 200)
   const html = await home.text()
-  assert.match(html, /<div id="root"><\/div>/)
+  assert.match(html, /<html lang="pt-BR"/)
+  assert.match(html, /conectando a cena eletrônica do nordeste/i)
+  assert.match(html, /<title>Início · CIRCUITO NE<\/title>/)
+  assert.match(html, /<meta name="robots" content="noindex, nofollow"/)
+  assert.doesNotMatch(html, /Figma Make App|Streamline document management/i)
 
   const deep = await fetch(`${base}/artistas/art-anerie`)
   assert.equal(deep.status, 200, 'recarregar uma rota não pode devolver 404')
-  assert.equal(await deep.text(), html)
+  const artistHtml = await deep.text()
+  assert.match(artistHtml, /<title>ANERIE · CIRCUITO NE<\/title>/)
+  assert.match(artistHtml, /Produtora e DJ recifense/)
 
-  const asset = html.match(/src="([^" ]+\.js)"/)?.[1]
+  const login = await fetch(`${base}/entrar`)
+  assert.equal(login.status, 200)
+  const loginHtml = await login.text()
+  assert.match(loginHtml, /<title>Entrar · CIRCUITO NE<\/title>/)
+  assert.match(loginHtml, /Este é um protótipo/)
+  assert.doesNotMatch(loginHtml, /Um hub independente/)
+
+  const asset = html.match(/<link rel="modulepreload" href="([^" ]+\.js)"/)?.[1]
   assert.ok(asset, 'build deve referenciar um bundle JavaScript')
   const bundle = await fetch(new URL(asset, base))
   assert.equal(bundle.status, 200)
@@ -22,7 +35,7 @@ test('o container serve a SPA também em links profundos e entrega os assets', a
 })
 
 test('arquivos internos e assets inexistentes não recebem o HTML da SPA', async () => {
-  for (const path of ['/.env', '/.git/config', '/assets/arquivo-inexistente.js']) {
+  for (const path of ['/.env', '/.git/config', '/assets/arquivo-inexistente.js', '/pagina-inexistente']) {
     const response = await fetch(base + path)
     await response.arrayBuffer()
     assert.equal(response.status, 404, path)

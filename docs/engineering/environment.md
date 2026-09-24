@@ -6,6 +6,22 @@ O responsável escolheu usar **Podman neste Windows por enquanto**, com possibil
 
 O container local é preview do protótipo. Não equivale à homologação integrada com banco e não oferece disponibilidade de produção: depende deste computador e da VM ligada.
 
+### Candidato SSR da fase zero
+
+A primeira fatia da migração usa React Router Framework com SSR e fixtures fixas, com Node 24 atrás do Caddy. Ela preserva as URLs públicas e os caminhos do protótipo, mas ainda não integra Auth ou Supabase. Para ensaiar sem substituir o preview estático existente:
+
+```powershell
+podman build --format docker -t localhost/circuitone-app:f0 .
+podman build --format docker -f deploy/Caddy.Dockerfile -t localhost/circuitone-proxy:f0 .
+podman network create circuitone-f0
+podman run -d --name circuitone-app-f0 --network circuitone-f0 --network-alias app --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges --memory 512m localhost/circuitone-app:f0
+podman run -d --name circuitone-proxy-f0 --network circuitone-f0 --read-only --cap-drop ALL --security-opt no-new-privileges --memory 128m -p 5186:8080 localhost/circuitone-proxy:f0
+$env:HOSTING_URL = 'http://172.23.250.196:5186'
+pnpm test:hosting
+```
+
+O IP é o endereço atual da VM WSL e pode mudar. Os containers de ensaio não têm banco nem secrets. O CI Linux constrói as duas imagens e executa o mesmo teste HTTP; o resultado remoto precisa ser conferido na PR antes de considerar a migração homologada.
+
 ## Executar neste host
 
 Podman 6.0.2 e máquina WSL já estavam instalados. Outros serviços ocupavam 8443, entre outras portas; eles não foram alterados. Container atual: `circuitone-preview`, imagem `localhost/circuitone:foundation`, porta 5178 → 8080.

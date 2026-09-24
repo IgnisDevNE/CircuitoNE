@@ -2,12 +2,11 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { cx } from '../../lib/utils'
 
 function usePrefersReducedMotion() {
-  const [reduced, setReduced] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-  )
+  const [reduced, setReduced] = useState(false)
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
     const on = () => setReduced(mq.matches)
+    on()
     mq.addEventListener('change', on)
     return () => mq.removeEventListener('change', on)
   }, [])

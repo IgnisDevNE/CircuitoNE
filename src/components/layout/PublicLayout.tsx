@@ -11,7 +11,7 @@ const NAV = [
 ]
 
 export function PublicLayout({ children }: { children: ReactNode }) {
-  const { user } = useStore()
+  const { user, now } = useStore()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
 
@@ -101,7 +101,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
           <span>
             <span className="text-[var(--accent-text)]">$</span> circuito_ne --scene=eletronica --regiao=nordeste
           </span>
-          <span>Hub cultural independente · {new Date().getFullYear()}</span>
+          <span>Hub cultural independente · {new Date(now).getFullYear()}</span>
         </div>
       </footer>
     </div>

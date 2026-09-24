@@ -138,6 +138,10 @@ Testes destrutivos e `reset` usam banco descartável local/CI. Homologação com
 
 As regiões diferentes exigem decisão antes de dados reais. Banco e arquivos têm estratégias próprias de backup; registrar retenção, responsáveis, perda aceitável e tempo de recuperação. Testar restauração de ambos antes do beta; não presumir que backup de Postgres recupera objetos de Storage.
 
+## Backup
+
+O desenho e o estado dos backups de banco **e** objetos ficam no [runbook de backup](backup.md). A rotina e a restauração permanecem critérios da #43; a criptografia antes de dados reais é o bloqueio separado #104.
+
 ## Codecov
 
 O CI preserva `codecov-lcov`. O publicador separado `codecov-publish.yml`, definido em `main`, verifica os jobs `quality` e `database` da execução original, baixa somente seu LCOV e envia à [instância própria](https://pipeline.magalz.space/gh/IgnisDevNE/CircuitoNE). Ele usa o token exclusivo do repositório no environment GitHub `Codecov Upload`, restrito a `main`, sem executar código de PR. O [primeiro relatório de `main`](https://pipeline.magalz.space/github/IgnisDevNE/CircuitoNE/commit/e74153ef47e388959477e2c3410f9dfffe02503f) foi processado com 43,13% de cobertura. `codecov.yml` permite o comentário e mantém status informativos; validar comentário e metadados numa PR real antes de concluir [#30](https://github.com/IgnisDevNE/CircuitoNE/issues/30). Ver [ADR 0007](../decisions/0007-codecov-self-hosted-target.md).

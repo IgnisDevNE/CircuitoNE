@@ -4,6 +4,11 @@ begin
   if current_setting('server_version_num')::int / 10000 <> 17 then
     raise exception 'Esperado Postgres 17';
   end if;
+  if to_regclass('auth.sessions') is null or not exists (
+    select from information_schema.columns where table_schema='auth' and table_name='users' and column_name='phone_confirmed_at'
+  ) then
+    raise exception 'Migrações oficiais do Auth ausentes';
+  end if;
   if (select count(*) from public.phase0_pipeline_probe) <> 1 then
     raise exception 'Migração de ensaio não foi aplicada exatamente uma vez';
   end if;

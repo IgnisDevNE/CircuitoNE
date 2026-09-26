@@ -28,6 +28,11 @@ test(
       "teste local não aceita destinos ou opções adicionais",
     )
     const workdir = prepareLocalDatabase()
+    const projectId = `circuitone-test-${basename(workdir).split("-").at(-1).toLowerCase()}`
+    const psqlArgs = ["exec", "-i", `supabase_db_${projectId}`, "psql", "--no-psqlrc", "--username", "postgres", "--dbname", "postgres", "--set", "ON_ERROR_STOP=1"]
+    // db query usa prepared statement único. psql suporta os ensaios transacionais.
+    const query = sql => execFileSync("docker", psqlArgs, { input: sql, encoding: "utf8", timeout: 30_000 })
+    const queryFile = file => query(readFileSync(file, "utf8"))
     const cli = resolve("node_modules/supabase/dist/supabase.js")
     const run = (...args) =>
       execFileSync(process.execPath, [cli, ...args, "--workdir", workdir], {
@@ -69,7 +74,7 @@ test(
     writeFileSync(
       config,
       original
-        .replace('project_id = "circuitone-local"', `project_id = "circuitone-test-${basename(workdir).split("-").at(-1).toLowerCase()}"`)
+        .replace('project_id = "circuitone-local"', `project_id = "${projectId}"`)
         .replace(/^port = 55432$/m, `port = ${dbPort}`)
         .replace(/^shadow_port = 55430$/m, `shadow_port = ${shadowPort}`),
     )
@@ -106,7 +111,7 @@ test(
       run("db", "reset", "--local")
       check()
       checkDefaults()
-      run("db", "query", "--local", "--file", resolve("tests/database/identity-profiles.sql"))
+      queryFile("tests/database/identity-profiles.sql")
     }
     // Duas conexões reais: lock da identidade e UNIQUE do CPF devem decidir no banco.
     for (const sameAccount of [false, true]) {
@@ -131,20 +136,7 @@ test(
             '{"kind":"member","name":"Ensaio"}', '30000000-0000-4000-8000-00000000000${index}');
           select pg_sleep(1); commit;`,
           )
-          return promisify(execFile)(
-            process.execPath,
-            [
-              cli,
-              "db",
-              "query",
-              "--local",
-              "--file",
-              file,
-              "--workdir",
-              workdir,
-            ],
-            { timeout: 30_000 },
-          )
+          return promisify(execFile)("docker", [...psqlArgs, "--command", readFileSync(file, "utf8")], { timeout: 30_000 })
         }),
       )
       assert.equal(
@@ -158,10 +150,7 @@ test(
         String(failure.stdout) + String(failure.stderr),
         /Não foi possível concluir|Cadastro já concluído/,
       )
-      run(
-        "db",
-        "query",
-        "--local",
+      query(
         `do $$ begin
         if (select count(*) from public.profiles) <> 1 or (select count(*) from private.account_details) <> 1 then
           raise exception 'Concorrência deixou contas/perfis parciais'; end if; end $$;
@@ -198,7 +187,7 @@ test(
     const seed = readFileSync("supabase/seeds/identity.sql", "utf8")
     const seedFile = join(workdir, "seed-identity.sql")
     writeFileSync(seedFile, seed)
-    assert.throws(() => run("db", "query", "--local", "--file", seedFile), error => /Seed exige destino sintético/.test(String(error.stdout) + String(error.stderr)))
+    assert.throws(() => queryFile(seedFile), error => /Seed exige destino sintético/.test(String(error.stdout) + String(error.stderr)))
     writeFileSync(
       seedFile,
       `set circuitone.seed_target='disposable';\n${seed}
@@ -206,15 +195,9 @@ test(
         ('02000000-0000-4000-8000-000000000999','01000000-0000-4000-8000-000000000001','artist','Sentinela','Recife','PE');
       ${seed}`,
     )
-    run("db", "query", "--local", "--file", seedFile)
-    run("db", "query", "--local", "--file", resolve("tests/database/identity-seed-preserves-others.sql"))
-    run(
-      "db",
-      "query",
-      "--local",
-      "--file",
-      resolve("tests/database/identity-seed.sql"),
-    )
+    queryFile(seedFile)
+    queryFile("tests/database/identity-seed-preserves-others.sql")
+    queryFile("tests/database/identity-seed.sql")
     const taxonomy = JSON.parse(readFileSync("docs/specs/estilos-musicais.json", "utf8"))
     const expected = Object.entries(taxonomy).flatMap(([style, children]) => [[style, null], ...children.map(name => [style, name])])
     const taxonomyFile = join(workdir, "taxonomy.sql")

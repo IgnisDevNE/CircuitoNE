@@ -14,7 +14,9 @@ major_version = 17
 enabled = false
 
 [auth]
-enabled = false
+# db start/reset aplica o schema oficial Auth antes das migrações da aplicação.
+# O harness não inicia o servidor Auth nem envia mensagens.
+enabled = true
 
 [storage]
 enabled = false

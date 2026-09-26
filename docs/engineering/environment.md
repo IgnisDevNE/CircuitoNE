@@ -1,55 +1,30 @@
 # Ambiente e operação
 
-## Escolha de hospedagem
+## Hospedagem local SSR
 
-O responsável escolheu usar **Podman neste Windows por enquanto**, com possibilidade de levar a aplicação ao Debian próprio. O preview atual é estático: build Node/Vite e execução com Caddy. A [arquitetura aprovada em 22/09/2026](../specs/architecture-mvp.md) prevê React Router Framework com SSR, runtime Node e Caddy como proxy HTTPS. Essa migração está planejada na fase 0; os comandos abaixo ainda descrevem o protótipo estático. Supabase gerenciado continua responsável pelo banco, Auth e Storage.
+O responsável escolheu Podman neste Windows, com migração futura para Debian. A aplicação já usa React Router Framework com SSR, Node 24 e Caddy; ainda usa fixtures, sem integração de Auth ou banco. Supabase gerenciado continua sendo o destino aprovado para banco, Auth e Storage.
 
-O container local é preview do protótipo. Não equivale à homologação integrada com banco e não oferece disponibilidade de produção: depende deste computador e da VM ligada.
+Um pod por ambiente compartilha somente o namespace de rede. Node fica em `127.0.0.1:3000`, acessível apenas dentro do pod; Caddy publica 8080. A [ADR 0011](../decisions/0011-container-loopback-proxy.md) registra o motivo e os limites. A rede padrão `podman` funciona pelo Windows; a rede customizada falhou no encaminhamento WSL deste host.
 
-### Candidato SSR da fase zero
-
-A primeira fatia da migração usa React Router Framework com SSR e fixtures fixas, com Node 24 atrás do Caddy. Ela preserva as URLs públicas e os caminhos do protótipo, mas ainda não integra Auth ou Supabase. Para ensaiar sem substituir o preview estático existente:
+Para um ensaio novo, sem substituir serviços existentes:
 
 ```powershell
 podman build --format docker -t localhost/circuitone-app:f0 .
 podman build --format docker -f deploy/Caddy.Dockerfile -t localhost/circuitone-proxy:f0 .
-podman network create circuitone-f0
-podman run -d --name circuitone-app-f0 --network circuitone-f0 --network-alias app --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges --memory 512m localhost/circuitone-app:f0
-podman run -d --name circuitone-proxy-f0 --network circuitone-f0 --read-only --cap-drop ALL --security-opt no-new-privileges --memory 128m -p 5186:8080 localhost/circuitone-proxy:f0
+podman pod create --name circuitone-hosting-pod --network podman --share net -p 5186:8080
+podman run -d --name circuitone-pod-app --pod circuitone-hosting-pod --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges --memory 512m -e CIRCUITONE_RUNTIME=preview -e HOST=127.0.0.1 localhost/circuitone-app:f0
+podman run -d --name circuitone-pod-proxy --pod circuitone-hosting-pod --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges --memory 128m localhost/circuitone-proxy:f0
 $env:HOSTING_URL = 'http://172.23.250.196:5186'
 pnpm test:hosting
 ```
 
-O IP é o endereço atual da VM WSL e pode mudar. Os containers de ensaio não têm banco nem secrets. O CI Linux constrói as duas imagens e executa o mesmo teste HTTP; o resultado remoto precisa ser conferido na PR antes de considerar a migração homologada.
+Não repetir criação com nomes ocupados. Para o pod existente, usar `podman pod start circuitone-hosting-pod`, `podman pod stop circuitone-hosting-pod` ou `podman pod restart circuitone-hosting-pod`. No Docker do CI, criar Node primeiro e recriar a dupla se a aplicação for substituída: Caddy usa o namespace daquele container específico.
 
-## Executar neste host
+O IP acima é o endereço atual da VM, sujeito a mudança; consultar `podman machine ssh ip -4 -brief address`. As portas publicadas na VM exigem restrição de acesso antes de exposição remota do demo. Cloudflare Access e Tunnel ainda precisam de validação ponta a ponta antes de publicar os domínios; esta configuração não comprova essa proteção. O antigo `circuitone-preview` em 5178 não foi removido, mas estava parado no retorno da sessão em 26/09/2026.
 
-Podman 6.0.2 e máquina WSL já estavam instalados. Outros serviços ocupavam 8443, entre outras portas; eles não foram alterados. Container atual: `circuitone-preview`, imagem `localhost/circuitone:foundation`, porta 5178 → 8080.
+O ensaio passou home, deep link SSR, assets e bloqueio de arquivos internos, inclusive após reiniciar o pod. Um container independente alcançou o proxy pela bridge e teve acesso ao Node negado. O CI verifica rotas e bloqueio do acesso direto ao Node; o reinício foi testado somente no host local. Isso não comprova produção em espera, integração com Supabase ou reinício automático após reboot do Windows, pendentes na [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43).
 
-```powershell
-podman build --format docker -t localhost/circuitone:foundation .
-podman run -d --name circuitone-preview --read-only --cap-drop ALL --security-opt no-new-privileges --memory 128m --cpus 1 -p 5178:8080 localhost/circuitone:foundation
-```
-
-O comando de criação é para ambiente novo, não para repetir com o nome ocupado. Para o container existente:
-
-```powershell
-podman start circuitone-preview
-podman logs --tail 30 circuitone-preview
-podman inspect circuitone-preview --format '{{.State.Status}} health={{.State.Health.Status}}'
-podman stop circuitone-preview
-```
-
-Nesta máquina, o encaminhamento WSL para `localhost` não funcionou. O acesso validado em 21/09/2026 foi **http://172.23.250.196:5178**. O IP pode mudar ao reiniciar a VM; consultar `podman machine ssh ip -4 -brief address` e usar o endereço de `eth0`. A publicação da porta vale para as interfaces da VM; não foi configurado túnel público nem DNS. Não alteramos a rede ou reiniciamos a VM que já atende outros serviços.
-
-```powershell
-$env:HOSTING_URL = 'http://172.23.250.196:5178'
-pnpm test:hosting
-```
-
-O teste verifica home, acesso direto a rota React, bundle JavaScript, bloqueio de caminhos internos e 404 de asset ausente. `--format docker` preserva o HEALTHCHECK na imagem construída pelo Podman. Processo usa UID 1000, raiz somente leitura, capabilities removidas e proibição de novos privilégios. Diretórios de runtime do Caddy são graváveis; arquivos da aplicação não são. O Caddy perde a capability gravada no binário durante o build, pois escuta em 8080 e não precisa dela.
-
-Imagens base são fixadas por digest; Dependabot propõe atualizações revisáveis. `.dockerignore` permite somente entradas necessárias ao build. Nenhum `.env`, histórico Git ou arquivo de credenciais entra no contexto. O frontend ainda não usa Supabase. No build estático, variável em runtime não altera JavaScript já compilado. Na migração SSR, definir configuração por ambiente no servidor e expor ao cliente somente URL e chave **publicável**, com teste de seleção do projeto. Nunca incluir chave secreta no bundle.
+Imagens são fixadas por digest e `--format docker` preserva HEALTHCHECK. Aplicação e proxy usam usuários sem privilégios, raiz somente leitura, capabilities removidas e proibição de novos privilégios; `/tmp` é volátil. `.dockerignore` exclui secrets e histórico Git. Nenhuma credencial privilegiada deve entrar no container. Este host e sua VM precisam estar ligados; o ensaio não oferece disponibilidade de produção.
 
 ## Ferramentas e CI
 

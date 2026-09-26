@@ -6,6 +6,7 @@ import { createServer } from "node:net"
 import { readFileSync, readdirSync, writeFileSync, rmSync, realpathSync } from "node:fs"
 import { resolve, join, basename, dirname } from "node:path"
 import { prepareLocalDatabase } from "../../scripts/prepare-local-db.mjs"
+import { checkCollectiveConcurrency } from './collective-concurrency.mjs'
 
 const reservePort = async (port) => {
   const server = createServer()
@@ -112,6 +113,7 @@ test(
       check()
       checkDefaults()
       queryFile("tests/database/identity-profiles.sql")
+      queryFile("tests/database/collectives.sql")
     }
     // Duas conexões reais: lock da identidade e UNIQUE do CPF devem decidir no banco.
     for (const sameAccount of [false, true]) {
@@ -157,6 +159,7 @@ test(
         delete from auth.users where id in ('20000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000002')`,
       )
     }
+    await checkCollectiveConcurrency(query, sql => promisify(execFile)('docker', [...psqlArgs, '--command', sql], { timeout: 30_000 }))
     run(
       "db",
       "query",
@@ -198,6 +201,10 @@ test(
     queryFile(seedFile)
     queryFile("tests/database/identity-seed-preserves-others.sql")
     queryFile("tests/database/identity-seed.sql")
+    const collectiveSeed = readFileSync('supabase/seeds/collectives.sql', 'utf8')
+    assert.throws(() => query(collectiveSeed), error => /Seed exige destino sintético/.test(String(error.stdout) + String(error.stderr)))
+    query(`set circuitone.seed_target='disposable';\n${collectiveSeed}\n${collectiveSeed}`)
+    queryFile('tests/database/collective-seed.sql')
     const taxonomy = JSON.parse(readFileSync("docs/specs/estilos-musicais.json", "utf8"))
     const expected = Object.entries(taxonomy).flatMap(([style, children]) => [[style, null], ...children.map(name => [style, name])])
     const taxonomyFile = join(workdir, "taxonomy.sql")

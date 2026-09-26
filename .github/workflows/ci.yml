@@ -19,6 +19,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  agent_runtime:
+    name: agent-runtime
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24.21.0'
+      - run: docker build --target agent -f deploy/agent/Dockerfile -t localhost/circuitone-agent:bootstrap .
+      - run: node --test tests/agent/image.test.mjs
+        env:
+          CONTAINER_ENGINE: docker
+      - run: docker build --target network -f deploy/agent/Dockerfile -t localhost/circuitone-agent-network:bootstrap .
+      - run: docker run --rm --network none --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges localhost/circuitone-agent-network:bootstrap squid -k parse
+
   quality:
     name: quality
     runs-on: ubuntu-latest

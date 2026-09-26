@@ -1,5 +1,7 @@
 # Ambiente e operação
 
+O ambiente do **implementador** e a sincronização pós-PR do Windows estão no [guia do agente isolado](agent-runtime.md). Os procedimentos abaixo descrevem hospedagem e manutenção; a sessão Windows não deve ser confundida com o container do agente.
+
 ## Hospedagem local SSR
 
 O responsável escolheu Podman neste Windows, com migração futura para Debian. A aplicação já usa React Router Framework com SSR, Node 24 e Caddy; ainda usa fixtures, sem integração de Auth ou banco. Supabase gerenciado continua sendo o destino aprovado para banco, Auth e Storage.
@@ -114,7 +116,7 @@ node scripts/github-app.mjs git push
 
 O helper usa Node nativo, emite um token temporário limitado ao repositório ID 1380574734 e o fornece somente ao processo `gh`/`git`. Não imprime nem grava o token; não faz login global nem substitui a credencial humana salva. Commits feitos por esse helper usam autor/committer `ignisdevne[bot]`. Para o Git, a cadeia de helpers é substituída somente no comando, sem fallback interativo para a conta humana.
 
-A chave fornecida está em `secrets/ignisdevne.2026-09-21.private-key.pem`; a pasta inteira está ignorada pelo Git e excluída do contexto do container. Nenhum desses arquivos estava versionado na inspeção. Para outro caminho ou rotação, definir `GITHUB_APP_PRIVATE_KEY_FILE`. O arquivo `githubapp-secret.txt` não é usado por esse fluxo de autenticação por instalação.
+A chave de bootstrap permanece no contexto de manutenção Windows até a revogação/limpeza final da #31, ignorada pelo Git e excluída dos containers. `scripts/github-app.mjs` agora exige token temporário e validade, sem ler chaves. O mantenedor define `GITHUB_APP_PRIVATE_KEY_FILE` externamente e usa `scripts/maintenance/issue-github-token.mjs`; o modo `--host gh ...`/`--host git ...` preserva a identidade App nas operações de manutenção. Não copiar a chave para o implementador. O arquivo `githubapp-secret.txt` não é usado por esse fluxo.
 
 A instalação 163660443 (App 5028495) está hoje em `selected repositories`, apenas `IgnisDevNE/CircuitoNE`; o QA permanece excluído. O responsável pretende reutilizar o bot em outros repositórios da organização, que deverão ser selecionados individualmente. Limitar tokens não reduz o poder da chave privada; por isso a separação definitiva exige emissor controlado fora do ambiente implementador. A configuração local atual é uma etapa de bootstrap, não prova de isolamento contra processos que ainda possam acessar credenciais humanas.
 

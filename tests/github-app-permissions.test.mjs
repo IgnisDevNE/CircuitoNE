@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { generateKeyPairSync } from 'node:crypto';
 import test from 'node:test';
-import { createInstallationToken } from '../scripts/github-app.mjs';
+import { createInstallationToken } from '../scripts/maintenance/issue-github-token.mjs';
 
 test('temporary CI permissions require explicit opt-in and never expand repository scope', async (t) => {
   const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
@@ -17,6 +17,9 @@ test('temporary CI permissions require explicit opt-in and never expand reposito
       process.env.GITHUB_APP_ACTIONS_WRITE = actions;
       process.env.GITHUB_APP_WORKFLOWS_WRITE = workflows;
       await createInstallationToken(privateKey);
+      assert.equal(requested.permissions.actions, 'read');
+      assert.equal(requested.permissions.workflows, undefined);
+      await createInstallationToken(privateKey, true);
       assert.deepEqual(requested.repository_ids, [1380574734]);
       assert.deepEqual(requested.permissions, {
         contents: 'write', pull_requests: 'write', issues: 'write',

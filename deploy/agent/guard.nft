@@ -1,0 +1,8 @@
+# Aplicado somente na namespace do container inerte pelo mantenedor.
+table inet circuitone_agent {
+  chain output {
+    type filter hook output priority 0; policy drop;
+    oifname "lo" accept
+    ip daddr 10.89.240.2 tcp dport 3128 accept
+  }
+}

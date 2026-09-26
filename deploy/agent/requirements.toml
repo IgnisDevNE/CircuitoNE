@@ -1,0 +1,18 @@
+# Política do mantenedor, incorporada à imagem e não editável pelo usuário node.
+[features]
+plugins = false
+apps = false
+browser_use = false
+browser_use_external = false
+browser_use_full_cdp_access = false
+in_app_browser = false
+computer_use = false
+remote_plugin = false
+
+# Somente o MCP local, com executável e argumentos aprovados.
+[mcp_servers.memtrace.identity]
+command = { executable = "/usr/local/bin/memtrace", args = [
+  { match = "exact", value = "mcp" },
+  { match = "exact", value = "--workspace" },
+  { match = "exact", value = "/workspace/circuito-ne" },
+] }

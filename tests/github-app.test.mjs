@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { generateKeyPairSync, verify } from 'node:crypto'
 import { test } from 'node:test'
-import { createInstallationToken } from '../scripts/github-app.mjs'
+import { createInstallationToken } from '../scripts/maintenance/issue-github-token.mjs'
 
 test('o token do App usa assinatura válida e fica limitado ao CircuitoNE', async (t) => {
   const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 })

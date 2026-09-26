@@ -1,6 +1,6 @@
 # ADR 0011 — Node e Caddy no mesmo namespace de rede
 
-Data: 26/09/2026. Status: proposta, dependente de revisão e homologação da PR.
+Data: 26/09/2026. Status: aceita na [PR #110](https://github.com/IgnisDevNE/CircuitoNE/pull/110), após revisão independente, aprovação e aceite canônico; CI e promoção pós-merge confirmados em `9dfb396`.
 
 ## Contexto
 
@@ -16,6 +16,6 @@ Criar a aplicação antes do proxy. No Docker, recriar a aplicação exige recri
 
 No ensaio local, os testes HTTP falharam com 502 usando o destino antigo `app:3000`; passaram após a troca para loopback, inclusive após reiniciar o pod. Um container independente alcançou Caddy na bridge, mas não Node na porta 3000. O CI verifica rotas e bloqueio do acesso direto ao Node sem secrets; o reinício foi testado somente no host local.
 
-Publicação dos domínios, proteção de acesso ao demo, produção em espera e inicialização após reinício do Windows ainda são critérios da [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43). Este ensaio não integra Supabase nem substitui homologação do produto.
+Os domínios foram publicados pelo Tunnel existente, preservando suas 29 rotas anteriores. HTTPS externo confirmou o bloqueio de visitantes no dev pelo Cloudflare Access e a página de espera de produção, com 404 nas rotas do protótipo. Login permitido, inicialização após reboot e demais critérios seguem na [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43). Este deploy usa fixtures, sem integração de Auth ou dados persistidos.
 
 Referência: [Podman pod create — compartilhamento e portas](https://docs.podman.io/en/latest/markdown/podman-pod-create.1.html).

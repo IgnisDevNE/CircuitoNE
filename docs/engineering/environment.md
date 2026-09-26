@@ -20,9 +20,30 @@ pnpm test:hosting
 
 Não repetir criação com nomes ocupados. Para o pod existente, usar `podman pod start circuitone-hosting-pod`, `podman pod stop circuitone-hosting-pod` ou `podman pod restart circuitone-hosting-pod`. No Docker do CI, criar Node primeiro e recriar a dupla se a aplicação for substituída: Caddy usa o namespace daquele container específico.
 
-O IP acima é o endereço atual da VM, sujeito a mudança; consultar `podman machine ssh ip -4 -brief address`. As portas publicadas na VM exigem restrição de acesso antes de exposição remota do demo. Cloudflare Access e Tunnel ainda precisam de validação ponta a ponta antes de publicar os domínios; esta configuração não comprova essa proteção. O antigo `circuitone-preview` em 5178 não foi removido, mas estava parado no retorno da sessão em 26/09/2026.
+O IP acima é o endereço atual da VM, sujeito a mudança; consultar `podman machine ssh ip -4 -brief address`. Não há portproxy nem listener Windows em 5186/5187; não criar encaminhamento público dessas portas para contornar Access. O antigo `circuitone-preview` em 5178 não foi removido, mas estava parado no retorno da sessão em 26/09/2026.
 
-O ensaio passou home, deep link SSR, assets e bloqueio de arquivos internos, inclusive após reiniciar o pod. Um container independente alcançou o proxy pela bridge e teve acesso ao Node negado. O CI verifica rotas e bloqueio do acesso direto ao Node; o reinício foi testado somente no host local. Isso não comprova produção em espera, integração com Supabase ou reinício automático após reboot do Windows, pendentes na [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43).
+O ensaio passou home, deep link SSR, assets e bloqueio de arquivos internos, inclusive após reiniciar o pod. Um container independente alcançou o proxy pela bridge e teve acesso ao Node negado. O CI verifica rotas e bloqueio do acesso direto ao Node; o reinício foi testado somente no host local. Integração com Supabase e reinício automático após reboot seguem na [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43).
+
+### Domínios publicados em 26/09/2026
+
+A [PR #110](https://github.com/IgnisDevNE/CircuitoNE/pull/110) foi integrada em `9dfb396`; [CI](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/36266836015) e [promoção QA](https://github.com/IgnisDevNE/CircuitoNE-QA/actions/runs/36266942956) passaram no commit integrado. Imagens locais: app `fe0751e221ce3580288bf9202344b0d10ebc685a4b8ed06aa720d8f64aba2f0d`; proxy `4d02f9c020aa6881d65299330f15b62214b1ada68b5c17b05290f31b46e89efb`. O build de app é idêntico ao artefato anterior; o proxy contém o destino loopback revisado.
+
+- [Dev](https://circuitone-dev.magalz.space): pod `circuitone-hosting-pod`, porta 5186, runtime `development`, referência dev e `DEMO_MODE=true`. Cloudflare Access cobre todo o domínio, com uma política Allow somente para `ignisdev@magalz.space`. As rotas `/`, `/artistas/art-anerie` e `/assets/missing.js` exigiram login no teste externo sem sessão. O acesso permitido após OTP ainda precisa de confirmação.
+- [Produção](https://circuitone.magalz.space): pod `circuitone-production-pod`, porta 5187, runtime `production`, referência de produção e `DEMO_MODE=false`. `/` mostra espera e `/healthz` retorna 200; login, perfil de artista, asset ausente e `.env` retornam 404. Nenhum dado real é servido.
+
+Os CNAMEs apontam para o tunnel `homelab`; a configuração local acrescenta apenas os dois hostnames antes do catchall, sem mudar as 29 rotas anteriores. O mantenedor precisou reiniciar o serviço como administrador. O arquivo anterior permanece em `C:\Users\magal\.cloudflared\config.before-circuitone-20260926.yml` para rollback; as novas rotas foram validadas pelo CLI. O serviço está automático e conectado. O resolvedor local ainda guardava NX no teste; DNS público 1.1.1.1 e HTTPS com resolução explícita ao IP publicado passaram, sem ignorar certificados.
+
+### Retomar os pods após login
+
+`deploy/start-host.ps1` inicia somente a máquina existente `podman-machine-default`, caso esteja parada, e os dois pods existentes. Não cria recursos, constrói imagens, troca versões, usa credenciais ou reinicia cloudflared. Máquina desconhecida ou erro nativo interrompe a execução. Pode ser chamado manualmente:
+
+```powershell
+powershell.exe -NoProfile -NonInteractive -File deploy/start-host.ps1
+```
+
+Após a aprovação desta mudança, copiar a versão revisada para uma pasta de operação fora do checkout e cadastrar uma tarefa Windows de login do mantenedor, com `RunLevel Limited` e `LogonType Interactive`, sem salvar senha. A ação deve chamar `powershell.exe -NoProfile -NonInteractive -File` nessa cópia, com até três retentativas separadas por um minuto. Não executar um arquivo de branch/PR nem buscar código novo no login. Atualizar a cópia de operação somente após revisão e promoção de uma nova versão.
+
+Teste local: chamada idempotente com pods já ligados e retomada após parar apenas os dois pods, seguidas dos testes HTTP. O teste isolado cobre máquina ligada/parada, estado inesperado e falhas nativas sem tocar a VM. Não desligamos a VM que atende outros serviços. A tarefa de login e um reboot real ainda precisam ser comprovados; esse desenho depende de login do mantenedor, sem prometer disponibilidade sem sessão.
 
 Imagens são fixadas por digest e `--format docker` preserva HEALTHCHECK. Aplicação e proxy usam usuários sem privilégios, raiz somente leitura, capabilities removidas e proibição de novos privilégios; `/tmp` é volátil. `.dockerignore` exclui secrets e histórico Git. Nenhuma credencial privilegiada deve entrar no container. Este host e sua VM precisam estar ligados; o ensaio não oferece disponibilidade de produção.
 
@@ -73,13 +94,13 @@ Testes offline em `tests/homologation-workflow.test.mjs` executam os scripts do 
 Repositório existente: [IgnisDevNE/CircuitoNE](https://github.com/IgnisDevNE/CircuitoNE), público na inspeção inicial; a visibilidade foi preservada. Baseline importado em `main`; preparação em `codex/project-foundation` e [PR #2](https://github.com/IgnisDevNE/CircuitoNE/pull/2). O estado verificado das proteções e do CI está no [relatório](../reviews/foundation-validation.md).
 
 - `main`: exigir PR, revisão independente, CODEOWNERS nos contratos/testes/infra, CI e resolução de comentários; sem force push ou exclusão. Administradores também sujeitos à proteção de branch. A conta administrativa ainda pode alterar a configuração: por isso deve sair do ambiente do implementador.
-- Ambiente **Homologação**: projeto `CircuitoNE-dev` (`odphoxozclrshqjgwbqk`, São Paulo), revisão de `magalz` e prevenção de autoaprovação. Variável `SUPABASE_PROJECT_REF` definida; sem secrets nesta preparação.
+- Ambiente **Homologação**: projeto `CircuitoNE-dev` (`odphoxozclrshqjgwbqk`, São Paulo), revisão de `magalz` e prevenção de autoaprovação. Variáveis e secrets foram cadastrados; a conexão protegida de leitura passou, conforme as evidências abaixo.
 - Ambiente **Producao**: o projeto inicial `mwgccjvztzbderlwtheg` (Oregon) foi removido vazio em 22/09/2026 e substituído por `CircuitoNE` (`ukyoyrmebwadmuzkswdw`, São Paulo). Com autorização expressa para a conta humana, as variáveis `SUPABASE_PROJECT_REF`, `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY` foram atualizadas e conferidas em 23/09/2026 UTC. O responsável cadastrou `SUPABASE_DB_PASSWORD` do novo banco e substituiu o token de gerenciamento antigo por um PAT de 90 dias restrito ao projeto e a `Connection Pooling: Read`, com rotação até 22/12/2026. O App recebeu HTTP 403 ao ler variables/secrets e continua sem esse acesso. O [workflow protegido](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/35813985190) comprovou conexão; ver [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) para as demais pendências.
 
 O [workflow manual de produção](../../.github/workflows/validate-production.yml) só executa na `main`, dentro do environment `Producao` protegido. Ele verifica variáveis e token, obtém o destino do pooler pela API de gerenciamento, valida a senha com TLS `verify-full` e consulta literal em transação somente leitura. Não faz checkout, migração, seed ou deploy; exige aprovação do environment a cada execução. A [primeira execução](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/35812265787) falhou ao consultar o pooler com o token anterior, antes de testar a senha; o workflow não registrou o código HTTP. Após a substituição do token, a [segunda](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/35813985190) passou em todas as etapas. Isso não comprova Auth, callbacks, RLS, SMTP nem deploy da aplicação.
 - Alertas de dependências/correções automáticas habilitados. Squash é o método de merge; exclusão automática de branch após merge habilitada. Branch atual permanece enquanto PR não for aprovado/concluído.
 
-O App `ignisdevne` foi conectado em 22/09/2026, com identidade `ignisdevne[bot]`. O PR inicial de `magalz` foi encerrado e substituído pelo [PR #2](https://github.com/IgnisDevNE/CircuitoNE/pull/2), aberto pelo App, com o último push revisável também vindo dele. Assim, a revisão pode ser feita pelo humano. Um job disparado por `magalz` não pode ser aprovado por ele mesmo quando a prevenção de autoaprovação está ativa. O mantenedor prepara mudanças de workflows, que o App não pode escrever. Não remover proteção para contornar isso. CODEOWNERS só passa a valer como regra de propriedade após entrar na branch base.
+O App `ignisdevne` foi conectado em 22/09/2026, com identidade `ignisdevne[bot]`. O PR inicial de `magalz` foi encerrado e substituído pelo [PR #2](https://github.com/IgnisDevNE/CircuitoNE/pull/2), aberto pelo App, com o último push revisável também vindo dele. Assim, a revisão pode ser feita pelo humano. Um job disparado por `magalz` não pode ser aprovado por ele mesmo quando a prevenção de autoaprovação está ativa. O App recebeu Workflows:write temporariamente para esta preparação; a revogação final permanece na #31. Não remover proteção para contornar isso. CODEOWNERS só passa a valer como regra de propriedade após entrar na branch base.
 
 ### Autenticação local do App
 
@@ -111,7 +132,7 @@ O caminho alternativo foi validado executando a CLI em um container Linux tempor
 
 Testes destrutivos e `reset` usam banco descartável local/CI. Homologação compartilhada recebe migrações revisadas, em sequência, com bloqueio de concorrência e registro de SHA/checksum. Preview usa somente dados fictícios. Produção nunca é destino de teste de schema.
 
-As regiões diferentes exigem decisão antes de dados reais. Banco e arquivos têm estratégias próprias de backup; registrar retenção, responsáveis, perda aceitável e tempo de recuperação. Testar restauração de ambos antes do beta; não presumir que backup de Postgres recupera objetos de Storage.
+Os dois projetos ficam em São Paulo; destinos e referências devem ser validados antes de dados reais. Banco e arquivos têm estratégias próprias de backup; registrar retenção, responsáveis, perda aceitável e tempo de recuperação. Testar restauração de ambos antes do beta; não presumir que backup de Postgres recupera objetos de Storage.
 
 ## Backup
 
@@ -126,8 +147,8 @@ Os artefatos `quality-reports` e `codecov-lcov` duram sete dias, mesmo se o serv
 ## Caminho para Debian
 
 1. Confirmar recursos, arquitetura, serviços existentes, acesso administrativo e política de atualização do servidor.
-2. Após a migração SSR, executar o runtime Node e o proxy Caddy revisados por digest com Podman rootless; serviço systemd/Quadlet para reinício e logs. Não fazer build de PR no host de produção. O container estático atual não entrega SSR.
-3. Configurar proxy HTTPS e DNS para **`circuitone.magalz.space`** (produção) e **`circuitone-dev.magalz.space`** (dev), nomes aprovados pelo responsável. Dev usa exclusivamente `CircuitoNE-dev`, com seeds sintéticos; produção usa `CircuitoNE`. Os domínios ainda não foram implantados nesta preparação. Certificados automáticos dependem de DNS e conectividade corretos. Seguir a [spec de ambientes e dados de teste](../specs/environments-and-test-data.md).
+2. Executar o runtime SSR Node e o proxy Caddy revisados por digest com Podman rootless; serviço systemd/Quadlet para reinício e logs. Não fazer build de PR no host de produção. A dupla atual foi validada no Windows, não no futuro Debian.
+3. Configurar proxy HTTPS e DNS para **`circuitone.magalz.space`** (produção) e **`circuitone-dev.magalz.space`** (dev), nomes aprovados pelo responsável. Dev usa exclusivamente `CircuitoNE-dev`, com seeds sintéticos; produção usa `CircuitoNE`. Os domínios já apontam ao tunnel deste Windows, conforme a seção de hospedagem; a migração ao Debian permanece futura. Certificados automáticos dependem de DNS e conectividade corretos. Seguir a [spec de ambientes e dados de teste](../specs/environments-and-test-data.md).
 4. Restringir portas, proteger o acesso administrativo, monitorar disponibilidade e espaço, registrar rotação de logs e alertas. Servir a aplicação atrás de HTTPS; HTTP do preview local não é configuração de produção.
 5. Promover artefato homologado, testar home/deep link/Auth, e manter digest anterior para rollback. Migrações precisam de plano próprio; voltar o container não desfaz SQL.
 

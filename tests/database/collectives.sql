@@ -42,6 +42,7 @@ select pg_temp.assert_true(public.get_collective_status(current_setting('test.c'
 select pg_temp.reject($q$select public.save_collective_role(current_setting('test.c')::uuid,null,'Editor',array['create_events'])$q$,'42501');
 select pg_temp.reject($q$select public.review_collective(current_setting('test.c')::uuid,1,'approved','Verificado manualmente')$q$,'42501');
 select pg_temp.reject($q$select public.get_collective_review_contact(current_setting('test.c')::uuid)$q$,'42501');
+select pg_temp.reject($q$select public.get_collective_review_queue()$q$,'42501');
 reset role;
 select pg_temp.assert_true((select count(*) from public.collectives)=1,'Criação parcial');
 select pg_temp.assert_true((select count(*) from private.collective_memberships)=1,'Proprietário sem vínculo');
@@ -51,7 +52,10 @@ insert into private.site_admins(user_id) values('70000000-0000-4000-8000-0000000
 set local role authenticated;
 select pg_temp.actor(4,false);
 select pg_temp.reject($q$select public.review_collective(current_setting('test.c')::uuid,1,'approved','Verificado')$q$,'42501');
+select pg_temp.reject($q$select public.get_collective_review_queue()$q$,'42501');
 select pg_temp.actor(4);
+select pg_temp.assert_true((select count(*) from public.get_collective_review_queue())=1,'Admin não descobre pedido pendente');
+select pg_temp.assert_true((select count(*) from public.get_collective_review_queue('pending',current_setting('test.c')::uuid))=0,'Cursor administrativo repete linha');
 select pg_temp.assert_true(public.get_collective_review_contact(current_setting('test.c')::uuid)->>'phone'='+5581997000001','Contato de verificação ausente');
 select pg_temp.assert_true(not (public.get_collective_review_contact(current_setting('test.c')::uuid)?|array['cpf','birth_date','email']),'Verificação expôs identidade excessiva');
 select public.review_collective(current_setting('test.c')::uuid,1,'rejected','Referências insuficientes');
@@ -78,13 +82,17 @@ select pg_temp.reject($q$select public.request_collective_membership(current_set
 select pg_temp.reject($q$select public.request_collective_membership(current_setting('test.c')::uuid,null,repeat('x',2001))$q$,'22023');
 select set_config('test.request',public.request_collective_membership(current_setting('test.c')::uuid)::text,true);
 select pg_temp.assert_true(public.request_collective_membership(current_setting('test.c')::uuid)=current_setting('test.request')::uuid,'Pedido pendente duplicado');
+select pg_temp.assert_true((select state from public.get_my_collective_requests() where id=current_setting('test.request')::uuid)='pending','Solicitante não acompanha próprio pedido');
 select pg_temp.reject($q$select public.request_collective_membership(current_setting('test.c')::uuid,null,'Outro conteúdo')$q$,'22023');
 select pg_temp.assert_true(public.get_collective_access(current_setting('test.c')::uuid) is null,'Pedido virou participação');
 select pg_temp.reject($q$select public.get_collective_status(current_setting('test.c')::uuid)$q$,'42501');
 select pg_temp.actor(1);
+select pg_temp.assert_true((select count(*) from public.get_my_collective_requests())=0,'Consulta pessoal revelou pedido alheio');
 select public.decide_collective_request(current_setting('test.request')::uuid,true);
 select pg_temp.reject($q$select public.decide_collective_request(current_setting('test.request')::uuid,true)$q$,'22023');
 select pg_temp.actor(2);
+select pg_temp.assert_true((select state from public.get_my_collective_requests() where id=current_setting('test.request')::uuid)='approved','Solicitante não acompanha decisão');
+select pg_temp.assert_true((select count(*) from public.get_my_collective_requests(current_setting('test.request')::uuid))=0,'Cursor pessoal repete linha');
 select pg_temp.assert_true(public.get_collective_access(current_setting('test.c')::uuid)->'permissions'='[]'::jsonb,'Novo membro recebeu poderes');
 select pg_temp.reject($q$select public.assign_collective_role(current_setting('test.c')::uuid,'70000000-0000-4000-8000-000000000002',current_setting('test.role')::uuid)$q$,'42501');
 select pg_temp.actor(1);

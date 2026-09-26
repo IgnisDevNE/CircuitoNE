@@ -22,6 +22,7 @@ create table public.collectives (
 );
 create index collectives_owner on public.collectives(owner_user_id) where owner_user_id is not null;
 create index collectives_catalog on public.collectives(name,id) where state='approved';
+create index collectives_review_queue on public.collectives(state,id);
 alter table public.collectives enable row level security;
 
 create table private.collective_details (
@@ -80,7 +81,7 @@ create table private.membership_requests (
   check ((state='pending')=(decided_at is null))
 );
 create unique index membership_one_pending on private.membership_requests(collective_id,user_id) where state='pending';
-create index membership_requests_user on private.membership_requests(user_id,created_at,id);
+create index membership_requests_user on private.membership_requests(user_id,id);
 create index membership_requests_profile on private.membership_requests(profile_id) where profile_id is not null;
 create index membership_requests_collective on private.membership_requests(collective_id,created_at,id);
 create index membership_requests_decider on private.membership_requests(decided_by) where decided_by is not null;
@@ -409,6 +410,23 @@ begin
     from private.collective_roles r left join private.collective_role_permissions p on p.collective_id=r.collective_id and p.role_id=r.id
     where r.collective_id=target group by r.id,r.name order by r.name,r.id;
 end $$;
+create function public.get_my_collective_requests(after_id uuid default null)
+returns table(id uuid,collective_id uuid,state text,created_at timestamptz)
+language sql stable security definer set search_path='' as $$
+  select r.id,r.collective_id,r.state,r.created_at from private.membership_requests r join public.collectives c on c.id=r.collective_id
+    where r.user_id=auth.uid() and private.active_account(auth.uid()) and c.state='approved' and (after_id is null or r.id>after_id)
+    order by r.id limit 50
+$$;
+create function public.get_collective_review_queue(target_state text default 'pending', after_id uuid default null)
+returns table(id uuid,kind text,name text,city text,state_code text,state text,version integer,created_at timestamptz)
+language plpgsql stable security definer set search_path='' as $$
+begin
+  if not private.site_admin() then raise exception using errcode='42501',message='Administração com MFA necessária'; end if;
+  if target_state is null or target_state not in ('pending','rejected','approved','suspended','closed') then
+    raise exception using errcode='22023',message='Estado inválido'; end if;
+  return query select c.id,c.kind,c.name,c.city,c.state_code,c.state,c.version,c.created_at from public.collectives c
+    where c.state=target_state and (after_id is null or c.id>after_id) order by c.id limit 50;
+end $$;
 
 revoke all on public.collectives from public,anon,authenticated,service_role;
 revoke all on private.collective_details,private.collective_roles,private.collective_role_permissions,private.collective_memberships,
@@ -419,7 +437,7 @@ revoke all on function public.create_collective(jsonb,uuid),public.edit_collecti
   public.save_collective_role(uuid,uuid,text,text[]),public.delete_collective_role(uuid,uuid),public.assign_collective_role(uuid,uuid,uuid),
   public.request_collective_membership(uuid,uuid,text),public.cancel_collective_request(uuid),public.decide_collective_request(uuid,boolean),public.remove_collective_member(uuid,uuid),
   public.transfer_collective_ownership(uuid,uuid),public.close_collective(uuid,text),public.support_close_collective(uuid,text),public.get_collective_status(uuid),
-  public.get_collective_access(uuid),public.get_collective_members(uuid),public.get_collective_member_activity(uuid),public.get_collective_requests(uuid),public.get_collective_roles(uuid),public.get_collective_review_contact(uuid)
+  public.get_collective_access(uuid),public.get_collective_members(uuid),public.get_collective_member_activity(uuid),public.get_collective_requests(uuid),public.get_collective_roles(uuid),public.get_collective_review_contact(uuid),public.get_my_collective_requests(uuid),public.get_collective_review_queue(text,uuid)
   from public,anon,authenticated,service_role;
 grant select(id,kind,name,description,activity,city,state_code,social_links,color,image_path) on public.collectives to anon,authenticated;
 grant execute on function private.collective_visible(uuid) to anon,authenticated;
@@ -429,4 +447,4 @@ grant execute on function public.create_collective(jsonb,uuid),public.edit_colle
   public.save_collective_role(uuid,uuid,text,text[]),public.delete_collective_role(uuid,uuid),public.assign_collective_role(uuid,uuid,uuid),
   public.request_collective_membership(uuid,uuid,text),public.cancel_collective_request(uuid),public.decide_collective_request(uuid,boolean),public.remove_collective_member(uuid,uuid),
   public.transfer_collective_ownership(uuid,uuid),public.close_collective(uuid,text),public.support_close_collective(uuid,text),public.get_collective_status(uuid),
-  public.get_collective_access(uuid),public.get_collective_member_activity(uuid),public.get_collective_requests(uuid),public.get_collective_roles(uuid),public.get_collective_review_contact(uuid) to authenticated;
+  public.get_collective_access(uuid),public.get_collective_member_activity(uuid),public.get_collective_requests(uuid),public.get_collective_roles(uuid),public.get_collective_review_contact(uuid),public.get_my_collective_requests(uuid),public.get_collective_review_queue(text,uuid) to authenticated;

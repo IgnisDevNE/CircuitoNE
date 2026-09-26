@@ -391,6 +391,19 @@ export type Database = {
         }[]
       }
       get_collective_review_contact: { Args: { target: string }; Returns: Json }
+      get_collective_review_queue: {
+        Args: { after_id?: string; target_state?: string }
+        Returns: {
+          city: string
+          created_at: string
+          id: string
+          kind: string
+          name: string
+          state: string
+          state_code: string
+          version: number
+        }[]
+      }
       get_collective_roles: {
         Args: { target: string }
         Returns: {
@@ -400,6 +413,15 @@ export type Database = {
         }[]
       }
       get_collective_status: { Args: { target: string }; Returns: Json }
+      get_my_collective_requests: {
+        Args: { after_id?: string }
+        Returns: {
+          collective_id: string
+          created_at: string
+          id: string
+          state: string
+        }[]
+      }
       get_profile: { Args: { target: string }; Returns: Json }
       remove_collective_member: {
         Args: { member: string; target: string }

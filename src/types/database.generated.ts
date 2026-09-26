@@ -75,6 +75,66 @@ export type Database = {
           },
         ]
       }
+      collectives: {
+        Row: {
+          activity: string
+          city: string
+          color: string | null
+          created_at: string
+          description: string
+          id: string
+          image_path: string | null
+          kind: string
+          member_role_builtin: boolean
+          member_role_id: string
+          name: string
+          owner_user_id: string | null
+          social_links: Json
+          state: string
+          state_code: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          activity: string
+          city: string
+          color?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          image_path?: string | null
+          kind: string
+          member_role_builtin?: boolean
+          member_role_id: string
+          name: string
+          owner_user_id?: string | null
+          social_links?: Json
+          state?: string
+          state_code: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          activity?: string
+          city?: string
+          color?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          image_path?: string | null
+          kind?: string
+          member_role_builtin?: boolean
+          member_role_id?: string
+          name?: string
+          owner_user_id?: string | null
+          social_links?: Json
+          state?: string
+          state_code?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       music_styles: {
         Row: {
           name: string
@@ -266,13 +326,116 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assign_collective_role: {
+        Args: { member: string; target: string; target_role: string }
+        Returns: undefined
+      }
+      cancel_collective_request: {
+        Args: { target_request: string }
+        Returns: undefined
+      }
+      close_collective: {
+        Args: { reason: string; target: string }
+        Returns: undefined
+      }
       complete_registration: {
         Args: { account: Json; profile: Json; request_id: string }
         Returns: string
       }
+      create_collective: {
+        Args: { payload: Json; request_id: string }
+        Returns: string
+      }
       create_profile: { Args: { payload: Json }; Returns: string }
+      decide_collective_request: {
+        Args: { approve: boolean; target_request: string }
+        Returns: undefined
+      }
+      delete_collective_role: {
+        Args: { target: string; target_role: string }
+        Returns: undefined
+      }
+      edit_collective: {
+        Args: {
+          expected_version: number
+          payload: Json
+          resubmit?: boolean
+          target: string
+        }
+        Returns: undefined
+      }
+      get_collective_access: { Args: { target: string }; Returns: Json }
+      get_collective_member_activity: {
+        Args: { target: string }
+        Returns: {
+          last_activity_at: string
+          user_id: string
+        }[]
+      }
+      get_collective_members: {
+        Args: { target: string }
+        Returns: {
+          artist_profile_id: string
+          name: string
+        }[]
+      }
+      get_collective_requests: {
+        Args: { target: string }
+        Returns: {
+          created_at: string
+          id: string
+          message: string
+          profile_id: string
+          state: string
+          user_id: string
+        }[]
+      }
+      get_collective_review_contact: { Args: { target: string }; Returns: Json }
+      get_collective_roles: {
+        Args: { target: string }
+        Returns: {
+          id: string
+          name: string
+          permissions: string[]
+        }[]
+      }
+      get_collective_status: { Args: { target: string }; Returns: Json }
       get_profile: { Args: { target: string }; Returns: Json }
+      remove_collective_member: {
+        Args: { member: string; target: string }
+        Returns: undefined
+      }
+      request_collective_membership: {
+        Args: { message?: string; profile?: string; target: string }
+        Returns: string
+      }
+      review_collective: {
+        Args: {
+          decision: string
+          expected_version: number
+          reason: string
+          target: string
+        }
+        Returns: undefined
+      }
+      save_collective_role: {
+        Args: {
+          permissions: string[]
+          role_name: string
+          target: string
+          target_role: string
+        }
+        Returns: string
+      }
       set_default_artist: { Args: { target: string }; Returns: undefined }
+      support_close_collective: {
+        Args: { reason: string; target: string }
+        Returns: undefined
+      }
+      transfer_collective_ownership: {
+        Args: { successor: string; target: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

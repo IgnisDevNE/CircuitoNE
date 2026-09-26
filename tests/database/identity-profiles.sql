@@ -10,6 +10,7 @@ language plpgsql as $$ begin
   end;
   raise exception 'Operation unexpectedly succeeded: %', statement;
 end $$;
+grant execute on function pg_temp.assert_true(boolean,text),pg_temp.reject(text,text) to anon,authenticated;
 
 select pg_temp.assert_true(private.valid_cpf('52998224725'), 'CPF válido rejeitado');
 select pg_temp.assert_true(not private.valid_cpf('11111111111'), 'CPF repetido aceito');
@@ -23,6 +24,7 @@ create function pg_temp.register(cpf text, kind text, birthday date default '199
 language sql as $$ select public.complete_registration(
   jsonb_build_object('name','Pessoa sintética','cpf',cpf,'birth_date',birthday,'city','Recife','state_code','PE','phone_is_whatsapp',true),
   jsonb_build_object('kind',kind,'name','Atuação sintética','styles',case when kind='artist' then styles else '[]'::jsonb end), request_id) $$;
+grant execute on function pg_temp.register(text,text,date,jsonb,uuid) to authenticated;
 
 insert into auth.users(id, email, email_confirmed_at, phone, phone_confirmed_at)
 values ('00000000-0000-4000-8000-000000000001', 'identity-1@example.invalid', now(), '5581990000001', now()),

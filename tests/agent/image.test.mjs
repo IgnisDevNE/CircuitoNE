@@ -32,6 +32,7 @@ test('a different config directory cannot enable MCP or plugins', () => {
 })
 
 test('agent cannot modify the system policy or execute as root', () => {
+  assert.equal(run(['circuitone-agent', '--version']).status, 0)
   assert.equal(run(['id', '-u']).stdout.trim(), '1000')
   assert.notEqual(run(['sh', '-c', 'printf changed > /etc/codex/requirements.toml']).status, 0)
 })

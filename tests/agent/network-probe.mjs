@@ -30,8 +30,10 @@ async function tunnel(destination) {
 for (const [host, port] of [['10.89.240.4', 7777], ['10.89.240.1', 80], ['10.88.0.10', 80], ['192.168.127.1', 80], ['169.254.169.254', 80], ['1.1.1.1', 443], ['::1', 443], ['2606:4700:4700::1111', 443]]) {
   assert.equal(await direct(host, port), false, `Direct access must fail: ${host}:${port}`)
 }
-for (const destination of ['example.com:443', 'github.com:80', '127.0.0.1:443', '10.89.240.1:443', '[::1]:443', '169.254.169.254:443']) {
+for (const destination of ['example.com:443', 'github.com:80', 'evil.memtrace.io:443', 'memtrace.io.example.com:443', '127.0.0.1:443', '10.89.240.1:443', '[::1]:443', '169.254.169.254:443']) {
   assert.equal(await tunnel(destination), 403, `Proxy must deny: ${destination}`)
 }
 assert.equal(await tunnel('api.github.com:443'), 200)
+assert.equal(await tunnel('www.memtrace.io:443'), 200)
+assert.equal(await tunnel('memtrace.io:443'), 200)
 console.log('UID/capabilities/no-new-privileges and direct/proxied network denials verified.')

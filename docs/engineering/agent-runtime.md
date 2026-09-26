@@ -39,7 +39,16 @@ As permissões temporárias de bootstrap ainda não foram revogadas. Variáveis 
 
 ## Memtrace e demais ferramentas
 
-Git, gh, rg, Node, pnpm e Memtrace CLI ficam na imagem. Plugins/apps Codex permanecem desativados. Nenhum MCP é habilitado por padrão. O índice Memtrace, quando autorizado, ficará no cache do container, limitado inicialmente a duas threads e sem embeddings; não montar o índice ou a licença do host. A licença de manutenção está vinculada ao App GitHub e não foi copiada. Habilitação de MCP exige identidade sem essa autoridade e revisão da entrada específica na allowlist; não abrir a lista inteira.
+Git, gh, rg, Node, pnpm e Memtrace ficam na imagem. Plugins/apps Codex permanecem desativados. Somente o MCP `memtrace` é autorizado: executável absoluto e argumentos exatos em política root; sua configuração padrão fica em `/etc/codex/config.toml`. A configuração encaminha explicitamente os caminhos XDG/MemDB, proxy e limites Memtrace ao subprocesso, sem variáveis de credenciais GitHub. Índice e licença ficam no cache próprio do container, limitado inicialmente a duas threads e sem embeddings. O diretório fixo de registros `~/.memtrace` aponta para esse mesmo cache; o restante do sistema continua somente leitura. Não montar índice/configuração ou sessões do host. O proxy permite apenas `memtrace.io` e `www.memtrace.io`, sem liberar subdomínios arbitrários.
+
+O mantenedor removeu a instalação GitHub do Memtrace antes de habilitar a licença. Uma credencial mínima foi transferida por stdin para `$XDG_CONFIG_HOME/memtrace/credentials.json` (0600), sem valor em argumentos, imagem, commit ou logs. Em um bootstrap novo, autenticar com `memtrace auth login` no container e concluir no navegador do mantenedor; indexar o checkout antes de iniciar o MCP. Não copiar o arquivo de credenciais completo do Windows. A licença não deve acompanhar um App GitHub reconectado: antes de reinstalar/reativar essa integração, retirar a licença/sessão do agente e repetir a revisão. A recusa foi demonstrada para CircuitoNE, não para outras contas/instalações.
+
+```powershell
+podman exec -it --workdir /workspace/circuito-ne circuitone-agent memtrace auth login
+podman exec --workdir /workspace/circuito-ne --env MEMTRACE_NO_REPLAY=1 circuitone-agent memtrace index /workspace/circuito-ne
+```
+
+O primeiro ensaio do broker criou um store vazio sem manifesto de escopo. Esse store descartável foi arquivado pelo comando de recuperação do Memtrace, antes da primeira indexação. Não usar `--clear` como rotina nem contra índices existentes. O fluxo acima inicializa o índice antes da revisão de PR.
 
 ## Sincronizar Windows após uma PR
 
@@ -55,7 +64,9 @@ A rotina lê os repositórios públicos sem credencial humana, captura os commit
 
 ## Evidências e limites
 
-Testes da imagem falharam antes da política/instalação e passaram depois, incluindo overrides `--enable`/`-c`, outro diretório de configuração e MCP canário desabilitado. As negativas de rede/capabilities passaram no Podman Windows, incluindo listener TCP canário alcançável por um controle sem guard e negado ao agente. O verificador confere inventário exato de volumes, ausência de portas, PID/IPC privados, imagem/política e as duas regras efetivas do firewall. Login ChatGPT e uma execução mínima sem ferramentas passaram. Imagem agente ensaiada: `34e4e1dff1955bb89c45bd3a6defe9995e428fab3962ff9f8ec75c6d6551b1e4`; proxy: `1577d783dcc8f023b05a47780eefb49faff1e1de064244d19746c8321e833728`.
+Testes da imagem falharam antes da política/instalação e passaram depois, incluindo overrides `--enable`/`-c`, outro diretório de configuração, MCP canário desabilitado e substituição recusada do comando/argumentos Memtrace. Os novos destinos Memtrace retornaram 403 antes da liberação e CONNECT 200 depois; subdomínios não autorizados continuam recusados. As negativas de rede/capabilities passaram no Podman Windows, incluindo listener TCP canário alcançável por um controle sem guard e negado ao agente. O verificador confere inventário exato de volumes, ausência de portas, PID/IPC privados, imagem/política e as duas regras efetivas do firewall. Login ChatGPT e uma execução mínima sem ferramentas passaram. Imagem agente ensaiada: `5db202f45b102e9e88fa2b787718984c67809ab40d22d6a6c336da7c7c58f6a0`; proxy: `e8a9cbc795bb33704ca674898203cf69bf03752517477382173497fcfd67a54b`.
+
+Memtrace indexou 173 arquivos (2.570 nós, 9.287 relações); o MCP listou o repositório e encontrou `validateRuntimeEnv`. O ensaio pelo próprio Codex também concluiu `find_code`, sem shell ou consulta GitHub. O broker foi reensaiado depois e permaneceu recusado por instalação inexistente. Os seis testes da imagem e os quatro testes relacionados de helper/sincronização passaram. [Evidência sem credenciais](../reviews/evidence/agent-memtrace-20260926.json).
 
 A sincronização passou cenários de edição humana, arquivo não rastreado, branch errada, operação pendente, trava concorrente, origem incorreta, QA divergente/inválido, falha de rede e edição concorrente. Ensaio real conferiu PR #121, main `55e822779cf89cd49440310ad1053f1d2c51df88`, accepted `fd85e05b443dd844996881d11ca94755b3cc07bf`.
 

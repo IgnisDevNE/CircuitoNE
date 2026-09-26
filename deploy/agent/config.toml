@@ -1,0 +1,11 @@
+[mcp_servers.memtrace]
+command = "/usr/local/bin/memtrace"
+args = ["mcp", "--workspace", "/workspace/circuito-ne"]
+env_vars = [
+  "HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy", "NO_PROXY",
+  "XDG_CONFIG_HOME", "XDG_CACHE_HOME", "MEMTRACE_DATA_DIR", "MEMTRACE_MEMDB_DATA_DIR",
+  "MEMTRACE_MAX_THREADS", "MEMTRACE_SKIP_EMBED", "MEMTRACE_TELEMETRY", "MEMTRACE_NO_AUTO_SETUP",
+]
+startup_timeout_sec = 90
+tool_timeout_sec = 120
+env = { MEMTRACE_HEADLESS = "1", MEMTRACE_MCP_UI = "0" }

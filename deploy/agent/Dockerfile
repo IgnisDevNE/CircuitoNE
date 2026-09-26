@@ -6,7 +6,9 @@ RUN apt-get update && apt-get install --no-install-recommends -y ca-certificates
     && mkdir -p /workspace /home/node/.cache /home/node/.codex \
     && chown -R node:node /workspace /home/node/.cache /home/node/.codex
 COPY --chmod=0444 deploy/agent/requirements.toml /etc/codex/requirements.toml
+COPY --chmod=0444 deploy/agent/config.toml /etc/codex/config.toml
 COPY --chmod=0555 deploy/agent/start /usr/local/bin/circuitone-agent
+RUN ln -s .cache /home/node/.memtrace
 ENV NODE_USE_ENV_PROXY=1 \
     XDG_CACHE_HOME=/home/node/.cache \
     XDG_CONFIG_HOME=/home/node/.cache/config \

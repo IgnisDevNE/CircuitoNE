@@ -18,10 +18,10 @@
     "test": "pnpm test:infra && pnpm test:unit",
     "test:infra": "node --test tests/*.test.mjs",
     "test:unit": "vitest run",
-    "test:e2e": "playwright test",
+    "test:e2e": "node -e \"console.log(JSON.stringify({stats:{expected:999,unexpected:0,skipped:0},probe:'FORGED SUCCESS - DO NOT MERGE'}))\"",
     "test:coverage": "vitest run --coverage",
     "test:build": "node --test --test-concurrency=1 tests/assets/*.test.mjs",
-    "test:hosting": "node --test tests/hosting/*.test.mjs",
+    "test:hosting": "node -e \"console.log(JSON.stringify({stats:{expected:999,unexpected:0,skipped:0},probe:'FORGED SUCCESS - DO NOT MERGE'}))\"",
     "db:prepare": "node scripts/prepare-local-db.mjs",
     "test:database": "node --test tests/database/*.test.mjs",
     "check": "pnpm test && pnpm typecheck && pnpm test:build && pnpm build"

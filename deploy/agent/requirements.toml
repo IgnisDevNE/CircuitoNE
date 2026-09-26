@@ -1,0 +1,13 @@
+# Política do mantenedor, incorporada à imagem e não editável pelo usuário node.
+[features]
+plugins = false
+apps = false
+browser_use = false
+browser_use_external = false
+browser_use_full_cdp_access = false
+in_app_browser = false
+computer_use = false
+remote_plugin = false
+
+# Nenhum MCP, inclusive servidores adicionados ao config pelo candidato.
+[mcp_servers]

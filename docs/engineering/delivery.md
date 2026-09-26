@@ -4,6 +4,8 @@
 
 O responsável escolheu **um GitHub App para os agentes**, em vez de outra conta pessoal. `magalz` permanece como responsável humano. Em 22/09/2026 foi conectado o App `ignisdevne` (5028495), instalação 163660443. Não compartilhar token de administrador com a execução cotidiana.
 
+O [bootstrap Linux](agent-runtime.md) separa o consumidor de token do emissor de manutenção, fixa apps/plugins Codex desativados e mantém checkout próprio. O login ChatGPT no container foi validado; as negativas cloud, revogações e demais critérios da #31 continuam pendentes. A [ADR 0012](../decisions/0012-isolated-agent-runtime.md) registra os limites. Após concluir uma PR e confirmar promoção, executar a rotina de sincronização do checkout Windows descrita no guia; ela nunca sobrescreve edições ou troca branches automaticamente.
+
 | Papel | Pode | Não pode |
 |---|---|---|
 | Responsável humano (`magalz`) | Aprovar contrato/testes, PRs e releases; gerir GitHub e ambientes | Delegar suas credenciais administrativas a implementadores e ainda afirmar que há isolamento |

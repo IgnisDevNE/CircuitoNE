@@ -1,6 +1,6 @@
 # Backend, dados e autenticação
 
-Detalhamento do MVP conforme a [arquitetura aprovada em 22/09/2026](../specs/architecture-mvp.md). O modelo relacional abaixo continua proposto e ainda não foi aplicado. O projeto `CircuitoNE-dev` não tinha tabelas em `public` nem migrações na inspeção. Produção não foi modificada.
+Detalhamento do MVP conforme a [arquitetura aprovada em 22/09/2026](../specs/architecture-mvp.md). Em 26/09/2026, o responsável antecipou o schema completo para a fase zero (#116–#119), mantendo UI/Auth de produto nas fases seguintes. Este modelo orienta as migrações revisadas; ainda não declara aplicação ou homologação remota. Dados exclusivamente sintéticos; produção não é destino de ensaio.
 
 ## Componentes
 
@@ -31,18 +31,18 @@ UUIDs em entidades, `timestamptz` para instantes, `date` para nascimento, `creat
 | Tabela / esquema lógico | Campos principais | Relações e restrições |
 |---|---|---|
 | `auth.users` | identidade, e-mail, credenciais gerenciadas por Auth | Não duplicar senha. E-mail de login tem Auth como fonte. |
-| `private.account_details` | `user_id`, nome, CPF normalizado, nascimento, gênero, cidade, UF, estado da conta | PK/FK `user_id`; CPF `NOT NULL UNIQUE`, 11 dígitos + verificação; nascimento obrigatório. Sem acesso público ou de administradores de coletivos. |
+| `private.account_details` | `user_id`, nome, CPF normalizado, nascimento, gênero, cidade, UF, estado, WhatsApp e perfil artístico padrão | PK/FK `user_id`; CPF válido `NOT NULL UNIQUE`, alteração só pelo suporte; 18 anos completos na conclusão. Celular E.164 único e confirmação têm Auth como fonte; não aceitar confirmação declarada pelo cliente. WhatsApp adicional opcional não substitui celular verificado. Preferência referencia somente artista próprio; sem fallback se não público/excluído. |
 | `profiles` | id, `owner_id`, tipo de atuação, nome, descrição, cidade, redes | Conta 1:N atuações; sem unicidade por proprietário para artista. Tipo entre artista/serviços/audiovisual/integrante. Catálogo interno autenticado expõe somente nome/descrição/cidade e início de mensagem; proprietário imutável via cliente. |
-| `artist_profiles` | `profile_id`, bio, estilos, cor, foto, status público | 1:1 atuação artista; leitura pública apenas de perfil publicado. Não contém contatos profissionais/CPF. |
+| `artist_profiles` | `profile_id`, bio, cor, foto, status público | 1:1 atuação artista, subtipo validado no banco; leitura pública apenas de perfil publicado. Estilos/subestilos em catálogo e vínculos relacionais, múltiplos estilos com subestilo opcional do mesmo estilo. Não contém contatos profissionais/CPF. |
 | `professional_details` | `profile_id`, booking, contato, material restrito por tipo de atuação, `fee_cents`, CNPJ, tipo serviço | 1:1 perfil profissional; titular mantém, apenas proprietário elegível consulta conforme RN-07. `fee_cents >= 0`; material coerente com RN-35. CNPJ fica privado. |
-| `profile_images` | id, `profile_id`, caminho Storage, ordem, texto alternativo | 1:N; índice `(profile_id, position)`; limite por perfil definido na fase 2. |
+| `profile_images` | id, `profile_id`, caminho Storage, posição, texto alternativo | Uma posição principal e até 10 posições de galeria por perfil, protegidas por constraint/índice único inclusive sob concorrência; JPG/PNG/WebP até 5 MB. |
 | `collectives` | id, `owner_user_id`, nome, tipo, bio, cidade/UF, atuação, cor, imagem, redes, estado | Exatamente um proprietário atual, também membro; transferência transacional. Estado aprovado controla funções e publicação. |
 | `private.collective_reviews` | coletivo, decisão, motivo, decisor, data | Histórico de verificação editorial; somente administração do site decide. Criador recebe somente o estado/motivo apropriado da própria solicitação. |
 | `private.site_admins` | `user_id`, concedido por/em | Papel operacional separado da propriedade de coletivos; provisionado por procedimento administrativo controlado. Cliente não se promove nem altera a lista. |
 | `private.collective_details` | `collective_id`, CNPJ | 1:1; criação/alteração de produtora exige CNPJ na mesma transação. Não embutir CNPJ em resposta pública. |
 | `collective_roles` | id, `collective_id`, nome, indicador de perfil inicial | Único `(collective_id, name)`; chave `(collective_id,id)` referenciável. Perfil inicial Membro sem permissões operacionais. Sem nível numérico nem sinalizador de proprietário delegável. |
 | `collective_role_permissions` | `collective_id`, `role_id`, chave de permissão | FK composta para perfil do mesmo coletivo; oito chaves aprovadas na #66: pedidos.gerir, membros.remover, eventos.criar/editar/publicar/cancelar, mensagens.ler/enviar. Perfis/atribuições, transferência, exclusão e diretório restrito não são delegáveis. |
-| `collective_memberships` | `collective_id`, `user_id`, `role_id`, `artist_profile_id`, entrada, última atividade | PK `(collective_id,user_id)`; FK composta `(collective_id,role_id)` impede perfil de outro coletivo. Proprietário deve manter vínculo; perfil vinculado pertence ao membro. |
+| `collective_memberships` | `collective_id`, `user_id`, `role_id`, entrada, última atividade | PK `(collective_id,user_id)`; FK composta `(collective_id,role_id)` impede perfil de outro coletivo. Proprietário deve manter vínculo; link artístico deriva da preferência única da conta, sem escolha por vínculo. |
 | `membership_requests` | id, coletivo, usuário, atuação desejada, mensagem, status, decisão/decisor/data | Índice único parcial `(collective_id,user_id)` onde status pendente. Estados pendente/aprovada/recusada/cancelada; histórico não é apagado ao decidir. |
 | `events` | id, coletivo, nome, tipo/outro, Markdown, início, fim opcional, fuso, local, gratuito/link, capa, status | `ends_at IS NULL OR ends_at > starts_at`; ingresso gratuito XOR link; tipo outros exige texto. Rascunho, publicado e cancelado seguem RN-27; editar publicado requer também permissão de publicar. |
 | `event_lineup` | id, evento, artista opcional, nome exibido, ordem | Evento 1:N; FK artista; texto obrigatório para nome livre; único `(event_id,artist_profile_id)` quando não nulo. |
@@ -53,6 +53,10 @@ UUIDs em entidades, `timestamptz` para instantes, `date` para nascimento, `creat
 | `private.audit_events` | ator, ação, recurso, instante, resultado, referência de correlação | Somente append pelo servidor; não registrar corpo de chat, CPF, senha, token ou dados completos de formulário. |
 
 O esquema `private` não será exposto pela Data API. A leitura/edição dos próprios dados de conta passa por operações específicas com autorização explícita. Caso se use view pública, `security_invoker=true`; não criar view que junte dados privados para depois “filtrar no frontend”.
+
+Concluir cadastro exige e-mail e celular confirmados em Auth, CPF válido e idade mínima, na mesma transação que cria conta/primeira atuação. Alteração de tipo de atuação não pode contornar constraints de subtipo/material. Artista aceita presskit por link **ou** PDF até 10 MB; audiovisual só link de portfólio; serviços só PDF opcional de lista de serviços/equipamentos até 10 MB; integrante/coletivo/produtora não recebem esses campos. Mutação e acesso direto obedecem ao mesmo contrato.
+
+Toda autorização interna consulta o estado atual da conta. Suspensão/exclusão pendente bloqueia capacidades imediatamente; apagar a conta não apaga mensagens compartilhadas, mas remove referências e identificadores do remetente na representação normal. A cópia mínima de denúncia e a identidade temporariamente retida ficam isoladas conforme RN-34, com prazo de 30 dias para concluir o caso e até 90 dias para a cópia sem identificação. Nenhuma FK deve preservar identificadores pessoais por acidente ou apagar histórico por cascata.
 
 `professional_details` pode permanecer em esquema exposto com RLS estrita, pois é separado dos dados de identidade. Uma `SELECT` de `artist_profiles` nunca inclui implicitamente essa tabela. JSONB é aceitável para redes sociais opcionais; não usar JSONB para membros, mensagens, permissões ou valores de negócio que exigem integridade relacional.
 

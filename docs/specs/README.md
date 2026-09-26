@@ -4,8 +4,8 @@ Esta pasta reúne especificações de arquitetura, requisitos técnicos e infrae
 
 | Documento | Estado | Escopo |
 |---|---|---|
-| [Arquitetura do MVP](architecture-mvp.md) | Aprovado em 22/09/2026; implementação pendente | Stack, responsabilidades, segurança, hospedagem e critérios de implementação |
-| [Ambientes e dados de teste](environments-and-test-data.md) | Requisitos aprovados em 22/09/2026; implementação pendente | Domínios prod/dev, separação de banco, login temporário, seeds e testes após migrações |
+| [Arquitetura do MVP](architecture-mvp.md) | Stack SSR/Node/Caddy implantada; integrações de produto pendentes | Stack, responsabilidades, segurança, hospedagem e critérios de implementação |
+| [Ambientes e dados de teste](environments-and-test-data.md) | Domínios/SMTP/backup dev implantados; homologação e recuperação completas pendentes | Domínios prod/dev, separação de banco, Auth, seeds e testes após migrações |
 | [Estilos musicais](music-styles.md) e [catálogo JSON](estilos-musicais.json) | Taxonomia aprovada em 23/09/2026; implementação pendente | Dois seletores por estilo, subestilo opcional, múltiplas escolhas e filtro |
 | [Markdown da descrição de eventos](event-description-markdown.md) | Implementado e validado em F0-T7; conteúdo real depende dos gates de produto | Formatos, URLs, renderização segura e regressões |
 | [Aceite canônico e promoção da suíte](canonical-ci-suite.md) | Gate obrigatório e promoção pós-merge operacionais; isolamento e ensaios finais pendentes na [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) | Integridade, execução confiável no CI e atualização da referência após revisão, merge e validação |

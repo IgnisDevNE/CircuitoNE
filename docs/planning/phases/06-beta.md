@@ -56,6 +56,8 @@
 
 ## F6-T5 — Piloto e promoção
 
+**Último gate técnico pré-release:** depois das demais entregas, concluir [#104](https://github.com/IgnisDevNE/CircuitoNE/issues/104): chave privada fora do ambiente dos agentes, cifragem dos backups de banco e Storage antes do upload, restauração comprovada, recusa de backup legível, backup de produção ativo e revisão de segurança. Só então aprovar lançamento ou piloto com dados reais. A fase zero valida operação sintética sem depender dessa ativação; ver ADR 0010.
+
 **Bloqueios por issue:** [#11](https://github.com/IgnisDevNE/CircuitoNE/issues/11)/[#12](https://github.com/IgnisDevNE/CircuitoNE/issues/12)/[#13](https://github.com/IgnisDevNE/CircuitoNE/issues/13)/[#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14)/[#15](https://github.com/IgnisDevNE/CircuitoNE/issues/15)/[#16](https://github.com/IgnisDevNE/CircuitoNE/issues/16)/[#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31)/[#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32) resolvidas no escopo de produção; [#38](https://github.com/IgnisDevNE/CircuitoNE/issues/38)/[#40](https://github.com/IgnisDevNE/CircuitoNE/issues/40)/[#42](https://github.com/IgnisDevNE/CircuitoNE/issues/42)/[#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) com decisões/pré-requisitos atendidos; nenhum novo P0/P1 aberto. [#29](https://github.com/IgnisDevNE/CircuitoNE/issues/29)/[#30](https://github.com/IgnisDevNE/CircuitoNE/issues/30) só admitem exceção conforme gate documentado.
 
 **Issues tratadas:** Nenhuma issue é encerrada automaticamente por promover; verificar evidência de todas as pendências residuais.

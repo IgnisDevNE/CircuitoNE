@@ -1,6 +1,6 @@
 # Plano de implementação
 
-**Revisão 3 — 22/09/2026.** Planos executáveis para a [arquitetura aprovada](../specs/architecture-mvp.md). A fase zero concentra adaptação à stack, limpeza, upgrades e remoção antecipada de bloqueios. Cada tarefa distingue issues de entrada das que deve resolver. Os documentos detalham trabalho futuro; não declaram a implementação concluída.
+**Revisão 4 — 26/09/2026.** Planos executáveis para a [arquitetura aprovada](../specs/architecture-mvp.md). A fase zero concentra adaptação à stack, limpeza, upgrades e remoção antecipada de bloqueios. Cada tarefa distingue issues de entrada das que deve resolver. Os documentos detalham trabalho futuro; não declaram a implementação concluída.
 
 ## Fases e dependências
 
@@ -30,16 +30,16 @@ São **38 tarefas**, identificadas nos planos. F0-T14 trata dependências e F0-T
 ## Estado real e próximo passo
 
 - GitHub/App, CI, documentação e preview estático foram integrados pelo [PR #2](https://github.com/IgnisDevNE/CircuitoNE/pull/2) em 22/09/2026. F0-T1/T3 não equivalem a fase zero completa.
-- SSR, backend, Auth, banco de negócio e funcionalidades persistentes continuam pendentes. O preview segue com mocks.
-- F0-T2 está parcial: o QA independente já executa o aceite obrigatório, retoma após aprovação, promove a suíte e fecha a proposta após o merge ([controle de mudanças](../controls/change-control.md)); o ensaio real da automação encerrou a [#58](https://github.com/IgnisDevNE/CircuitoNE/issues/58). Faltam os ensaios negativos mais amplos, a proteção efetiva do QA e a retirada das credenciais humanas/chaves do ambiente implementador ([#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31)).
-- Codecov: upload real no Cloud em `main` e PR validado. O responsável escolheu voltar à instância própria; verificar acesso/organização ([#29](https://github.com/IgnisDevNE/CircuitoNE/issues/29)), configurar servidor e comprovar upload antes de trocar o CI ([#30](https://github.com/IgnisDevNE/CircuitoNE/issues/30)). Dependabot/forks ainda exigem evidência própria.
-- Próximo trabalho: partir de `main` atualizada e branch nova; priorizar F0-T14/T15, F0-T2 e F0-T6 nas partes independentes. Resolver o máximo de bloqueios na fase zero; preparação com fixtures pode avançar sem tratar pendências como aprovadas. [Parecer por PR do Dependabot](../reviews/dependabot-2026-09-22.md).
+- SSR/Node 24/TypeScript 7 estão validados (#35/#36); dev usa pods com fixtures e produção serve espera. Banco completo antecipado para F0 (#116–#119); Auth e jornadas de produto continuam pendentes.
+- F0-T2 está parcial: o QA independente já executa o aceite obrigatório, retoma após aprovação, promove a suíte e fecha a proposta após o merge ([controle de mudanças](../controls/change-control.md)); o ensaio real da automação encerrou a [#58](https://github.com/IgnisDevNE/CircuitoNE/issues/58). Faltam os ensaios negativos mais amplos, a prova completa de concorrência/promoção e a retirada das credenciais humanas/chaves do ambiente implementador ([#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31)).
+- Codecov próprio: relatório, checks e comentário numérico comprovados (#30); falta uma atualização genuína compatível do Dependabot. Forks mantêm testes/LCOV como artefatos sem token.
+- Próximo trabalho: partir de `main` atualizada e branch nova; seguir a ordem aprovada em 26/09 no plano da F0: schema completo/infra, isolamento, homologação e recuperação. Resolver o máximo de bloqueios na fase zero; preparação com fixtures pode avançar sem tratar pendências como aprovadas. [Parecer por PR do Dependabot](../reviews/dependabot-2026-09-22.md).
 
 ## Contrato comum de cada tarefa
 
 1. Vincular RN/decisão, definir critérios e negações, escopo, dependências, risco e responsável por revisão. Identificar issues bloqueantes e o pré-requisito que deve ser resolvido antes do trecho dependente. Separar essas issues das que a própria tarefa resolve; não criar ciclo exigindo que a correção termine antes de começar. Em issue com várias partes, registrar evidência do pré-requisito atendido; o restante continua aberto. Pendência de produto bloqueia apenas o trabalho que depende dela; não inventar resposta.
 2. Escrever teste primeiro e registrar falha pelo comportamento ausente. O contrato de aceite é revisado e fixado fora da autoridade do implementador. Caracterização já correta pode começar verde; documentação recebe revisão de consistência, links e evidências.
-3. Implementar o menor incremento completo: UI/servidor/banco/políticas quando necessários, com falhas, autorização e documentação. Não construir todo o schema antes de testar a primeira jornada.
+3. Implementar o menor incremento completo: UI/servidor/banco/políticas quando necessários, com falhas, autorização e documentação. Na F0, antecipar schema completo em quatro fatias, cada uma com testes SQL/RLS/RPC antes da migração e seeds sintéticos; jornadas de UI continuam nas fases seguintes.
 4. Rodar verificações pertinentes: unidade/interação, TypeScript/build, API/RLS/Storage/concorrência, jornada e acessibilidade afetadas. Registrar SHA final e versão do oráculo; cobertura é evidência auxiliar.
 5. Review normal independente do diff e dos contratos/testes. Resolver P0/P1; risco residual aceito precisa de responsável e prazo. Todo achado deferido, dívida técnica ou bug não resolvido deve ter issue aberta vinculada, conforme `AGENTS.md`; abrir issue não dispensa o gate. O implementador não é seu único aprovador.
 6. Homologar alterações executáveis pelo GitHub no `CircuitoNE-dev`, com migrations/checksums, artefato e smoke. Nenhum teste de schema em produção. Documentar aplicabilidade quando o PR só altera documentos.
@@ -71,8 +71,8 @@ Os blocos **Bloqueios por issue** dos planos registram requisitos de entrada. **
 | ID | Pendência / responsável | Efeito e aceite |
 |---|---|---|
 | [DEF-01](https://github.com/IgnisDevNE/CircuitoNE/issues/29) | Autorizar OAuth CodeCov na IgnisDevNE / proprietário da organização | Sincronizar associação sem 403 e confirmar organização na conta. Deferido; não bloqueia testes locais, planejamento ou demais tarefas |
-| [DEF-02](https://github.com/IgnisDevNE/CircuitoNE/issues/30) | Publicar cobertura no Codecov / mantenedor + implementação F0-T13 | Relatório real no SHA correto, token restrito e publicação isolada. Até lá, artefato local/CI; sem declarar cobertura remota validada |
-| [F0-T2](https://github.com/IgnisDevNE/CircuitoNE/issues/31) | Isolamento do QA/emissor/implementador / mantenedor | Barreira obrigatória antes de agentes implementarem regras reais; demonstrar testes negativos, incluindo ausência de credenciais administrativas locais |
+| [DEF-02](https://github.com/IgnisDevNE/CircuitoNE/issues/30) | Publicar cobertura no Codecov / mantenedor + implementação F0-T13 | Relatório/checks/comentário próprios comprovados; falta PR genuína compatível do Dependabot. Artefatos sem token para forks |
+| [F0-T2](https://github.com/IgnisDevNE/CircuitoNE/issues/31) | Isolamento do QA/emissor/implementador / mantenedor | Barreira antes de aplicação remota/integração; preparação de schema/RLS/RPCs sintéticos em banco descartável autorizada em 26/09; demonstrar testes negativos, incluindo ausência de credenciais administrativas locais |
 | [F0-T4/T5](https://github.com/IgnisDevNE/CircuitoNE/issues/32) | Credenciais e fluxo real de homologação / mantenedor + implementação | Testar o fluxo no projeto correto; não promover só por CI verde |
 | [D-02/D-03](https://github.com/IgnisDevNE/CircuitoNE/issues/38) | Idade, CPF, recuperação e retenção / responsável pelo produto | Decisões aprovadas em 22/09/2026; integrar registro revisado antes dos contratos afetados da fase 1. Implementação e isolamento seguem pendentes |
 | [D-08/D-10](https://github.com/IgnisDevNE/CircuitoNE/issues/39) | Arquivos/cotas e dados sociais / responsável pelo produto | Decisões aprovadas em 22/09/2026; integrar registro revisado antes das tarefas afetadas da fase 2. Uploads e edição real seguem pendentes |

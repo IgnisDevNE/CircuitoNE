@@ -4,6 +4,10 @@ Estado verificado em 24/09/2026. Este controle cobre GitHub, esteira, Supabase e
 
 ## Identidades e autoridade atual
 
+**Destino aprovado em 26/09/2026, ainda por implantar:** agente integralmente em container Linux no Podman, usuário sem privilégios, sistema somente leitura e volumes próprios de checkout/cache. Sem montagem de perfil/discos Windows, `secrets/`, sockets do engine, chaves QA ou sessões administrativas. Manutenção humana fica fora do container. O helper receberá token temporário do App emitido externamente; renovação manual, sem chave privada no implementador. O aceite exige provas de negação nessa identidade. Apenas executar comandos Linux pelo harness Windows não satisfaz #31.
+
+**Memtrace em 26/09/2026:** `memtrace-platform` reinstalado somente no CircuitoNE (165262507), leitura de código/metadados e escrita em checks/issues/PRs. Callback confirmou vínculo e revisão local strict da #115 passou, sem publicação (#113 encerrada). É revisor auxiliar; não substitui Sol/low, revisão humana ou check canônico. A licença de manutenção não será montada automaticamente no ambiente do implementador.
+
 | Identidade | Acesso necessário no fluxo | Limite e situação verificada |
 |---|---|---|
 | `magalz` (mantenedor humano) | Administrar repositórios, Apps, ambientes e credenciais; revisar QA, homologação e releases. Acessa o dashboard Supabase com sua conta pessoal. | A proteção do CircuitoNE impede aprovar a própria PR e o environment protegido impede autoaprovação de deployment. A sessão GitHub, as credenciais humanas e a conexão Supabase da conta pessoal ainda estão acessíveis pelo ambiente do agente; isso impede afirmar isolamento forte. O papel exato no Supabase não foi revalidado nesta auditoria. |

@@ -1,16 +1,29 @@
 # Fase 0 — Preparar a base para desenvolver
 
-**Estado:** em execução; fundação do PR #2 integrada e checkpoint de testes/toolchain preparado em 22/09/2026. A fase não está concluída; [evidências e bloqueios](../../reviews/phase-0.md). Esta fase reúne infraestrutura, testes, adaptação à stack e correções do protótipo necessárias antes das funcionalidades reais. [Índice e regras comuns](../implementation-plan.md).
+**Estado em 26/09/2026:** em execução; SSR/Node 24/TypeScript 7 concluídos (#35/#36), pods dev/produção publicados e retomada por login instalada. PR #115 integrada em `859ef29321c2573f0398d1f9ea313a0d13fb6893`, CI/QA/promoção confirmados. A fase não está concluída; [evidências e bloqueios](../../reviews/phase-0.md). O escopo aprovado agora inclui o schema completo do MVP, com dados exclusivamente sintéticos. [Índice e regras comuns](../implementation-plan.md).
 
 **Entrada:** arquitetura aprovada; inventário de 27 rotas e [achados UI-01–18](../../reviews/prototype-audit.md). **Saída:** aplicação executável em React Router Framework/Node/Caddy, testes e homologação operacionais, contratos sob autoridade independente e nenhum P0/P1 aberto no caminho que receberá dados reais.
 
 ## Ordem de trabalho
 
+**Plano aprovado em 26/09/2026 (prevalece sobre a ordem histórica abaixo):** consolidar evidências → preparar quatro fatias de schema em bancos descartáveis e mudanças da esteira → concluir negativas do QA e preparar container Linux do agente → retirar autoridade temporária e fechar #31 → aplicar/homologar no CircuitoNE-dev e concluir recuperação #32/#43 → revisão completa/OWASP. Aproveitar o acesso de manutenção durante o bootstrap; não ativar migração remota antes do isolamento.
+
+O agente de implementação executará integralmente em container Linux no Podman, sem perfil/discos Windows, chaves, sessões humanas ou socket do engine. Receberá apenas token temporário do App emitido pelo mantenedor fora desse ambiente. Esta sessão Windows é de manutenção. A #30 conserva a validação de atualização genuína do Dependabot; não fabricar upgrade para encerrá-la. A #104 é o último gate técnico pré-release e não bloqueia a fase zero; produção permanece em espera, com cadastros e backup legível desativados.
+
+| Fatia F0-T4 | Issue | Entrada e entrega |
+|---|---|---|
+| 1 Identidade e atuações | [#116](https://github.com/IgnisDevNE/CircuitoNE/issues/116) | Regras aprovadas; conta privada, perfis, taxonomia, materiais, RLS e seeds |
+| 2 Coletivos | [#117](https://github.com/IgnisDevNE/CircuitoNE/issues/117) | Contratos da #116; proprietário, aprovação, perfis/permissões e vínculos atômicos |
+| 3 Eventos | [#118](https://github.com/IgnisDevNE/CircuitoNE/issues/118) | #117; eventos/lineup, publicação, cancelamento e agenda |
+| 4 Mensagens e ciclo de vida | [#119](https://github.com/IgnisDevNE/CircuitoNE/issues/119) | #118 e identidades anteriores; conversas, limites, denúncias, exclusão/expurgo |
+
+Cada fatia inclui migrações, constraints/índices/grants/RLS, RPCs atômicas, tipos e seeds determinísticos, com TDD SQL e revisão Sol/low. Implementação descartável pode começar; aplicação remota aguarda #31 e pré-requisitos de destino/recuperação de #43. UI, jornadas Auth e operação de moderação continuam nas fases de produto. Nenhuma issue exige seu próprio encerramento antes de começar a correção.
+
 **Sprint de 23/09/2026:** o responsável pediu para executar primeiro as correções e preparações da fase 0 que não dependem de isolamento, deixando a retirada das credenciais temporárias e o fechamento da #31 por último. Isso não libera jobs com secrets, migrações no projeto compartilhado nem promoção: esses passos aguardam o gate de isolamento de F0-T2 e serão verificados antes da saída da fase.
 
 Com F0-T1/T3 integradas, abrir primeiro F0-T14 (dependências) e F0-T15 (decisões/pré-requisitos), em paralelo ao trabalho independente de F0-T2 e F0-T6. Corrigir F0-T7–T10; migrar F0-T11/T12; concluir F0-T4/T5 e o review de fase. Estabilizar a toolchain de F0-T14 antes do aceite final dos testes/SSR. F0-T13 pode avançar quando houver cobertura real, mas a dependência externa do Codecov não bloqueia a fase. Dependências específicas abaixo prevalecem sobre essa sequência resumida.
 
-Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em checkpoints necessários, mantendo cada tarefa com review normal independente. PRs intermediários seguem a ordem das dependências para aprovação crescente. O planejamento atual não autoriza marcar a base como pronta nem começar regras reais sem o isolamento de F0-T2. Preparação com dados fictícios pode avançar nas partes independentes. A [auditoria atual do Supabase](../../reviews/supabase-environments-2026-09-22.md) distingue o que foi verificado das configurações ainda pendentes.
+Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em checkpoints necessários, mantendo cada tarefa com review normal independente. PRs intermediários seguem a ordem das dependências para aprovação crescente. O planejamento atual não autoriza marcar a base como pronta nem aplicar regras em ambiente compartilhado sem o isolamento de F0-T2. A decisão de 26/09 autoriza preparar e testar schema/RLS/RPCs em banco descartável com dados sintéticos antes desse gate. A [auditoria atual do Supabase](../../reviews/supabase-environments-2026-09-22.md) distingue o que foi verificado das configurações ainda pendentes.
 
 ## F0-T1 — Consolidar GitHub, toolchain e CI
 
@@ -64,7 +77,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 - Entrega: CLI fixado, configuração por ambiente, adaptador simples de `docs/migrations/` para a árvore de execução do CLI, tipos gerados e dados sintéticos determinísticos.
 - Testar primeiro: ordem/checksum de migrações, reconstrução limpa, destino incorreto rejeitado e ausência de cópias editáveis concorrentes. Um `reset` de teste nunca alcança homologação compartilhada ou produção.
 - Aceite: validar compatibilidade do Supabase local com Podman/WSL; se não for suportada no host, usar banco descartável em runner Linux isolado, documentando a alternativa. Nenhuma promessa de compatibilidade apenas por ambos usarem containers.
-- Documentação: [convenção de migrações](../../migrations/README.md), ambiente, preparação de seeds e política de concorrência. Migração de ensaio fica no banco descartável; schema real entra nas fases de produto.
+- Documentação: [convenção de migrações](../../migrations/README.md), ambiente, seeds e política de concorrência. Migração de ensaio fica no banco descartável; schema completo do MVP entra agora nas quatro fatias #116–#119, sem antecipar interfaces de produto.
 
 ## F0-T5 — Homologar e promover pelo GitHub
 
@@ -122,7 +135,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 ## F0-T9 — Conter o mock e corrigir escopos de interface
 
-**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) antes dos contratos de autorização; [#40](https://github.com/IgnisDevNE/CircuitoNE/issues/40) na integração do registro revisado das invariantes aprovadas em 22/09/2026. Implementação e validação da autorização real permanecem nas fases correspondentes.
+**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) antes da aplicação compartilhada dos contratos de autorização; [#40](https://github.com/IgnisDevNE/CircuitoNE/issues/40) na integração do registro revisado das invariantes aprovadas em 22/09/2026. Schema/RLS/RPCs e testes SQL entram na F0 (#116–#119); integração da autorização nas interfaces e jornadas permanece nas fases de produto.
 
 **Issues tratadas:** [#12](https://github.com/IgnisDevNE/CircuitoNE/issues/12)/[#13](https://github.com/IgnisDevNE/CircuitoNE/issues/13)/[#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14)/[#22](https://github.com/IgnisDevNE/CircuitoNE/issues/22)/[#28](https://github.com/IgnisDevNE/CircuitoNE/issues/28) na contenção do mock e troca de contexto. Autorização real e persistência não são encerradas por uma correção de UI.
 
@@ -174,15 +187,15 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 ## F0-T13 — Cobertura local e integração Codecov
 
-**Bloqueios por issue:** O acesso à organização da instância própria foi verificado e [#29](https://github.com/IgnisDevNE/CircuitoNE/issues/29) encerrada. [#30](https://github.com/IgnisDevNE/CircuitoNE/issues/30) ainda exige relatório e comentário em PR real; o token já está isolado conforme [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31). Ver [ADR 0007](../../decisions/0007-codecov-self-hosted-target.md); [ADR 0004](../../decisions/0004-codecov-cloud.md) registra a escolha anterior.
+**Bloqueios por issue:** O acesso à organização da instância própria foi verificado e [#29](https://github.com/IgnisDevNE/CircuitoNE/issues/29) encerrada. [#30](https://github.com/IgnisDevNE/CircuitoNE/issues/30) ainda exige validação de uma PR genuína compatível do Dependabot; o token já está isolado conforme [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31). Ver [ADR 0007](../../decisions/0007-codecov-self-hosted-target.md); [ADR 0004](../../decisions/0004-codecov-cloud.md) registra a escolha anterior.
 
 **Issues tratadas:** [#30](https://github.com/IgnisDevNE/CircuitoNE/issues/30) e colaboração operacional em [#29](https://github.com/IgnisDevNE/CircuitoNE/issues/29); não fechar upload sem relatório real.
 
-**Estado:** cobertura e artefatos entregues pelo PR #45. O [primeiro relatório próprio de `main`](https://pipeline.magalz.space/github/IgnisDevNE/CircuitoNE/commit/e74153ef47e388959477e2c3410f9dfffe02503f) foi processado no SHA `e74153e`, com 43,13% de cobertura; falta validar PR e comentário em #30. A [ampliação de cobertura](../../reviews/coverage-backlog-2026-09-22.md) registra testes de interação e correções do roteador; não satisfaz aceite canônico. **Dependência:** F0-T6 para gerar LCOV. **Risco:** médio.
+**Estado:** cobertura e artefatos entregues pelo PR #45. O [primeiro relatório próprio de `main`](https://pipeline.magalz.space/github/IgnisDevNE/CircuitoNE/commit/e74153ef47e388959477e2c3410f9dfffe02503f) foi processado no SHA `e74153e`, com 43,13% de cobertura; PR e comentário numérico foram comprovados nas #105/#110; falta o caso Dependabot da #30. A [ampliação de cobertura](../../reviews/coverage-backlog-2026-09-22.md) registra testes de interação e correções do roteador; não satisfaz aceite canônico. **Dependência:** F0-T6 para gerar LCOV. **Risco:** médio.
 
 - Entrega: relatório LCOV/HTML reproduzível, conjunto de arquivos incluídos explícito, baseline aprovado e política de cobertura de código alterado. Não impor porcentagem arbitrária nem excluir caminhos para esconder ausência de testes.
 - Testar primeiro: código não executado aparece descoberto e arquivo novo entra no relatório; uma regressão controlada na regra exercitada faz o teste falhar mesmo se a cobertura continuar igual. Falha de teste impede tratar relatório como evidência aprovada; cobertura de linhas não prova qualidade do oráculo.
-- Aceite externo: validar upload de PR e comentário efetivo na instância própria, associados ao repo/commit/branch corretos. O publicador permanece separado, sem executar o app nem consumir screenshots. Dependabot/forks exigem evidência própria. Pendência em #30, responsável implementação/mantenedor, destino F0-T13.
+- Aceite externo: validar upload de PR e comentário efetivo na instância própria, associados ao repo/commit/branch corretos. O publicador permanece separado, sem executar o app nem consumir screenshots. Dependabot exige execução genuína compatível; forks conservam testes/LCOV em artefatos sem token de upload. Pendência em #30, responsável implementação/mantenedor, destino F0-T13.
 - Se o upload falhar: preservar cobertura como artefato do CI, registrar pendência e continuar. Só tornar check remoto obrigatório depois de validar o caminho completo; não remover os gates locais de teste/review.
 - Documentação: [diagnóstico Codecov](../../reviews/codecov-diagnosis.md), exclusões justificadas, baseline e instrução de upload. Não usar o mesmo agente/verificador para escrever testes canônicos e atestar sua imutabilidade.
 
@@ -212,7 +225,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 **Dependência:** regras/propostas já inventariadas; decisões de produto podem avançar sem código. **Responsáveis:** produto e mantenedor. A preparação com credenciais depende do isolamento de F0-T2.
 
 - Resolver na fase zero: idade/CPF/recuperação/retenção, arquivos e dados sociais, verificação/suspensão e invariantes de coletivos, catálogo de perfis e permissões (#66), tempo/publicação/agenda de eventos, iniciação/moderação de mensagens. Propostas continuam propostas até aprovação; não inventar resposta para encerrar issue.
-- Preparar: a produção vazia de Oregon já foi substituída por projeto em São Paulo (`ukyoyrmebwadmuzkswdw`), mantendo dev em São Paulo. Referência, URL e chave publicável do environment GitHub `Producao` foram atualizadas e conferidas pela conta humana autorizada; token restrito e senha passaram na [verificação protegida de leitura](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/35813985190). Ainda faltam callbacks e guard de ambiente. O App implementador recebeu HTTP 403 ao ler variables/secrets. Em 24/09, o domínio `magalz.space` já estava verificado no SMTP2GO; criamos usuários separados `circuitone-dev` (sandbox, sem entrega ao destinatário original) e `circuitone` (produção), desativamos rastreamento de abertura/cliques e salvamos cada credencial no respectivo projeto Supabase. Novos cadastros no Auth de produção foram desativados até a liberação. Envio controlado e links de Auth ainda precisam de teste; o sandbox precisa de uma caixa de auditoria controlada para validar a mensagem sem entregá-la ao destinatário original. Preparar DNS/TLS, capacidade e responsáveis. RPO 24h, RTO 48h e backup diário de banco/objetos são metas aprovadas, ainda não implantadas ou ensaiadas. A configuração de SMTP não autoriza enviar mensagens a usuários reais.
+- Estado em 26/09/2026: ambos os projetos estão em São Paulo; produção `ukyoyrmebwadmuzkswdw` validada por conexão de leitura. Guard de ambiente, SMTP2GO separado, dev em sandbox com auditoria em `ignisdev@magalz.space`, domínios/HTTPS e pods estão implantados. Ensaio SMTP sintético passou; novos cadastros de produção estão desativados e redirects continuam vazios até callback Auth revisado. Backup dev e restauração PostgreSQL passaram; faltam recuperação completa do Storage/checksum independente, RPO/RTO medidos, login permitido no Access e reboot real. As evidências atuais ficam em #43 e nos guias operacionais. #104 é o último gate técnico pré-release, sem dados reais antes dele.
 - Aceite: cada decisão tem responsável, registro aprovado e exemplos de aceite/negação nos contratos afetados; SMTP de dev é validado com cópia somente à caixa de auditoria controlada, e o de produção com destino de teste controlado antes de reativar cadastros. Marcar evidências por pré-requisito e remover apenas o bloqueio correspondente.
 - Documentação: atualizar regras canônicas, ambiente/spec pertinente e issues; implementação persistente, deploy final e ensaio completo de restauração continuam nas fases correspondentes. Sem testes artificiais para decisões documentais.
 
@@ -222,8 +235,8 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 |---|---|---|
 | Defeitos autônomos de Markdown, dinheiro, estado de rota e semântica (#11/#17/#22/#27) | Corrigir e encerrar com evidência de todos os critérios aplicáveis ao protótipo | Critério ainda não demonstrado, explicitamente atribuído a uma tarefa; não fechar só porque o exemplo deixou de falhar |
 | Dependências (#34–#37), decisões e pré-requisitos (#38–#43/#66) | Resolver antes de estabilizar a base e antes das tarefas dependentes | Incompatibilidade externa demonstrada ou decisão humana pendente, com responsável e impacto exato |
-| Infraestrutura (#29–#32) | Concluir comentário de PR no Codecov próprio, isolamento e homologação | #29 foi encerrada e o baseline próprio passou; #30 exige PR/comentário real. #31/#32 bloqueiam a saída correspondente da fase |
-| Achados que incluem persistência/autorizações e funcionalidades ainda inexistentes | Antecipar na F0 validação, testes, contenção do mock, estados de falha e correções independentes | Manter a issue aberta até o aceite integral nas fases 1–5; não inventar backend provisório ou mover todo o produto para F0 só para zerar a lista |
+| Infraestrutura (#29–#32) | Concluir caso Dependabot, isolamento e homologação | #29 encerrada; Codecov próprio com relatório/checks/comentário comprovados. #30 conserva o caso Dependabot. #31/#32 bloqueiam a saída correspondente da fase |
+| Achados que incluem persistência/autorizações e funcionalidades ainda inexistentes | Antecipar schema, invariantes, RLS/RPCs, seeds e testes SQL completos na F0 | Interfaces e jornadas integradas continuam nas fases 1–5; manter suas issues abertas até aceite integral, sem backend provisório |
 | SEO e qualidade integrada (#26/#28 e validação final) | Corrigir metadados estáticos, SSR com fixtures, determinismo e estados já testáveis | Consultas/paginação/dados reais e validação do produto final permanecem nas tarefas de domínio e F6-T3 |
 
 O relatório de saída deve listar **cada issue ainda aberta**, o que já foi resolvido, motivo concreto do restante, tarefa de destino e efeito no gate. Ausência de issue nova não prova ausência de dívida; uma issue parcialmente atendida não é encerrada como resolvida.

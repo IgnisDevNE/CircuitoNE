@@ -98,6 +98,21 @@ export async function createRestoreDatabase() {
     "--tmpfs",
     "/tmp:rw,nosuid,nodev,size=128m",
   ]
+  const authEnv = [
+    "GOTRUE_DB_DRIVER=postgres",
+    `GOTRUE_DB_DATABASE_URL=postgresql://supabase_auth_admin:${password}@127.0.0.1:5432/postgres`,
+    `GOTRUE_JWT_SECRET=${jwtSecret}`,
+    "GOTRUE_JWT_AUD=authenticated",
+    "GOTRUE_JWT_DEFAULT_GROUP_NAME=authenticated",
+    "GOTRUE_SITE_URL=https://synthetic.invalid",
+    "API_EXTERNAL_URL=http://127.0.0.1:9999",
+    "GOTRUE_API_HOST=0.0.0.0",
+    "GOTRUE_API_PORT=9999",
+    "GOTRUE_MFA_ENABLED=true",
+    "GOTRUE_MFA_TOTP_ENROLL_ENABLED=true",
+    "GOTRUE_MFA_TOTP_VERIFY_ENABLED=true",
+    "GOTRUE_LOG_LEVEL=error",
+  ]
   const storageRun = (id, args) => {
     names.push(id)
     return run([
@@ -195,20 +210,42 @@ export async function createRestoreDatabase() {
           "--network",
           `container:${name}`,
           ...flags,
-          "-e",
-          "GOTRUE_DB_DRIVER=postgres",
-          "-e",
-          `GOTRUE_DB_DATABASE_URL=postgresql://supabase_auth_admin:${password}@127.0.0.1:5432/postgres`,
-          "-e",
-          `GOTRUE_JWT_SECRET=${jwtSecret}`,
-          "-e",
-          "GOTRUE_SITE_URL=https://synthetic.invalid",
-          "-e",
-          "API_EXTERNAL_URL=http://127.0.0.1:9999",
+          ...authEnv.flatMap((item) => ["-e", item]),
           auth,
           "auth",
           "migrate",
         ])
+      },
+      startAuthServer: async () => {
+        const id = `${name}-auth`
+        names.push(id)
+        run([
+          "run",
+          "-d",
+          "--name",
+          id,
+          "--network",
+          `container:${name}`,
+          ...flags,
+          ...authEnv.flatMap((item) => ["-e", item]),
+          auth,
+        ])
+        let healthy = false
+        for (let attempt = 0; attempt < 60; attempt++) {
+          try {
+            run([
+              "exec",
+              `${name}-api`,
+              "node",
+              "-e",
+              "fetch('http://127.0.0.1:9999/health',{signal:AbortSignal.timeout(1000)}).then(r=>{if(!r.ok)process.exitCode=1}).catch(()=>process.exitCode=1)",
+            ])
+            healthy = true
+            break
+          } catch {}
+          await delay(500)
+        }
+        assert.ok(healthy, "Isolated Auth API did not become healthy")
       },
       populate: async (root, objects) => {
         const id = `${name}-files`

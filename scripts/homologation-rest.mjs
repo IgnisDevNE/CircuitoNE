@@ -220,12 +220,23 @@ export async function checkHomologationRest(
       target: "05000000-0000-4000-8000-000000000001",
     })
     assert.equal(denial.status, 403)
-    for (const n of [4, 7]) {
+    for (const n of [5, 7]) {
       const hidden = await rest("rpc/get_event", undefined, {
         target: `0a000000-0000-4000-8000-${String(n).padStart(12, "0")}`,
       })
       assert.equal(hidden.status, 200)
       assert.equal(hidden.data, null)
+    }
+    const cancelledId = "0a000000-0000-4000-8000-000000000004"
+    const cancelled = await rest("rpc/get_event", undefined, {
+      target: cancelledId,
+    })
+    assert.equal(cancelled.status, 200)
+    assert.equal(cancelled.data.state, "cancelled")
+    for (const period of ["future", "ongoing", "past"]) {
+      const agenda = await rest("rpc/list_events", undefined, { period })
+      assert.equal(agenda.status, 200)
+      assert.ok(!agenda.data.some((event) => event.id === cancelledId))
     }
     const history = await rest("rpc/get_messages", jwt(5), {
       target: "0d000000-0000-4000-8000-000000000006",

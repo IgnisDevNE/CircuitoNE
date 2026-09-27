@@ -4,8 +4,10 @@ do $$ begin
   if current_setting('circuitone.seed_target',true) is null or current_setting('circuitone.seed_target',true) not in ('disposable','odphoxozclrshqjgwbqk') then
     raise exception 'Seed exige destino sintético declarado pelo executor'; end if;
 end $$;
-insert into auth.users(id,email,email_confirmed_at,phone,phone_confirmed_at) values
-('01000000-0000-4000-8000-000000000005','fixture-member@example.invalid',now(),'5581999000005',now()) on conflict(id) do nothing;
+insert into auth.users(instance_id,aud,role,confirmation_token,recovery_token,email_change_token_current,email_change_token_new,email_change,phone_change_token,phone_change,reauthentication_token,created_at,updated_at,raw_app_meta_data,raw_user_meta_data,id,email,email_confirmed_at,phone,phone_confirmed_at) values
+('00000000-0000-0000-0000-000000000000','authenticated','authenticated',
+ '','','','','','','','',now(),now(),'{}'::jsonb,'{}'::jsonb,
+ '01000000-0000-4000-8000-000000000005','fixture-member@example.invalid',now(),'5581999000005',now()) on conflict(id) do nothing;
 insert into private.account_details(user_id,name,cpf,birth_date,city,state_code,phone_is_whatsapp,registration_request_id,registration_hash) values
 ('01000000-0000-4000-8000-000000000005','Membro sintético ativo','93541134780','1990-01-01','Recife','PE',true,'03000000-0000-4000-8000-000000000005','seed-collectives-v1') on conflict(user_id) do nothing;
 -- Titular diferente do proprietário: prova acesso profissional somente com MFA elegível.

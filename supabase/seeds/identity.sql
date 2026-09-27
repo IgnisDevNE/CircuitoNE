@@ -8,12 +8,15 @@ do $$ begin
   end if;
 end $$;
 
-insert into auth.users(id,email,email_confirmed_at,phone,phone_confirmed_at)
-values
+insert into auth.users(instance_id,aud,role,confirmation_token,recovery_token,email_change_token_current,email_change_token_new,email_change,phone_change_token,phone_change,reauthentication_token,created_at,updated_at,raw_app_meta_data,raw_user_meta_data,id,email,email_confirmed_at,phone,phone_confirmed_at)
+select '00000000-0000-0000-0000-000000000000'::uuid,'authenticated','authenticated',
+  '','','','','','','','',now(),now(),'{}'::jsonb,'{}'::jsonb,
+  id::uuid,email,email_confirmed_at,phone,phone_confirmed_at from (values
  ('01000000-0000-4000-8000-000000000001','fixture-active@example.invalid',now(),'5581999000001',now()),
  ('01000000-0000-4000-8000-000000000002','fixture-suspended@example.invalid',now(),'5581999000002',now()),
  ('01000000-0000-4000-8000-000000000003','fixture-deletion@example.invalid',now(),'5581999000003',now()),
  ('01000000-0000-4000-8000-000000000004','fixture-unconfirmed@example.invalid',null,'5581999000004',null)
+) fixture(id,email,email_confirmed_at,phone,phone_confirmed_at)
 on conflict(id) do nothing;
 insert into private.account_details(user_id,name,cpf,birth_date,city,state_code,phone_is_whatsapp,whatsapp_number,state,registration_request_id,registration_hash)
 values

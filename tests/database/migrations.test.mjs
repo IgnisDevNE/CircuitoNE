@@ -7,6 +7,7 @@ import { readFileSync, readdirSync, writeFileSync, rmSync, realpathSync } from "
 import { resolve, join, basename, dirname } from "node:path"
 import { prepareLocalDatabase } from "../../scripts/prepare-local-db.mjs"
 import { checkCollectiveConcurrency } from './collective-concurrency.mjs'
+import { checkEventConcurrency } from './event-concurrency.mjs'
 
 const reservePort = async (port) => {
   const server = createServer()
@@ -114,6 +115,7 @@ test(
       checkDefaults()
       queryFile("tests/database/identity-profiles.sql")
       queryFile("tests/database/collectives.sql")
+      queryFile("tests/database/events.sql")
     }
     // Duas conexões reais: lock da identidade e UNIQUE do CPF devem decidir no banco.
     for (const sameAccount of [false, true]) {
@@ -160,6 +162,7 @@ test(
       )
     }
     await checkCollectiveConcurrency(query, sql => promisify(execFile)('docker', [...psqlArgs, '--command', sql], { timeout: 30_000 }))
+    await checkEventConcurrency(query, sql => promisify(execFile)('docker', [...psqlArgs, '--command', sql], { timeout: 30_000 }))
     run(
       "db",
       "query",
@@ -205,6 +208,19 @@ test(
     assert.throws(() => query(collectiveSeed), error => /Seed exige destino sintético/.test(String(error.stdout) + String(error.stderr)))
     query(`set circuitone.seed_target='disposable';\n${collectiveSeed}\n${collectiveSeed}`)
     queryFile('tests/database/collective-seed.sql')
+    const eventSeed = readFileSync('supabase/seeds/events.sql', 'utf8')
+    assert.throws(() => query(eventSeed), error => /Seed exige destino sintético/.test(String(error.stdout) + String(error.stderr)))
+    assert.throws(() => query(`set circuitone.seed_target='disposable';\n${eventSeed}`), error => /Seed exige referência temporal/.test(String(error.stdout) + String(error.stderr)))
+    query(`set circuitone.seed_target='disposable'; set circuitone.seed_time='2026-09-26T12:00Z';\n${eventSeed}\n${eventSeed}`)
+    queryFile('tests/database/event-seed.sql')
+    query(`delete from private.event_lineup where event_id='0a000000-0000-4000-8000-000000000001';
+      update public.events set name='Alteração preservada' where id='0a000000-0000-4000-8000-000000000001';
+      set circuitone.seed_target='disposable'; set circuitone.seed_time='2026-09-26T12:00Z';\n${eventSeed}
+      do $$ begin
+        if exists(select from private.event_lineup where event_id='0a000000-0000-4000-8000-000000000001') or
+          (select name from public.events where id='0a000000-0000-4000-8000-000000000001')<>'Alteração preservada' then
+          raise exception 'Seed reconstruiu dados editados'; end if;
+      end $$;`)
     const taxonomy = JSON.parse(readFileSync("docs/specs/estilos-musicais.json", "utf8"))
     const expected = Object.entries(taxonomy).flatMap(([style, children]) => [[style, null], ...children.map(name => [style, name])])
     const taxonomyFile = join(workdir, "taxonomy.sql")

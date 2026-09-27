@@ -18,6 +18,8 @@ Usar Git e Actions, sem criar middleware ou framework próprio. O contrato de ve
 
 ## Consequências e limites
 
+**Detalhamento de 27/09/2026:** o schema completo exige aceite de banco além do navegador. O runner integrado pela [QA PR #24](https://github.com/IgnisDevNE/CircuitoNE-QA/pull/24) mantém dependências e comandos em W e oráculos SQL/concorrência em Q; SQL candidato é dado enviado a um PostgreSQL descartável separado do executor, sem acesso ao host ou ao publicador. Ambos os jobs precisam passar; o estado v2 registra duas árvores. O estado E2E anterior é apenas predecessor da primeira promoção SQL revisada. A [spec](../specs/canonical-ci-suite.md) registra a promoção inicial ainda pendente, sem declarar a #31 concluída.
+
 - Reduzir processamento local de aceite; manter testes rápidos locais para TDD e diagnóstico.
 - Separar aprovação de testes, execução do candidato e publicação/promoção. O implementador pode propor testes, mas não aprovar sua referência ou atestar a própria entrega.
 - Invalidar aceite antes do merge quando a suíte/base avançar; coordenar a integração e a promoção anterior para impedir entrada com resultado desatualizado. Tratar promoção como operação auditável e condicionada ao estado atual, com retentativa e histórico; um merge não pode apagar testes aceitos por outro PR.

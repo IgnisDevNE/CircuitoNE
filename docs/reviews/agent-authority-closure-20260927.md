@@ -28,6 +28,8 @@ As verificações automatizadas do QA também cobrem SHA divergente, revisão ob
 
 O contexto Windows preserva sessões humanas e a chave externa do emissor para manutenção. Não compartilhar esse estado com o Linux. A prova é do ambiente container verificado e dos caminhos/poderes ensaiados, não de isolamento forte deste computador nem de segurança absoluta da conta ChatGPT.
 
+Revisão independente Sol/low em 27/09 não encontrou novos bloqueadores no escopo da #31: inspecionou política/rede/launcher, emissão/consumo do token, grants instalados e limites das evidências. Condicionou o fechamento à review humana da PR, merge e promoção do SHA integrado. Essa revisão de segurança do controle não substitui a revisão completa OWASP da fase após a execução hospedada #32/#43.
+
 ## Checkpoint operacional já integrado
 
 A [PR #137](https://github.com/IgnisDevNE/CircuitoNE/pull/137) foi aprovada no head `90f582525054dcd0c2ac43624aa34ce35e8c54cf` e integrada em `7e372c8f88c056c065636e5d3de1899ea2b60bbe`. [CI 36301810158](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/36301810158) e [promoção QA 36301954840](https://github.com/IgnisDevNE/CircuitoNE-QA/actions/runs/36301954840) passaram; accepted `853287849d163c67f6df9bc485c56fa4bfcfb4cc` apontou para esse SHA/run/PR.

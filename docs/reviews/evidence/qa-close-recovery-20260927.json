@@ -1,0 +1,28 @@
+{
+  "verifiedAt": "2026-09-27T05:39:04Z",
+  "controlPr": "https://github.com/IgnisDevNE/CircuitoNE-QA/pull/28",
+  "controlCommit": "41d104fb683b3271b35bd270c345a0156a23c858",
+  "workflowRun": "https://github.com/IgnisDevNE/CircuitoNE-QA/actions/runs/36297796163",
+  "sourceRunId": 36289161697,
+  "mode": "promote",
+  "proposal": {
+    "number": 25,
+    "head": "73e9c73849ddd22593d713c24fe9cdcbed2cc278",
+    "reviewer": "magalz",
+    "reviewState": "APPROVED",
+    "reopenedOriginal": true,
+    "closedAfterRecovery": true,
+    "merged": false
+  },
+  "acceptedBefore": "dd2fa1d12c15269fd16ec318a6fd2a10930f94b5",
+  "acceptedAfter": "dd2fa1d12c15269fd16ec318a6fd2a10930f94b5",
+  "jobs": {
+    "resolve": "success",
+    "close-proposal": "success",
+    "test": "skipped",
+    "database": "skipped",
+    "publish": "skipped",
+    "promote": "skipped"
+  },
+  "scope": "Recovery of interrupted proposal closure only; no new test commit, deployment or hosted database mutation. Original branch already existed and its original reviewed SHA was preserved."
+}

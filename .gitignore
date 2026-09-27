@@ -25,6 +25,7 @@ logs/
 /.orbit-artifacts
 /.memdb/
 /.memtrace/
+/.memtrace-workspace
 /.claude/
 /.agents/
 /.codex/

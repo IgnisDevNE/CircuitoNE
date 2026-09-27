@@ -26,7 +26,7 @@ create table private.messages (
   conversation_id uuid not null references private.conversations(id),
   sender_identity_id uuid not null references private.message_identities(id),
   author_user_id uuid references private.account_details(user_id) on delete set null,
-  body text not null check(length(btrim(body)) between 1 and 2000),
+  body text not null check(length(btrim(body))>0 and length(body)<=2000),
   created_at timestamptz not null default clock_timestamp(),
   unique(conversation_id,id)
 );
@@ -117,7 +117,7 @@ create function public.send_message(sender_kind text,sender uuid,recipient_kind 
 language plpgsql security definer set search_path='' as $$
 declare from_id uuid; to_id uuid; convo uuid; message uuid; fingerprint text; prior private.message_requests; instant timestamptz; day_start timestamptz;
 begin
-  if request_id is null or body is null or length(btrim(body)) not between 1 and 2000 then raise exception using errcode='22023',message='Mensagem inválida'; end if;
+  if request_id is null or body is null or length(btrim(body))=0 or length(body)>2000 then raise exception using errcode='22023',message='Mensagem inválida'; end if;
   perform private.lock_message_context(sender_kind,sender,recipient_kind,recipient);
   from_id:=private.message_identity(sender_kind,sender); to_id:=private.message_identity(recipient_kind,recipient);
   if from_id=to_id then raise exception using errcode='22023',message='Escolha outro interlocutor'; end if;
@@ -217,11 +217,11 @@ create table private.message_reports (
   id uuid primary key default gen_random_uuid(),
   source_message_id uuid references private.messages(id) on delete set null,
   reporter_user_id uuid references private.account_details(user_id) on delete set null,
-  reason text not null check(length(btrim(reason)) between 1 and 2000),
+  reason text not null check(length(btrim(reason))>0 and length(reason)<=2000),
   assigned_to uuid references private.account_details(user_id) on delete set null,
   created_at timestamptz not null default clock_timestamp(),
   closed_at timestamptz check(closed_at is null or isfinite(closed_at)),
-  resolution text check(length(btrim(resolution)) between 1 and 2000),
+  resolution text check(length(btrim(resolution))>0 and length(resolution)<=2000),
   check((closed_at is null)=(resolution is null)),
   unique(reporter_user_id,source_message_id)
 );
@@ -290,7 +290,7 @@ language plpgsql security definer set search_path='' as $$
 declare m private.messages; result uuid;
 begin
   perform private.lock_lifecycle();
-  if reason is null or length(btrim(reason)) not between 1 and 2000 then raise exception using errcode='22023',message='Motivo necessário'; end if;
+  if reason is null or length(btrim(reason))=0 or length(reason)>2000 then raise exception using errcode='22023',message='Motivo necessário'; end if;
   select * into m from private.messages where id=target;
   if not found or not private.conversation_read(m.conversation_id) then raise exception using errcode='42501',message='Denúncia não autorizada'; end if;
   select id into result from private.message_reports r where r.source_message_id=target and r.reporter_user_id=auth.uid();
@@ -358,7 +358,7 @@ language plpgsql security definer set search_path='' as $$
 begin
   perform private.lock_lifecycle();
   if not private.site_admin() then raise exception using errcode='42501',message='Administração com MFA necessária'; end if;
-  if resolution is null or length(btrim(resolution)) not between 1 and 2000 then raise exception using errcode='22023',message='Conclusão necessária'; end if;
+  if resolution is null or length(btrim(resolution))=0 or length(resolution)>2000 then raise exception using errcode='22023',message='Conclusão necessária'; end if;
   update private.message_reports set closed_at=clock_timestamp(),resolution=close_message_report.resolution where id=target and assigned_to=auth.uid() and closed_at is null;
   if not found then raise exception using errcode='42501',message='Caso indisponível'; end if;
   update private.report_context set author_user_id=null where report_id=target;

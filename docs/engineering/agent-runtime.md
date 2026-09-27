@@ -37,6 +37,12 @@ O emissor valida o container, pede token somente para CircuitoNE e o entrega por
 
 As permissões temporárias de bootstrap ainda não foram revogadas. Variáveis de opt-in Actions/Workflows pertencem exclusivamente à manutenção até o gate final; não fornecê-las ao implementador. Retirar também a concessão na instalação, pois reduzir apenas o pedido do token não restringe uma chave ainda acessível.
 
+### Disparos protegidos após o bootstrap
+
+O workflow `Request protected maintenance` está preparado para evitar conservar `Actions:write` no App implementador. Somente `magalz`, em `main`, pode solicitar homologação, backup dev, drill dev ou leitura de produção; reexecução por outro ator é recusada. O controlador não faz checkout, não recebe secrets e usa apenas o `GITHUB_TOKEN` do job para pedir a operação escolhida em `main`. Aprovações e validações de destino continuam nos workflows de execução. Não há nova chave persistente nem acesso ao QA.
+
+Antes da revogação, comprovar no GitHub o ator efetivo do destino e a possibilidade de aprovação pelo mantenedor, começando pela leitura de produção. Falha nesse ensaio bloqueia o fechamento da #31; não remover `prevent_self_review`. O dispatch usa referência `main`, não fixa atomicamente seu SHA: se a branch avançar depois da consulta do controlador, conferir o SHA real do destino e seus gates antes de aprovar. Homologação permanece desativada até a #31 concluída. Após integração, o mantenedor usa o formulário do controlador; não fornece sua credencial ou permissões de Actions ao implementador.
+
 ## Memtrace e demais ferramentas
 
 Git, gh, rg, Node, pnpm e Memtrace ficam na imagem. Plugins/apps Codex permanecem desativados. Somente o MCP `memtrace` é autorizado: executável absoluto e argumentos exatos em política root; sua configuração padrão fica em `/etc/codex/config.toml`. A configuração encaminha explicitamente os caminhos XDG/MemDB, proxy e limites Memtrace ao subprocesso, sem variáveis de credenciais GitHub. Índice e licença ficam no cache próprio do container, limitado inicialmente a duas threads e sem embeddings. O diretório fixo de registros `~/.memtrace` aponta para esse mesmo cache; o restante do sistema continua somente leitura. Não montar índice/configuração ou sessões do host. O proxy permite apenas `memtrace.io` e `www.memtrace.io`, sem liberar subdomínios arbitrários.
@@ -70,4 +76,14 @@ Memtrace indexou 173 arquivos (2.570 nós, 9.287 relações); o MCP listou o rep
 
 A sincronização passou cenários de edição humana, arquivo não rastreado, branch errada, operação pendente, trava concorrente, origem incorreta, QA divergente/inválido, falha de rede e edição concorrente. Ensaio real conferiu PR #121, main `55e822779cf89cd49440310ad1053f1d2c51df88`, accepted `fd85e05b443dd844996881d11ca94755b3cc07bf`.
 
-Isso não fecha a #31: faltam negativas GitHub na identidade isolada, restrição da autoridade cloud compartilhada, ensaios finais de QA/concorrência/recuperação e revogações. O bloqueio local de apps não prova que outro cliente usando a mesma sessão tenha perdido autoridade remota. Responsáveis: mantenedor e QA; concluir antes de homologação remota (#32).
+Isso não fecha a #31: faltam negativas GitHub na identidade isolada, ensaios finais de QA/concorrência/recuperação e revogações. A descoberta cloud foi reensaiada após remover as conexões, conforme registro abaixo; o bloqueio local de apps, sozinho, não restringe outro cliente usando a mesma sessão. Responsáveis: mantenedor e QA; concluir antes de homologação remota (#32).
+
+## Fronteira cloud em 27/09/2026
+
+O teste independente confirmou descoberta de GitHub e Supabase pela sessão compartilhada, mesmo com apps/plugins desativados. O mantenedor escolheu retirar essas conexões da conta; Plugin Management concluiu a remoção e o novo catálogo, consultado com a mesma credencial, não incluiu os dois namespaces. Tentativas posteriores de consultar metadados do repositório público e listar projetos retornaram erro JSON-RPC -32001, sem resultado de serviço; nenhuma escrita foi tentada. A evidência sanitizada está em [agent-cloud-discovery-20260927.json](../reviews/evidence/agent-cloud-discovery-20260927.json). Não reinstalar/reconectar integrações administrativas enquanto essa autenticação estiver no agente: primeiro removê-la/substituí-la, depois revisar e repetir as provas. A política local do Codex e a rede guardada continuam obrigatórias. A #31 conserva as negativas GitHub e a revisão final; a remoção dos conectores, sozinha, não fecha a issue.
+
+## Token mínimo reensaiado
+
+Após validar o guard, o mantenedor emitiu um token temporário sem opt-ins de bootstrap e entregou apenas token/validade ao processo no container. A partir dele, GitHub recusou secrets, leitura administrativa da proteção, escrita de workflow, disparo de CI, publicação de check, escrita no QA e disparo de promoção QA: sete HTTP 403. Uma branch comum descartável no source pôde ser criada e foi eliminada ao fim, confirmando que o teste usou uma identidade funcional. Discos Windows, `secrets/`, sessão gh humana e sockets do engine não estavam acessíveis pelos caminhos verificados. [Evidência](../reviews/evidence/agent-github-authority-20260927.json).
+
+Este ensaio comprova o escopo efetivo do token entregue, não a revogação das concessões temporárias da instalação. Repetir a prova após a retirada final dessas concessões; não fechar #31 antes disso e da revisão de segurança. O Windows permanece contexto separado de manutenção.

@@ -3,7 +3,30 @@ import { test, mock } from "node:test"
 import {
   downloadBackupReceipt,
   githubBackupMetadata,
+  readReceiptFile,
 } from "../scripts/backup-receipt.mjs"
+import { mkdtempSync, rmSync, writeFileSync, symlinkSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
+
+test("receipt reads one bounded regular file without following a link", () => {
+  const root = mkdtempSync(join(tmpdir(), "receipt-file-"))
+  const file = join(root, "receipt.json")
+  try {
+    writeFileSync(file, '{"version":1}')
+    assert.deepEqual(readReceiptFile(file), { version: 1 })
+    writeFileSync(file, " ".repeat(4097))
+    assert.throws(() => readReceiptFile(file), /Receipt/)
+    assert.throws(() => readReceiptFile(root))
+    if (process.platform !== "win32") {
+      const link = join(root, "link")
+      symlinkSync(file, link)
+      assert.throws(() => readReceiptFile(link))
+    }
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
 
 test("receipt lookup binds the attempt before treating a missing artifact as unpublished", async (t) => {
   const original = process.env.GITHUB_TOKEN

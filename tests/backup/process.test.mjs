@@ -14,18 +14,15 @@ test(
     try {
       for (const mode of ["timeout", "exit"]) {
         const marker = join(directory, mode)
-        const descendant = `setTimeout(()=>require('node:fs').writeFileSync(${JSON.stringify(marker)},'orphan'),1000)`
-        const parent = `require('node:child_process').spawn(process.execPath,['-e',${JSON.stringify(descendant)}],{stdio:'ignore'});${
-          mode === "timeout"
-            ? "setTimeout(()=>{},10000)"
-            : "setTimeout(()=>process.exit(0),200)"
-        }`
+        const parent = `require('node:child_process').spawn(process.execPath,
+          ['-e',"setTimeout(()=>require('node:fs').writeFileSync(process.argv[1],'orphan'),1000)",process.argv[2]],{stdio:'ignore'});
+          if(process.argv[1]==='timeout') setTimeout(()=>{},10000); else setTimeout(()=>process.exit(0),200)`
         if (mode === "timeout")
           await assert.rejects(
-            runProtectedProcess(process.execPath, ["-e", parent], "", 400),
+            runProtectedProcess(process.execPath, ["-e", parent, mode, marker], "", 400),
           )
         else
-          await runProtectedProcess(process.execPath, ["-e", parent], "", 2000)
+          await runProtectedProcess(process.execPath, ["-e", parent, mode, marker], "", 2000)
         await delay(1200)
         assert.ok(!existsSync(marker), "CLI survived its PostgreSQL holder")
       }

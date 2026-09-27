@@ -237,7 +237,12 @@ export async function createRestoreDatabase() {
             try { const backend=new FileBackend(); for(const o of JSON.parse(input)) {
               await backend.uploadObject('restore','restore/'+o.bucket_id+'/'+o.name,o.version,
                 createReadStream('/var/lib/storage/_restore_staging/'+o.bucket_id+'/'+o.name),o.metadata?.mimetype,o.metadata?.cacheControl);
-            } rmSync('/var/lib/storage/_restore_staging',{recursive:true,force:true});} catch { process.exitCode=1; }
+            } rmSync('/var/lib/storage/_restore_staging',{recursive:true,force:true});} catch(e) {
+              // Whitelisted error class only: never paths, object data or credential-bearing messages.
+              const code=e.code ?? e.originalError?.code ?? e.cause?.code;
+              console.error('Native restore failed: '+(['EACCES','EPERM','ENOENT','ENOSPC','EROFS','ENOTSUP'].includes(code)?code:'BACKEND'));
+              process.exitCode=1;
+            }
           });`,
           ],
           JSON.stringify(objects),

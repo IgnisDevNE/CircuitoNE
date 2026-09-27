@@ -4,9 +4,9 @@ A busca manual de atualizações produziu três PRs genuínas. Nenhuma atualiza�
 
 | PR | Parecer | Evidência e ação |
 | --- | --- | --- |
-| [#129](https://github.com/IgnisDevNE/CircuitoNE/pull/129) | Incompatível | React 19.3.0 com React DOM 19.2.7; quality/SSR recusou a combinação. Agrupar futuras atualizações do runtime e tipos React; a PR atual deve ser substituída por proposta consistente. |
+| [#129](https://github.com/IgnisDevNE/CircuitoNE/pull/129) | Incompatível, encerrada sem merge | React 19.3.0 com React DOM 19.2.7; quality/SSR recusou a combinação. Branch eliminada. Agrupar futuras atualizações do runtime e tipos React para gerar uma proposta consistente. |
 | [#130](https://github.com/IgnisDevNE/CircuitoNE/pull/130) | Compatível tecnicamente, revisão humana pendente | Plugin React 6.1.1, testes/typecheck/build/CI/canônico/CodeQL verdes. Relatório, checks e comentário numérico Codecov recebidos no SHA exato; [evidência](evidence/codecov-dependabot-20260927.json). A aprovação desta evidência não integra a dependência automaticamente. |
-| [#131](https://github.com/IgnisDevNE/CircuitoNE/pull/131) | Fora da toolchain aprovada | Tipos Node 26.6.2 com runtime Node 24.21.0. Manter atualizações 24.x; ignorar versões >=25 até decisão explícita de mudar o runtime. |
+| [#131](https://github.com/IgnisDevNE/CircuitoNE/pull/131) | Fora da toolchain aprovada, encerrada sem merge | Tipos Node 26.6.2 com runtime Node 24.21.0. Branch eliminada. Manter atualizações 24.x; ignorar versões >=25 até decisão explícita de mudar o runtime. |
 
 O agrupamento reduz propostas inconsistentes, mas não substitui o gate SSR que já recusou a #129. Nenhum downgrade artificial, segredo no CI candidato ou aumento de permissões foi necessário.
 

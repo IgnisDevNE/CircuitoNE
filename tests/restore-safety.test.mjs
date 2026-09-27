@@ -68,6 +68,14 @@ test("SQL guard failures retain only an approved fixed diagnostic", async () => 
 
 test("CI prepares pinned recovery images before parallel native tests", () => {
   const workflow = readFileSync(".github/workflows/ci.yml", "utf8")
+  const restore = readFileSync("scripts/restore-drill.mjs", "utf8")
+  for (const image of [
+    "docker.io/supabase/postgres@sha256:6942962433a569e87f228b4d4ab7e11db5deca64e43babb3a038443ad6c4f1bb",
+    "docker.io/supabase/gotrue@sha256:c0c25187a6b835e65a6f6e6c6b39d090e832d40e6de5186f2c038e0411944232",
+  ]) {
+    assert.ok(workflow.includes(image), "CI must use the verified official mirror")
+    assert.ok(restore.includes(image), "Runtime must use the same pinned mirror")
+  }
   const job = workflow.slice(workflow.indexOf("  backup_recovery:"))
   assert.ok(job.indexOf("Prepare pinned recovery images") >= 0)
   assert.ok(

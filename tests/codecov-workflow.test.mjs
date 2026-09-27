@@ -13,7 +13,8 @@ test('CI preserves LCOV and leaves publication to the protected workflow', () =>
 test('fork candidates keep tests and coverage artifacts without access to the publisher secret', () => {
   const quality = workflow.match(/^  quality:\r?\n([\s\S]*?)(?=^  database:)/m)?.[1];
   assert.ok(quality);
-  assert.doesNotMatch(quality, /^    if:|secrets\.|environment:|id-token: write/m);
+  assert.doesNotMatch(quality, /^    if:/m);
+  assert.doesNotMatch(quality, /secrets\.|environment:|id-token: write/);
   assert.match(workflow, /on:\s+pull_request:/);
   assert.match(quality, /run: pnpm check/);
   assert.match(quality, /run: pnpm test:coverage/);

@@ -10,13 +10,13 @@ import { setTimeout as delay } from "node:timers/promises"
 import { verifyBackupContents } from "./verify-backup.mjs"
 
 const postgres =
-  "public.ecr.aws/supabase/postgres@sha256:6942962433a569e87f228b4d4ab7e11db5deca64e43babb3a038443ad6c4f1bb"
+  "docker.io/supabase/postgres@sha256:6942962433a569e87f228b4d4ab7e11db5deca64e43babb3a038443ad6c4f1bb"
 const storage =
   "docker.io/supabase/storage-api@sha256:63da55733ce9d7592d860739acb94f0b6189d880b7565d247ee5b195be854db1"
 const rest =
   "docker.io/postgrest/postgrest@sha256:aa7e96af2d01219a09bc00c75de28171b1f9fda17ea455a931e4fb6d317089e0"
 const auth =
-  "public.ecr.aws/supabase/gotrue@sha256:c0c25187a6b835e65a6f6e6c6b39d090e832d40e6de5186f2c038e0411944232"
+  "docker.io/supabase/gotrue@sha256:c0c25187a6b835e65a6f6e6c6b39d090e832d40e6de5186f2c038e0411944232"
 
 // Only disposable local resources; no URLs, database credentials or container names from callers.
 export async function createRestoreDatabase() {

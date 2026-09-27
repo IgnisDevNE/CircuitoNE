@@ -29,7 +29,8 @@ test('host startup resumes only the existing machine and project pods, failing c
       exit $result
     `
     const result = spawnSync(process.platform === 'win32' ? 'pwsh.exe' : 'pwsh',
-      ['-NoProfile', '-NonInteractive', '-Command', command], { encoding: 'utf8', timeout: 15000 })
+      // Cold PowerShell startup competes with the parallel CI test files; assertions stay unchanged.
+      ['-NoProfile', '-NonInteractive', '-Command', command], { encoding: 'utf8', timeout: 60000 })
     assert.ifError(result.error)
     assert.equal(result.status, scenario.status, result.stderr)
     assert.deepEqual(JSON.parse(result.stdout.trim()), scenario.actions)

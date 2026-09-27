@@ -1,0 +1,15 @@
+{
+  "qaLocalCopies": [
+    {
+      "name": "circuitone-qa-promoter.2026-09-23.private-key.pem",
+      "removed": true
+    },
+    {
+      "name": "circuitone-qa-publisher.2026-09-22.private-key (1).pem",
+      "removed": true
+    }
+  ],
+  "protectedGitHubSecrets": "Preserved",
+  "scope": "Known local bootstrap copies removed; no claim of revoking unknown copies",
+  "observedAt": "2026-09-27T07:10:44.3751232Z"
+}

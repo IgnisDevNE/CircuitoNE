@@ -1,0 +1,93 @@
+{
+  "date": "2026-09-27",
+  "stage": "After installed Actions/Workflows write and Members read revocation",
+  "guardPassed": true,
+  "exitCode": 0,
+  "records": [
+    {
+      "files": [
+        {
+          "path": "/mnt/c",
+          "present": false
+        },
+        {
+          "path": "/mnt/d",
+          "present": false
+        },
+        {
+          "path": "/run/podman/podman.sock",
+          "present": false
+        },
+        {
+          "path": "/var/run/docker.sock",
+          "present": false
+        },
+        {
+          "path": "/workspace/circuito-ne/secrets",
+          "present": false
+        },
+        {
+          "path": "/home/node/.config/gh/hosts.yml",
+          "present": false
+        }
+      ]
+    },
+    {
+      "sourceSha": "7e372c8f88c056c065636e5d3de1899ea2b60bbe",
+      "records": [
+        {
+          "name": "source secrets inaccessible",
+          "status": 403,
+          "expected": [
+            403
+          ]
+        },
+        {
+          "name": "source protection administration inaccessible",
+          "status": 403,
+          "expected": [
+            403
+          ]
+        },
+        {
+          "name": "workflow write denied",
+          "status": 403,
+          "expected": [
+            403
+          ]
+        },
+        {
+          "name": "source dispatch denied",
+          "status": 403,
+          "expected": [
+            403
+          ]
+        },
+        {
+          "name": "source check forgery denied",
+          "status": 403,
+          "expected": [
+            403
+          ]
+        },
+        {
+          "name": "QA contents write denied",
+          "status": 403,
+          "expected": [
+            403,
+            404
+          ]
+        },
+        {
+          "name": "QA promotion dispatch denied",
+          "status": 403,
+          "expected": [
+            403,
+            404
+          ]
+        }
+      ],
+      "allExpected": true
+    }
+  ]
+}

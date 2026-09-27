@@ -152,14 +152,23 @@ export async function createRestoreDatabase() {
     ])
   }
   const close = () => {
+    let failures = 0
     for (const id of [...names].reverse()) {
       try {
         run(["rm", "-fv", id])
-      } catch {}
+      } catch {
+        failures++
+      }
     }
     try {
       run(["volume", "rm", volume])
-    } catch {}
+    } catch {
+      failures++
+    }
+    if (failures)
+      throw new Error(
+        `Disposable cleanup failed for ${failures} owned resource(s)`,
+      )
   }
   try {
     run([

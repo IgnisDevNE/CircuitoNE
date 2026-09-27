@@ -135,6 +135,98 @@ export type Database = {
         }
         Relationships: []
       }
+      events: {
+        Row: {
+          cancelled_at: string | null
+          city: string
+          collective_id: string
+          cover_bytes: number | null
+          cover_path: string | null
+          cover_url: string | null
+          created_at: string
+          description: string
+          ends_at: string | null
+          first_published_at: string | null
+          id: string
+          is_free: boolean
+          kind: string
+          name: string
+          other_kind: string | null
+          previous_starts_at: string | null
+          rescheduled_at: string | null
+          starts_at: string
+          state: string
+          state_code: string
+          ticket_url: string | null
+          timezone: string
+          updated_at: string
+          venue: string
+          version: number
+        }
+        Insert: {
+          cancelled_at?: string | null
+          city: string
+          collective_id: string
+          cover_bytes?: number | null
+          cover_path?: string | null
+          cover_url?: string | null
+          created_at?: string
+          description?: string
+          ends_at?: string | null
+          first_published_at?: string | null
+          id?: string
+          is_free: boolean
+          kind: string
+          name: string
+          other_kind?: string | null
+          previous_starts_at?: string | null
+          rescheduled_at?: string | null
+          starts_at: string
+          state?: string
+          state_code: string
+          ticket_url?: string | null
+          timezone?: string
+          updated_at?: string
+          venue: string
+          version?: number
+        }
+        Update: {
+          cancelled_at?: string | null
+          city?: string
+          collective_id?: string
+          cover_bytes?: number | null
+          cover_path?: string | null
+          cover_url?: string | null
+          created_at?: string
+          description?: string
+          ends_at?: string | null
+          first_published_at?: string | null
+          id?: string
+          is_free?: boolean
+          kind?: string
+          name?: string
+          other_kind?: string | null
+          previous_starts_at?: string | null
+          rescheduled_at?: string | null
+          starts_at?: string
+          state?: string
+          state_code?: string
+          ticket_url?: string | null
+          timezone?: string
+          updated_at?: string
+          venue?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_collective_id_fkey"
+            columns: ["collective_id"]
+            isOneToOne: false
+            referencedRelation: "collectives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       music_styles: {
         Row: {
           name: string
@@ -334,6 +426,10 @@ export type Database = {
         Args: { target_request: string }
         Returns: undefined
       }
+      cancel_event: {
+        Args: { expected_version: number; target: string }
+        Returns: undefined
+      }
       close_collective: {
         Args: { reason: string; target: string }
         Returns: undefined
@@ -344,6 +440,10 @@ export type Database = {
       }
       create_collective: {
         Args: { payload: Json; request_id: string }
+        Returns: string
+      }
+      create_event: {
+        Args: { collective: string; payload: Json; request_id: string }
         Returns: string
       }
       create_profile: { Args: { payload: Json }; Returns: string }
@@ -413,6 +513,7 @@ export type Database = {
         }[]
       }
       get_collective_status: { Args: { target: string }; Returns: Json }
+      get_event: { Args: { target: string }; Returns: Json }
       get_my_collective_requests: {
         Args: { after_id?: string }
         Returns: {
@@ -423,6 +524,28 @@ export type Database = {
         }[]
       }
       get_profile: { Args: { target: string }; Returns: Json }
+      list_collective_events: {
+        Args: {
+          after_id?: string
+          after_start?: string
+          period?: string
+          target: string
+        }
+        Returns: Json
+      }
+      list_events: {
+        Args: {
+          after_id?: string
+          after_start?: string
+          artist?: string
+          period?: string
+        }
+        Returns: Json
+      }
+      publish_event: {
+        Args: { expected_version: number; target: string }
+        Returns: undefined
+      }
       remove_collective_member: {
         Args: { member: string; target: string }
         Returns: undefined
@@ -456,6 +579,10 @@ export type Database = {
       }
       transfer_collective_ownership: {
         Args: { successor: string; target: string }
+        Returns: undefined
+      }
+      update_event: {
+        Args: { expected_version: number; payload: Json; target: string }
         Returns: undefined
       }
     }

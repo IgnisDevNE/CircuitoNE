@@ -11,7 +11,8 @@
 **Dependência:** F3-T2/T5 e perfis da fase 2. **Regras:** RN-23–26 e suspensão de RN-30/D-01, aprovada na #40; integrar seu registro revisado antes deste contrato.
 
 - Testar primeiro: criação permitida ao proprietário do próprio coletivo aprovado mesmo sem permissão no perfil, negada a membro sem permissão de criar e proprietário de outro coletivo; negar coletivo pendente ou suspenso, lineup com perfil inválido, artista duplicado, nome livre vazio, tipo “outros” sem descrição, gratuito versus ingresso, fim vazio ou não posterior ao início e o mesmo horário visto em navegadores de fusos diferentes.
-- Entrega: evento + lineup em transação; cachê/valores quando aplicáveis em centavos, instantes UTC e exibição identificada em `America/Fortaleza` conforme RN-24. Não converter fim vazio em início artificial.
+- Testar exclusão da atuação e da conta: preservar somente o nome creditado, sem FK/link, mantendo evento e demais participantes; não reassociar agenda por nome ou CPF (RN-25/34).
+- Entrega: evento + lineup em transação, instantes UTC e exibição identificada em `America/Fortaleza` conforme RN-24. Não converter fim vazio em início artificial.
 - Aceite: autoria vem da sessão e do vínculo aprovado; falha não deixa evento parcial; envio repetido é idempotente. Ingresso é link externo HTTP(S), sem módulo de pagamento.
 - Documentação: contrato temporal, validação, atomicidade, payload e migração.
 

@@ -25,6 +25,18 @@ A integridade compara objetos/árvores Git da versão candidata com a referênci
 
 ## Etapas da esteira
 
+### Extensão SQL — runner integrado em 27/09/2026
+
+**Primeira promoção pendente:** a [QA PR #24](https://github.com/IgnisDevNE/CircuitoNE-QA/pull/24) foi aprovada no SHA `3f7809d`, passou no [CI Linux 36287399502](https://github.com/IgnisDevNE/CircuitoNE-QA/actions/runs/36287399502) e integrou o runner em `f9d03bd54b7b15a17520277ce76c833728b6a645`. Falta aprovar a primeira proposta SQL e concluir o ciclo de aceite/merge/promoção v2. Responsáveis: mantenedor e QA; pré-requisito da homologação remota #32, dentro da #31.
+
+O inventário canônico passa a abranger `tests/e2e/` e os arquivos `.sql`/`*-concurrency.mjs` de `tests/database/`. O harness local `migrations.test.mjs` fica fora: comandos, bootstrap, dependências e seleção de etapas pertencem a W. Migrações e seeds de C entram apenas como blobs SQL regulares do commit exato; nenhum helper, pacote ou script candidato é executado pelo verificador de banco.
+
+O banco descartável usa PostgreSQL 17 e migrações oficiais do Auth fixados por digest. Antes do SQL candidato, o bootstrap termina; banco e executor separado não têm rede externa, mounts de host, socket do engine ou secrets. Compartilham somente a rede local do banco. Ambos usam raiz somente leitura, usuários sem privilégios, capacidades removidas e limites de recursos. O driver envia SQL pelo protocolo e não interpreta metacomandos de shell. Dois ciclos completos verificam RLS/grants, invariantes, concorrência e seeds sintéticos. A comparação da taxonomia normativa e dos tipos gerados continua no CI da aplicação; REST/Storage e homologação compartilhada continuam na #32.
+
+O publicador exige sucesso dos jobs de navegador **e** banco, vinculando `scope=2` à evidência. Ausência, cancelamento ou falha de qualquer um impede sucesso. A promoção exige essa evidência e grava `schema_version: 2`, `test_tree` e `database_tree` após copiar exatamente os arquivos aprovados.
+
+O estado anterior somente E2E continua válido como predecessor, não como aceite SQL nem como execução já promovida. A primeira PR após integrar W propõe toda a suíte SQL, exige revisão de Q e passa nos dois jobs antes do merge. Depois, a promoção reexecuta o commit integrado e avança para v2. Não editar `accepted` para inicializar a suíte. Novas asserções SQL e módulos de concorrência entram pela proposta usual; mudanças nas etapas de fixtures/seeds exigem revisão de W.
+
 | Etapa | Entrada e resultado obrigatório |
 |---|---|
 | `resolve-acceptance` | Confirma origem do evento, repositório, PR e C pela API; resolve S, W e eventual Q a partir de registros de QA. Dados do PR não escolhem sozinhos a referência nem o workflow. |

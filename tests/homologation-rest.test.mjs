@@ -39,6 +39,7 @@ test("sessions use public credentials, MFA is real, and failure still revokes sy
     SUPABASE_ACCESS_TOKEN: "synthetic-pat",
     SUPABASE_PUBLISHABLE_KEY: "sb_publishable_fixture",
     GITHUB_RUN_ID: "123",
+    GITHUB_RUN_ATTEMPT: "1",
   }
   const uid = (n) => `01000000-0000-4000-8000-${String(n).padStart(12, "0")}`
   const profile = (n) =>
@@ -51,10 +52,18 @@ test("sessions use public credentials, MFA is real, and failure still revokes sy
   }
   const token = (n) =>
     `eyJ.${Buffer.from(JSON.stringify({ session_id: uid(n) })).toString("base64url")}.synthetic`
-  for (const failChallenge of [false, true]) {
+  for (const failure of [
+    "none",
+    "challenge",
+    "enroll-response",
+    "verify-response",
+    "residue",
+  ]) {
     const calls = []
     let mfa = false
     let deleted = false
+    let enrolledFactor = false
+    let unknownSession = false
     globalThis.fetch = async (url, init) => {
       const body = init.body && JSON.parse(init.body)
       calls.push({ url, ...init })
@@ -74,6 +83,7 @@ test("sessions use public credentials, MFA is real, and failure still revokes sy
         if (path.includes("/factors/")) {
           deleted = true
           mfa = false
+          enrolledFactor = false
           return Response.json({})
         }
         const n = Number(path.slice(-12))
@@ -90,6 +100,15 @@ test("sessions use public credentials, MFA is real, and failure still revokes sy
           id: uid(n),
           email: emails[n],
           email_confirmed_at: "2026-09-26T12:00Z",
+          factors:
+            n === 1 && enrolledFactor
+              ? [
+                  {
+                    id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                    friendly_name: "phase0-123-1",
+                  },
+                ]
+              : [],
         })
       }
       assert.equal(init.headers.apikey, env.SUPABASE_PUBLISHABLE_KEY)
@@ -101,16 +120,24 @@ test("sessions use public credentials, MFA is real, and failure still revokes sy
       }
       if (path.endsWith("/verify")) {
         const n = Number(body.token_hash.slice(-1))
+        if (failure === "verify-response") {
+          unknownSession = true
+          throw new Error("response lost after session creation")
+        }
         return Response.json({ user: { id: uid(n) }, access_token: token(n) })
       }
-      if (path.endsWith("/factors"))
+      if (path.endsWith("/factors")) {
+        enrolledFactor = true
+        if (failure === "enroll-response")
+          throw new Error("response lost after factor creation")
         return Response.json({
           id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
           totp: { secret: "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ" },
         })
+      }
       if (path.endsWith("/challenge"))
         return Response.json({ id: "challenge" }, {
-          status: failChallenge ? 500 : 200,
+          status: failure === "challenge" ? 500 : 200,
         })
       if (path.endsWith("/logout")) return new Response(null, { status: 204 })
       if (path.endsWith("/profiles")) {
@@ -134,21 +161,34 @@ test("sessions use public credentials, MFA is real, and failure still revokes sy
       throw new Error("unexpected fixture route")
     }
     try {
+      let inventories = 0
       const query = (sql) => {
         assert.match(sql, /begin read only/)
         for (const n of [1, 2, 3, 5]) assert.ok(sql.includes(uid(n)))
-        return "0"
+        inventories++
+        assert.ok(
+          sql.includes("user_id"),
+          "Inventory must cover unknown fixture sessions",
+        )
+        return unknownSession || failure === "residue" ? "1" : "0"
       }
-      if (failChallenge) await assert.rejects(checkHomologationRest(env, query))
+      if (failure !== "none")
+        await assert.rejects(checkHomologationRest(env, query))
       else await checkHomologationRest(env, query)
-      assert.ok(
-        deleted,
-        "Temporary factor must be deleted even if challenge fails",
-      )
-      assert.equal(
-        calls.filter((call) => call.url.includes("/logout?scope=local")).length,
-        4,
-      )
+      if (["none", "challenge", "enroll-response"].includes(failure))
+        assert.ok(
+          deleted,
+          "Temporary factor must be reconciled even if response is lost",
+        )
+      if (failure === "residue") {
+        assert.equal(inventories, 1)
+        assert.ok(
+          !calls.some((call) =>
+            /generate_link|\/verify|\/factors$/.test(call.url),
+          ),
+          "Retry must block before any mutation",
+        )
+      } else assert.ok(inventories >= 2)
       assert.ok(!calls.some((call) => /\/invite|\/otp|password/.test(call.url)))
     } finally {
       globalThis.fetch = original

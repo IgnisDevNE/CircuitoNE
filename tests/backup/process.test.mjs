@@ -19,10 +19,20 @@ test(
           if(process.argv[1]==='timeout') setTimeout(()=>{},10000); else setTimeout(()=>process.exit(0),200)`
         if (mode === "timeout")
           await assert.rejects(
-            runProtectedProcess(process.execPath, ["-e", parent, mode, marker], "", 400),
+            runProtectedProcess(
+              process.execPath,
+              ["-e", parent, mode, marker],
+              "",
+              400,
+            ),
           )
         else
-          await runProtectedProcess(process.execPath, ["-e", parent, mode, marker], "", 2000)
+          await runProtectedProcess(
+            process.execPath,
+            ["-e", parent, mode, marker],
+            "",
+            2000,
+          )
         await delay(1200)
         assert.ok(!existsSync(marker), "CLI survived its PostgreSQL holder")
       }

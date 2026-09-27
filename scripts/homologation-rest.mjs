@@ -125,21 +125,38 @@ export async function checkHomologationRest(
   const uid = (n) => `01000000-0000-4000-8000-${String(n).padStart(12, "0")}`
   const profile = (n) =>
     `02000000-0000-4000-8000-${String(n).padStart(12, "0")}`
+  const fixtures = [
+    [1, "fixture-active@example.invalid"],
+    [5, "fixture-member@example.invalid"],
+    [2, "fixture-suspended@example.invalid"],
+    [3, "fixture-deletion@example.invalid"],
+  ]
+  assert.match(env.GITHUB_RUN_ID ?? "", /^[1-9][0-9]*$/)
+  assert.match(env.GITHUB_RUN_ATTEMPT ?? "", /^[1-9][0-9]*$/)
+  const marker = `phase0-${env.GITHUB_RUN_ID}-${env.GITHUB_RUN_ATTEMPT}`
+  const ids = fixtures.map(([n]) => `'${uid(n)}'`).join(",")
+  const assertNoAccess = () =>
+    assert.equal(
+      sessionQuery(
+        `begin read only; select (select count(*) from auth.sessions where user_id in(${ids})) + (select count(*) from auth.mfa_factors where user_id in(${ids})); rollback;`,
+      ).trim(),
+      "0",
+      "Synthetic Auth residue requires protected maintenance before retry",
+    )
+  // These four identities are exclusively reserved for this smoke. Never clean another account.
+  for (const [n, email] of fixtures) {
+    const existing = await auth(`admin/users/${uid(n)}`, admin)
+    assert.equal(existing.status, 200)
+    assert.equal(existing.data.id, uid(n))
+    assert.equal(existing.data.email, email)
+    assert.ok(
+      existing.data.email_confirmed_at,
+      "Fixture must already have confirmed email",
+    )
+  }
+  assertNoAccess()
   try {
-    for (const [n, email] of [
-      [1, "fixture-active@example.invalid"],
-      [5, "fixture-member@example.invalid"],
-      [2, "fixture-suspended@example.invalid"],
-      [3, "fixture-deletion@example.invalid"],
-    ]) {
-      const existing = await auth(`admin/users/${uid(n)}`, admin)
-      assert.equal(existing.status, 200)
-      assert.equal(existing.data.id, uid(n))
-      assert.equal(existing.data.email, email)
-      assert.ok(
-        existing.data.email_confirmed_at,
-        "Fixture must already have confirmed email",
-      )
+    for (const [n, email] of fixtures) {
       const link = await auth("admin/generate_link", admin, "POST", {
         type: "magiclink",
         email,
@@ -217,7 +234,7 @@ export async function checkHomologationRest(
     assert.equal(history.data[0].sender_name, "Conta excluída")
     const enrolled = await auth("factors", userHeaders(jwt(1)), "POST", {
       factor_type: "totp",
-      friendly_name: `phase0-${env.GITHUB_RUN_ID}`,
+      friendly_name: marker,
     })
     assert.equal(enrolled.status, 200)
     assert.match(enrolled.data.id, /^[a-f0-9-]{36}$/)
@@ -260,36 +277,38 @@ export async function checkHomologationRest(
     assert.equal(revoked.status, 200)
     assert.deepEqual(revoked.data, [])
   } finally {
+    // A lost enrollment response can leave a factor whose ID was never received.
     const cleanups = await Promise.allSettled([
-      ...(factor
-        ? [
-            auth(
-              `admin/users/${uid(1)}/factors/${factor}`,
-              admin,
-              "DELETE",
-            ).then((result) => assert.equal(result.status, 200)),
-          ]
-        : []),
+      (async () => {
+        const inventory = await auth(`admin/users/${uid(1)}`, admin)
+        assert.equal(inventory.status, 200)
+        assert.equal(inventory.data.id, uid(1))
+        assert.equal(inventory.data.email, fixtures[0][1])
+        const factors = (inventory.data.factors ?? []).filter(
+          (item) => item.friendly_name === marker,
+        )
+        for (const item of factors) {
+          assert.match(item.id, /^[a-f0-9-]{36}$/)
+          const removed = await auth(
+            `admin/users/${uid(1)}/factors/${item.id}`,
+            admin,
+            "DELETE",
+          )
+          assert.equal(removed.status, 200)
+        }
+      })(),
       ...sessions.map((session) =>
         auth("logout?scope=local", userHeaders(session.jwt), "POST").then(
           (result) => assert.ok([204, 401, 403].includes(result.status)),
         ),
       ),
     ])
+    // Covers unreceived verify responses and prior interrupted executions, not only known JWTs.
+    assertNoAccess()
     assert.ok(
       cleanups.every((result) => result.status === "fulfilled"),
       "Synthetic Auth cleanup failed",
     )
-    if (sessionIds.size) {
-      const ids = [...sessionIds].map((id) => `'${id}'`).join(",")
-      assert.equal(
-        sessionQuery(
-          `begin read only; select count(*) from auth.sessions where id in(${ids}); rollback;`,
-        ).trim(),
-        "0",
-        "Exact synthetic sessions remain after cleanup",
-      )
-    }
   }
   console.log(
     "REST + real Auth verified: public/internal projections, private data, suspended accounts, historical messages, owner MFA and revocation. No email sent; no session or factor persisted.",

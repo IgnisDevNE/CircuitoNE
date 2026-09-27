@@ -232,15 +232,20 @@ export async function createRestoreDatabase() {
             "-e",
             `
           const {FileBackend}=require('/app/dist/storage/backend/file.js');
-          const {createReadStream,rmSync}=require('node:fs');
+          const {createReadStream,rmSync,statSync}=require('node:fs');
+          let stage='initialize';
           let input=''; process.stdin.on('data',c=>input+=c); process.stdin.on('end',async()=>{
             try { const backend=new FileBackend(); for(const o of JSON.parse(input)) {
-              await backend.uploadObject('restore','restore/'+o.bucket_id+'/'+o.name,o.version,
+              stage='upload'; await backend.uploadObject('restore','restore/'+o.bucket_id+'/'+o.name,o.version,
                 createReadStream('/var/lib/storage/_restore_staging/'+o.bucket_id+'/'+o.name),o.metadata?.mimetype,o.metadata?.cacheControl);
-            } rmSync('/var/lib/storage/_restore_staging',{recursive:true,force:true});} catch(e) {
+            } stage='staging-cleanup'; rmSync('/var/lib/storage/_restore_staging',{recursive:true,force:true});} catch(e) {
               // Whitelisted error class only: never paths, object data or credential-bearing messages.
               const code=e.code ?? e.originalError?.code ?? e.cause?.code;
               console.error('Native restore failed: '+(['EACCES','EPERM','ENOENT','ENOSPC','EROFS','ENOTSUP'].includes(code)?code:'BACKEND'));
+              console.error('Native restore stage: '+stage+'; uid='+process.getuid());
+              for(const path of ['/var/lib/storage','/var/lib/storage/_restore_staging']) {
+                const s=statSync(path); console.error('Disposable directory: uid='+s.uid+' gid='+s.gid+' mode='+(s.mode&511).toString(8));
+              }
               process.exitCode=1;
             }
           });`,

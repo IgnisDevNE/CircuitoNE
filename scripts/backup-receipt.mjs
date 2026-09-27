@@ -1,15 +1,29 @@
 import { execFileSync } from "node:child_process"
-import { constants, openSync, closeSync, fstatSync, readSync, mkdirSync, readdirSync } from "node:fs"
+import {
+  constants,
+  openSync,
+  closeSync,
+  fstatSync,
+  readSync,
+  mkdirSync,
+  readdirSync,
+} from "node:fs"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { verifyReceiptOrigin } from "./verify-backup.mjs"
 
 const repo = "IgnisDevNE/CircuitoNE"
 export function readReceiptFile(file) {
-  const fd = openSync(file, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0))
+  const fd = openSync(
+    file,
+    constants.O_RDONLY |
+      (constants.O_NOFOLLOW ?? 0) |
+      (constants.O_NONBLOCK ?? 0),
+  )
   try {
     const stat = fstatSync(fd)
-    if (!stat.isFile() || stat.size > 4096) throw new Error("Receipt file is invalid")
+    if (!stat.isFile() || stat.size > 4096)
+      throw new Error("Receipt file is invalid")
     const bytes = Buffer.alloc(4097)
     let size = 0
     while (size < bytes.length) {
@@ -19,7 +33,9 @@ export function readReceiptFile(file) {
     }
     if (size > 4096) throw new Error("Receipt file is oversized")
     return JSON.parse(bytes.subarray(0, size).toString("utf8"))
-  } finally { closeSync(fd) }
+  } finally {
+    closeSync(fd)
+  }
 }
 export async function githubBackupMetadata(path) {
   if (
@@ -123,9 +139,7 @@ export async function downloadBackupReceipt(key, directory) {
     },
   )
   const file = join(directory, "backup-receipt.json")
-  if (
-    readdirSync(directory).join() !== "backup-receipt.json"
-  )
+  if (readdirSync(directory).join() !== "backup-receipt.json")
     throw new Error("Receipt artifact inventory is invalid")
   const receipt = readReceiptFile(file)
   verifyReceiptOrigin(receipt, run)

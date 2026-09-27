@@ -8,4 +8,6 @@ Responsáveis: implementação prepara os ensaios; QA e mantenedor revisam; mant
 
 TDD local: o teste de integração falhou pela ausência da preparação de Storage; a negativa de owner incorreto falhou antes da consulta explícita; lançamento mal sucedido falhou antes de abranger o start pelo rollback. Correções mantiveram os testes verdes. SQL/RLS foi exercitado em PostgreSQL Supabase descartável no Podman, incluindo idempotência e recusa de política adulterada. A evidência nativa de promoção/rollback deve ser vinculada ao CI do SHA final, após revisão Sol/low.
 
+O ensaio integrado com Auth e Storage reais também passou no Podman: upload pela sessão do titular, leitura privada, negação a outro usuário/visitante e limpeza completa das sessões/MFA. O teste reproduziu o retorno HTTP 400 com código interno 404 do bucket ausente; somente essa resposta específica permite criá-lo, sem tratar erros arbitrários como ausência.
+
 Produção continua na página de espera, sem migrações, cadastros novos, dados reais ou backup legível. A cifra de banco e objetos é o último gate técnico pré-release da #104, fora da fase zero.

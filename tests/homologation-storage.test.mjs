@@ -37,14 +37,17 @@ test("private synthetic upload uses its owner session, checks denial and refuses
   const original = globalThis.fetch
   for (const mode of [
     "create",
+    "create-storage-404",
+    "bucket-error",
     "exists",
     "corrupt",
     "public",
     "exposed",
     "wrong-owner",
   ]) {
-    let bucketExists = mode !== "create",
-      objectExists = mode !== "create",
+    const creates = ["create", "create-storage-404"].includes(mode)
+    let bucketExists = !creates,
+      objectExists = !creates,
       writes = 0,
       policies = 0
     const calls = []
@@ -55,6 +58,11 @@ test("private synthetic upload uses its owner session, checks denial and refuses
       calls.push({ url, ...init })
       const path = new URL(url).pathname
       if (path.endsWith("/bucket/" + storageFixture.bucket)) {
+        if (mode === "bucket-error")
+          return Response.json(
+            { statusCode: "400", error: "Invalid request" },
+            { status: 400 },
+          )
         return bucketExists
           ? Response.json({
               id: storageFixture.bucket,
@@ -63,7 +71,16 @@ test("private synthetic upload uses its owner session, checks denial and refuses
               file_size_limit: 1024,
               allowed_mime_types: ["text/plain"],
             })
-          : Response.json({}, { status: 404 })
+          : mode === "create-storage-404"
+            ? Response.json(
+                {
+                  statusCode: "404",
+                  error: "Bucket not found",
+                  message: "Bucket not found",
+                },
+                { status: 400 },
+              )
+            : Response.json({}, { status: 404 })
       }
       if (path.endsWith("/bucket")) {
         assert.equal(init.headers.Authorization, "Bearer admin")
@@ -116,11 +133,19 @@ test("private synthetic upload uses its owner session, checks denial and refuses
               : "01000000-0000-4000-8000-000000000001"
           },
         )
-      if (["corrupt", "public", "exposed", "wrong-owner"].includes(mode))
+      if (
+        [
+          "corrupt",
+          "public",
+          "exposed",
+          "wrong-owner",
+          "bucket-error",
+        ].includes(mode)
+      )
         await assert.rejects(action())
       else assert.equal((await action()).sha256, storageFixture.sha256)
-      assert.equal(writes, mode === "create" ? 1 : 0)
-      assert.equal(policies, mode === "public" ? 0 : 1)
+      assert.equal(writes, creates ? 1 : 0)
+      assert.equal(policies, ["public", "bucket-error"].includes(mode) ? 0 : 1)
       assert.ok(!calls.some((call) => ["PUT", "DELETE"].includes(call.method)))
     } finally {
       globalThis.fetch = original

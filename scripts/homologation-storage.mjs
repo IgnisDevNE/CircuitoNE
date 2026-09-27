@@ -81,7 +81,14 @@ export async function prepareHomologationStorage(
   }
   const { bucket, name } = storageFixture
   let found = await call(`bucket/${bucket}`, admin)
-  if (found.status === 404) {
+  // Storage's HTTP 400 can carry a semantic 404; other failures must not create a bucket.
+  const bucketError =
+    found.status === 400 ? JSON.parse(found.bytes.toString("utf8")) : undefined
+  if (
+    found.status === 404 ||
+    (bucketError?.statusCode === "404" &&
+      bucketError.error === "Bucket not found")
+  ) {
     const created = await call("bucket", admin, "POST", {
       id: bucket,
       name: bucket,

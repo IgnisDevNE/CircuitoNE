@@ -184,7 +184,7 @@ test("sessions use public credentials, MFA is real, and failure still revokes sy
         assert.equal(inventories, 1)
         assert.ok(
           !calls.some((call) =>
-            /generate_link|\/verify|\/factors$/.test(call.url),
+            /(?:generate_link|\/verify|\/factors)$/.test(call.url),
           ),
           "Retry must block before any mutation",
         )

@@ -37,6 +37,12 @@ O emissor valida o container, pede token somente para CircuitoNE e o entrega por
 
 As permissões temporárias de bootstrap ainda não foram revogadas. Variáveis de opt-in Actions/Workflows pertencem exclusivamente à manutenção até o gate final; não fornecê-las ao implementador. Retirar também a concessão na instalação, pois reduzir apenas o pedido do token não restringe uma chave ainda acessível.
 
+### Disparos protegidos após o bootstrap
+
+O workflow `Request protected maintenance` está preparado para evitar conservar `Actions:write` no App implementador. Somente `magalz`, em `main`, pode solicitar homologação, backup dev, drill dev ou leitura de produção; reexecução por outro ator é recusada. O controlador não faz checkout, não recebe secrets e usa apenas o `GITHUB_TOKEN` do job para pedir a operação escolhida em `main`. Aprovações e validações de destino continuam nos workflows de execução. Não há nova chave persistente nem acesso ao QA.
+
+Antes da revogação, comprovar no GitHub o ator efetivo do destino e a possibilidade de aprovação pelo mantenedor, começando pela leitura de produção. Falha nesse ensaio bloqueia o fechamento da #31; não remover `prevent_self_review`. O dispatch usa referência `main`, não fixa atomicamente seu SHA: se a branch avançar depois da consulta do controlador, conferir o SHA real do destino e seus gates antes de aprovar. Homologação permanece desativada até a #31 concluída. Após integração, o mantenedor usa o formulário do controlador; não fornece sua credencial ou permissões de Actions ao implementador.
+
 ## Memtrace e demais ferramentas
 
 Git, gh, rg, Node, pnpm e Memtrace ficam na imagem. Plugins/apps Codex permanecem desativados. Somente o MCP `memtrace` é autorizado: executável absoluto e argumentos exatos em política root; sua configuração padrão fica em `/etc/codex/config.toml`. A configuração encaminha explicitamente os caminhos XDG/MemDB, proxy e limites Memtrace ao subprocesso, sem variáveis de credenciais GitHub. Índice e licença ficam no cache próprio do container, limitado inicialmente a duas threads e sem embeddings. O diretório fixo de registros `~/.memtrace` aponta para esse mesmo cache; o restante do sistema continua somente leitura. Não montar índice/configuração ou sessões do host. O proxy permite apenas `memtrace.io` e `www.memtrace.io`, sem liberar subdomínios arbitrários.

@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   backup:
@@ -49,8 +50,10 @@ jobs:
           set -euo pipefail
           curl --disable --fail --silent --show-error --proto '=https' --connect-timeout 10 --max-time 20 --max-filesize 65536 --output supabase-ca.crt https://supabase-downloads.s3-ap-southeast-1.amazonaws.com/prod/ssl/prod-ca-2021.crt
           echo '700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7  supabase-ca.crt' | sha256sum --check --status
-      - name: Export, upload, read back and rotate one backup
+      - name: Export, upload and read back the new backup
+        id: export
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           BACKUP_ENV: ${{ matrix.name }}
           SUPABASE_PROJECT_REF: ${{ matrix.ref }}
           R2_BUCKET: ${{ matrix.bucket }}
@@ -60,3 +63,23 @@ jobs:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
         run: node scripts/backup.mjs
+      - name: Persist only the independent integrity receipt
+        id: receipt
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: backup-receipt-${{ matrix.name }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/backup-receipt.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Reverify the receipted replacement and rotate
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: node scripts/backup.mjs rotate
+      - name: Remove only a replacement proven not to have a published receipt
+        if: ${{ always() && steps.export.outcome == 'success' && steps.receipt.outcome != 'success' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: node scripts/backup.mjs discard

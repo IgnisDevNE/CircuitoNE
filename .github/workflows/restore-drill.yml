@@ -5,6 +5,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   restore:
@@ -57,33 +58,45 @@ jobs:
           fi
           aws s3api get-object --bucket "$bucket" --key "${keys[0]}" --endpoint-url "$endpoint" --region auto "$work/backup.tar.gz" >/dev/null
           chmod 600 "$work/backup.tar.gz"
-      - name: Verify archive and restore in a network-isolated database
+          printf '%s' "${keys[0]}" > "$work/backup-key"
+      - name: Verify the complete archive against its protected execution receipt
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'RECEIPT'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          import { join } from 'node:path';
+          import { downloadBackupReceipt } from './scripts/backup-receipt.mjs';
+          import { verifyArchiveReceipt } from './scripts/verify-backup.mjs';
+          const work = join(process.env.RUNNER_TEMP, `restore-drill-${process.env.GITHUB_RUN_ID}`);
+          const record = await downloadBackupReceipt(readFileSync(join(work, 'backup-key'), 'utf8'), join(work, 'receipt'));
+          if (!record) throw new Error('Backup has no independent protected receipt');
+          verifyArchiveReceipt(join(work, 'backup.tar.gz'), record.receipt, record.run);
+          writeFileSync(join(work, 'verified-receipt.json'), JSON.stringify(record.receipt), { flag: 'wx', mode: 0o600 });
+          console.log('External archive checksum and exact protected export evidence verified.');
+          RECEIPT
+      - name: Restore database and objects, preserving ACL and checking the real Storage API
         shell: bash
         run: |
           set -euo pipefail
           work="$RUNNER_TEMP/restore-drill-$GITHUB_RUN_ID"
           client='docker.io/library/postgres@sha256:0b6698eaf9d5c65fd1b5ffe23cd27d2ad959feb1e3bc283a980c0c6d7ac66310'
-          server='public.ecr.aws/supabase/postgres@sha256:6942962433a569e87f228b4d4ab7e11db5deca64e43babb3a038443ad6c4f1bb'
-          name="circuitone-restore-$GITHUB_RUN_ID"
-          network="circuitone-restore-net-$GITHUB_RUN_ID"
-          trap 'docker rm -f "$name" >/dev/null 2>&1 || true; docker network rm "$network" >/dev/null 2>&1 || true; rm -rf -- "$work"' EXIT
           mkdir -m 700 "$work/extracted"
           docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --user "$(id -u):$(id -g)" --mount "type=bind,src=$work,dst=/work" "$client" tar -xzf /work/backup.tar.gz -C /work/extracted --no-same-owner --no-same-permissions
-          node scripts/verify-backup.mjs "$work/extracted"
-          docker network create --internal "$network" >/dev/null
-          docker run -d --name "$name" --network "$network" --memory 1g -e POSTGRES_PASSWORD=synthetic-restore-only "$server" >/dev/null
-          ready=false
-          for attempt in {1..30}; do
-            if [[ "$(docker logs "$name" 2>&1)" == *'PostgreSQL init process complete; ready for start up.'* ]] && docker exec "$name" pg_isready -U supabase_admin >/dev/null 2>&1; then
-              ready=true
-              break
-            fi
-            sleep 1
-          done
-          if [[ "$ready" != true ]]; then
-            echo '::error::Isolated PostgreSQL did not finish initialization.'
-            exit 1
-          fi
-          docker run --rm --network "$network" --read-only --cap-drop ALL --security-opt no-new-privileges --user "$(id -u):$(id -g)" --mount "type=bind,src=$work/extracted,dst=/backup,readonly" -e "PGHOST=$name" -e PGPASSWORD=synthetic-restore-only "$client" pg_restore --exit-on-error --clean --if-exists --no-owner --no-acl --username=supabase_admin --dbname=postgres /backup/db.dump
-          docker run --rm --network "$network" --read-only --cap-drop ALL --security-opt no-new-privileges -e "PGHOST=$name" -e PGPASSWORD=synthetic-restore-only "$client" psql -U supabase_admin -d postgres -Atqc "select count(*) from pg_namespace where nspname = 'storage'" | grep -qx 1
-          echo 'Isolated dev database restore succeeded; no Supabase project was modified.'
+          node scripts/restore-drill.mjs "$work/extracted" "$work/verified-receipt.json"
+      - name: Remove the local disposable backup copy on every outcome
+        if: always()
+        shell: bash
+        run: |
+          node --input-type=module <<'CLEANUP'
+          import assert from 'node:assert/strict';
+          import {rmSync} from 'node:fs';
+          import {join,resolve,dirname} from 'node:path';
+          assert.match(process.env.GITHUB_RUN_ID,/^[1-9][0-9]*$/);
+          const parent=resolve(process.env.RUNNER_TEMP);
+          const work=join(parent,`restore-drill-${process.env.GITHUB_RUN_ID}`);
+          assert.equal(dirname(work),parent);
+          rmSync(work,{recursive:true,force:true});
+          CLEANUP

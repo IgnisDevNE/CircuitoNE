@@ -1,0 +1,33 @@
+{
+  "date": "2026-09-27",
+  "pr": 130,
+  "author": "app/dependabot",
+  "sourceSha": "2d6fbc63ae1bc2f061db83d01dff0d041ed9d85a",
+  "sourceBranch": "dependabot/npm_and_yarn/vitejs/plugin-react-6.1.1",
+  "ciRunId": 36295068328,
+  "publisher": {
+    "runId": 36295198144,
+    "event": "workflow_run",
+    "workflowSha": "f99736f36f63ce5c0b8126ed7e04edc1056d0d41",
+    "conclusion": "success",
+    "downloadSourceRunId": 36295068328,
+    "overrideCommit": "2d6fbc63ae1bc2f061db83d01dff0d041ed9d85a",
+    "overridePr": 130,
+    "credentialBoundary": "CODECOV_TOKEN is used only by the protected publisher, not the candidate CI. Publication is not globally tokenless."
+  },
+  "artifacts": [
+    {"id": 10923707292, "name": "codecov-lcov", "digest": "sha256:bbb605c42e102997bfb61ed60ba924327cf3471ca5c965c39a28ebf0be189d80", "expiredAtCheck": false},
+    {"id": 10923478127, "name": "quality-reports", "digest": "sha256:1166f194c14cba77317a396d8144e3ca0adf241e8361171e787f792f858328fe", "expiredAtCheck": false}
+  ],
+  "artifactVerification": "Digests and source association from GitHub API; artifacts were not downloaded or rehashed in this audit.",
+  "checks": {"quality": "success", "database": "success", "agent-runtime": "success", "CodeQL": "success", "canonical-acceptance": "success", "codecov/project": "success", "codecov/patch": "success", "homologation-credentials": "skipped"},
+  "coverageComment": {"id": 5852711079, "author": "ignis-dev-codecov", "baseShortSha": "f99736f", "headShortSha": "2d6fbc6", "basePercent": 53.26, "prPercent": 53.34},
+  "forkPolicy": "Approved scope: tests and LCOV artifacts only; publisher rejects external head_repository. Executable workflow-policy tests cover this configuration; no real fork PR was executed for this evidence.",
+  "links": {
+    "ci": "https://github.com/IgnisDevNE/CircuitoNE/actions/runs/36295068328",
+    "publisher": "https://github.com/IgnisDevNE/CircuitoNE/actions/runs/36295198144",
+    "canonical": "https://github.com/IgnisDevNE/CircuitoNE-QA/actions/runs/36295203344",
+    "comment": "https://github.com/IgnisDevNE/CircuitoNE/pull/130#issuecomment-5852711079",
+    "report": "https://pipeline.magalz.space/gh/IgnisDevNE/CircuitoNE/pull/130"
+  }
+}

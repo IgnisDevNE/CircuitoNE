@@ -1,0 +1,10 @@
+{
+  "observedAt": "2026-09-27T07:34:58.549Z",
+  "guardPassed": true,
+  "probeTokenRevoked": true,
+  "sourcePr": 138,
+  "sourceSha": "c927f5c23825aaf40af261587fb294b1ab9c106c",
+  "author": "ignisdevne[bot]",
+  "status": 422,
+  "ownApprovalDenied": true
+}

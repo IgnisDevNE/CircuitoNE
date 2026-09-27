@@ -1,7 +1,9 @@
 import assert from "node:assert/strict"
 import { createHash, createHmac, randomBytes } from "node:crypto"
-import { execFileSync } from "node:child_process"
-import { appendFileSync, readFileSync } from "node:fs"
+import { execFileSync, execFile } from "node:child_process"
+import { appendFileSync, readFileSync, createReadStream } from "node:fs"
+import { Readable } from "node:stream"
+import { pipeline } from "node:stream/promises"
 import { join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { setTimeout as delay } from "node:timers/promises"
@@ -25,22 +27,23 @@ export async function createRestoreDatabase() {
   const jwtSecret = randomBytes(32).toString("hex")
   const names = [name]
   const volume = `${name}-storage`
+  const childEnv = Object.fromEntries(
+    [
+      "PATH",
+      "HOME",
+      "USERPROFILE",
+      "SYSTEMROOT",
+      "APPDATA",
+      "LOCALAPPDATA",
+      "CONTAINER_HOST",
+      "DOCKER_HOST",
+    ]
+      .filter((key) => process.env[key])
+      .map((key) => [key, process.env[key]]),
+  )
   const run = (args, input) =>
     execFileSync(engine, args, {
-      env: Object.fromEntries(
-        [
-          "PATH",
-          "HOME",
-          "USERPROFILE",
-          "SYSTEMROOT",
-          "APPDATA",
-          "LOCALAPPDATA",
-          "CONTAINER_HOST",
-          "DOCKER_HOST",
-        ]
-          .filter((key) => process.env[key])
-          .map((key) => [key, process.env[key]]),
-      ),
+      env: childEnv,
       input,
       encoding: "utf8",
       stdio: ["pipe", "pipe", "pipe"],
@@ -207,7 +210,7 @@ export async function createRestoreDatabase() {
           "migrate",
         ])
       },
-      populate: (root, objects) => {
+      populate: async (root, objects) => {
         const id = `${name}-files`
         storageRun(id, [
           "-d",
@@ -217,41 +220,49 @@ export async function createRestoreDatabase() {
           "-c",
           "sleep infinity",
         ])
-        run([
-          "cp",
-          join(root, "storage"),
-          `${id}:/var/lib/storage/_restore_staging`,
-        ])
-        // Use the pinned native backend to preserve the exact path/version/xattrs without SQL upsert.
-        run(
-          [
-            "exec",
-            "-i",
-            id,
-            "node",
-            "-e",
-            `
+        // Stream into the pinned backend: no copied UID/mode dependency or duplicate staging tree.
+        for (const object of objects) {
+          let child
+          const completed = new Promise((resolve, reject) => {
+            child = execFile(
+              engine,
+              [
+                "exec",
+                "-i",
+                id,
+                "node",
+                "-e",
+                `
           const {FileBackend}=require('/app/dist/storage/backend/file.js');
-          const {createReadStream,rmSync,statSync}=require('node:fs');
-          let stage='initialize';
-          let input=''; process.stdin.on('data',c=>input+=c); process.stdin.on('end',async()=>{
-            try { const backend=new FileBackend(); for(const o of JSON.parse(input)) {
-              stage='upload'; await backend.uploadObject('restore','restore/'+o.bucket_id+'/'+o.name,o.version,
-                createReadStream('/var/lib/storage/_restore_staging/'+o.bucket_id+'/'+o.name),o.metadata?.mimetype,o.metadata?.cacheControl);
-            } stage='staging-cleanup'; rmSync('/var/lib/storage/_restore_staging',{recursive:true,force:true});} catch(e) {
-              // Whitelisted error class only: never paths, object data or credential-bearing messages.
-              const code=e.code ?? e.originalError?.code ?? e.cause?.code;
-              console.error('Native restore failed: '+(['EACCES','EPERM','ENOENT','ENOSPC','EROFS','ENOTSUP'].includes(code)?code:'BACKEND'));
-              console.error('Native restore stage: '+stage+'; uid='+process.getuid());
-              for(const path of ['/var/lib/storage','/var/lib/storage/_restore_staging']) {
-                const s=statSync(path); console.error('Disposable directory: uid='+s.uid+' gid='+s.gid+' mode='+(s.mode&511).toString(8));
-              }
-              process.exitCode=1;
+          const {Readable}=require('node:stream');
+          (async()=>{
+            const input=process.stdin[Symbol.asyncIterator](); let header=Buffer.alloc(0), offset;
+            while((offset=header.indexOf(10))<0) {
+              const chunk=await input.next(); if(chunk.done) throw Error('Missing metadata');
+              header=Buffer.concat([header,chunk.value]); if(header.length>1024*1024) throw Error('Oversized metadata');
             }
-          });`,
-          ],
-          JSON.stringify(objects),
-        )
+            const o=JSON.parse(header.subarray(0,offset).toString('utf8'));
+            const body=Readable.from((async function*(){ yield header.subarray(offset+1); for await(const c of input) yield c; })());
+            await new FileBackend().uploadObject('restore','restore/'+o.bucket_id+'/'+o.name,o.version,body,o.metadata?.mimetype,o.metadata?.cacheControl);
+          })().catch(()=>{process.exitCode=1});`,
+              ],
+              { env: childEnv, timeout: 300000, maxBuffer: 4096 },
+              (error) =>
+                error
+                  ? reject(new Error("Native object restoration failed"))
+                  : resolve(),
+            )
+          })
+          const bytes = Readable.from(
+            (async function* () {
+              yield Buffer.from(JSON.stringify(object) + "\n")
+              yield* createReadStream(
+                join(root, "storage", object.bucket_id, object.name),
+              )
+            })(),
+          )
+          await Promise.all([pipeline(bytes, child.stdin), completed])
+        }
         run(["rm", "-fv", id])
       },
       startApi: async () => {
@@ -365,7 +376,7 @@ export async function restoreBackup(root) {
       and not exists(select from pg_depend d where d.classid='pg_class'::regclass and d.objid=c.oid and d.deptype='e')) then raise exception 'Restored application RLS missing'; end if;
       if exists(select from pg_constraint c join pg_namespace n on n.oid=c.connamespace
       where n.nspname in('public','private') and not c.convalidated) then raise exception 'Restored constraint not validated'; end if; end $$;`)
-    db.populate(root, snapshot.objects)
+    await db.populate(root, snapshot.objects)
     await db.startApi()
     assert.equal(
       db.sql(snapshotSql).trim(),

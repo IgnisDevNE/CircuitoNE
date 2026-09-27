@@ -8,6 +8,8 @@ import { resolve, join, basename, dirname } from "node:path"
 import { prepareLocalDatabase } from "../../scripts/prepare-local-db.mjs"
 import { checkCollectiveConcurrency } from './collective-concurrency.mjs'
 import { checkEventConcurrency } from './event-concurrency.mjs'
+import { checkMessageConcurrency } from './message-concurrency.mjs'
+import { checkLifecycleConcurrency } from './lifecycle-concurrency.mjs'
 
 const reservePort = async (port) => {
   const server = createServer()
@@ -116,6 +118,9 @@ test(
       queryFile("tests/database/identity-profiles.sql")
       queryFile("tests/database/collectives.sql")
       queryFile("tests/database/events.sql")
+      queryFile("tests/database/messages.sql")
+      queryFile("tests/database/message-permissions.sql")
+      queryFile("tests/database/lifecycle.sql")
     }
     // Duas conexões reais: lock da identidade e UNIQUE do CPF devem decidir no banco.
     for (const sameAccount of [false, true]) {
@@ -163,6 +168,8 @@ test(
     }
     await checkCollectiveConcurrency(query, sql => promisify(execFile)('docker', [...psqlArgs, '--command', sql], { timeout: 30_000 }))
     await checkEventConcurrency(query, sql => promisify(execFile)('docker', [...psqlArgs, '--command', sql], { timeout: 30_000 }))
+    await checkMessageConcurrency(query, sql => promisify(execFile)('docker', [...psqlArgs, '--command', sql], { timeout: 30_000 }))
+    await checkLifecycleConcurrency(query, sql => promisify(execFile)('docker', [...psqlArgs, '--command', sql], { timeout: 30_000 }))
     run(
       "db",
       "query",
@@ -221,6 +228,20 @@ test(
           (select name from public.events where id='0a000000-0000-4000-8000-000000000001')<>'Alteração preservada' then
           raise exception 'Seed reconstruiu dados editados'; end if;
       end $$;`)
+    const messageSeed = readFileSync('supabase/seeds/messages.sql', 'utf8')
+    assert.throws(() => query(messageSeed), error => /Seed exige destino sintético/.test(String(error.stdout) + String(error.stderr)))
+    assert.throws(() => query(`set circuitone.seed_target='disposable';
+${messageSeed}`), error => /Seed exige referência temporal/.test(String(error.stdout) + String(error.stderr)))
+    query(`set circuitone.seed_target='disposable'; set circuitone.seed_time='2026-09-26T12:00Z';
+${messageSeed}
+${messageSeed}`)
+    queryFile('tests/database/message-seed.sql')
+    query(`delete from private.conversation_blocks where conversation_id='0d000000-0000-4000-8000-000000000002';
+      update private.messages set body='Edição preservada' where id='0e000000-0000-4000-8000-000000000001';
+      set circuitone.seed_target='disposable'; set circuitone.seed_time='2026-09-26T12:00Z';
+${messageSeed}
+      do $$ begin if exists(select from private.conversation_blocks where conversation_id='0d000000-0000-4000-8000-000000000002') or
+        (select body from private.messages where id='0e000000-0000-4000-8000-000000000001')<>'Edição preservada' then raise exception 'Seed recriou estado de mensagens editado'; end if; end $$;`)
     const taxonomy = JSON.parse(readFileSync("docs/specs/estilos-musicais.json", "utf8"))
     const expected = Object.entries(taxonomy).flatMap(([style, children]) => [[style, null], ...children.map(name => [style, name])])
     const taxonomyFile = join(workdir, "taxonomy.sql")

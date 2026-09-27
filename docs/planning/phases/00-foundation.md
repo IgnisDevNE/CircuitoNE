@@ -15,7 +15,7 @@ O agente de implementação executará integralmente em container Linux no Podma
 | 1 Identidade e atuações | [#116](https://github.com/IgnisDevNE/CircuitoNE/issues/116) | Regras aprovadas; conta privada, perfis, taxonomia, materiais, RLS e seeds |
 | 2 Coletivos | [#117](https://github.com/IgnisDevNE/CircuitoNE/issues/117) | Contratos da #116; proprietário, aprovação, perfis/permissões e vínculos atômicos |
 | 3 Eventos | [#118](https://github.com/IgnisDevNE/CircuitoNE/issues/118) | #117; eventos/lineup, publicação, cancelamento e agenda |
-| 4 Mensagens e ciclo de vida | [#119](https://github.com/IgnisDevNE/CircuitoNE/issues/119) | #118 e identidades anteriores; conversas, limites, denúncias, exclusão/expurgo |
+| 4 Mensagens e ciclo de vida | [#119](https://github.com/IgnisDevNE/CircuitoNE/issues/119) | #118 local integrado em `1cf7764`; schema/RPCs, testes e seeds em revisão. Executor Auth/Storage é #23/#21 nas fases de produto; homologação após #31/#43 na #32 |
 
 Cada fatia inclui migrações, constraints/índices/grants/RLS, RPCs atômicas, tipos e seeds determinísticos, com TDD SQL e revisão Sol/low. Implementação descartável pode começar; aplicação remota aguarda #31 e pré-requisitos de destino/recuperação de #43. UI, jornadas Auth e operação de moderação continuam nas fases de produto. Nenhuma issue exige seu próprio encerramento antes de começar a correção.
 

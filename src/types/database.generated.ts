@@ -430,8 +430,13 @@ export type Database = {
         Args: { expected_version: number; target: string }
         Returns: undefined
       }
+      claim_message_report: { Args: { target: string }; Returns: undefined }
       close_collective: {
         Args: { reason: string; target: string }
+        Returns: undefined
+      }
+      close_message_report: {
+        Args: { resolution: string; target: string }
         Returns: undefined
       }
       complete_registration: {
@@ -455,6 +460,7 @@ export type Database = {
         Args: { target: string; target_role: string }
         Returns: undefined
       }
+      delete_profile: { Args: { target: string }; Returns: undefined }
       edit_collective: {
         Args: {
           expected_version: number
@@ -464,6 +470,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_account_deletion_status: { Args: never; Returns: Json }
       get_collective_access: { Args: { target: string }; Returns: Json }
       get_collective_member_activity: {
         Args: { target: string }
@@ -514,6 +521,11 @@ export type Database = {
       }
       get_collective_status: { Args: { target: string }; Returns: Json }
       get_event: { Args: { target: string }; Returns: Json }
+      get_message_report: { Args: { target: string }; Returns: Json }
+      get_messages: {
+        Args: { after_id?: string; after_time?: string; target: string }
+        Returns: Json
+      }
       get_my_collective_requests: {
         Args: { after_id?: string }
         Returns: {
@@ -533,6 +545,10 @@ export type Database = {
         }
         Returns: Json
       }
+      list_conversations: {
+        Args: { after_id?: string; after_time?: string }
+        Returns: Json
+      }
       list_events: {
         Args: {
           after_id?: string
@@ -542,6 +558,14 @@ export type Database = {
         }
         Returns: Json
       }
+      list_message_reports: {
+        Args: { after_id?: string; after_time?: string }
+        Returns: Json
+      }
+      mark_conversation_read: {
+        Args: { last_message: string; target: string }
+        Returns: undefined
+      }
       publish_event: {
         Args: { expected_version: number; target: string }
         Returns: undefined
@@ -550,6 +574,11 @@ export type Database = {
         Args: { member: string; target: string }
         Returns: undefined
       }
+      report_message: {
+        Args: { reason: string; target: string }
+        Returns: string
+      }
+      request_account_deletion: { Args: never; Returns: undefined }
       request_collective_membership: {
         Args: { message?: string; profile?: string; target: string }
         Returns: string
@@ -571,6 +600,26 @@ export type Database = {
           target_role: string
         }
         Returns: string
+      }
+      send_message: {
+        Args: {
+          body: string
+          recipient: string
+          recipient_kind: string
+          request_id: string
+          sender: string
+          sender_kind: string
+        }
+        Returns: Json
+      }
+      set_conversation_block: {
+        Args: {
+          as_id: string
+          as_kind: string
+          blocked: boolean
+          target: string
+        }
+        Returns: undefined
       }
       set_default_artist: { Args: { target: string }; Returns: undefined }
       support_close_collective: {

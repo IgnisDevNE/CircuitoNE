@@ -6,7 +6,7 @@ import { createRestoreDatabase } from "../../scripts/restore-drill.mjs"
 import { checkHomologationRest } from "../../scripts/homologation-rest.mjs"
 
 test(
-  "real isolated Auth validates fixture login, owner MFA and complete session cleanup",
+  "real isolated Auth and Storage validate ownership, owner MFA and complete session cleanup",
   { timeout: 180000 },
   async () => {
     const db = await createRestoreDatabase()
@@ -42,10 +42,15 @@ test(
         const parsed = new URL(url)
         assert.equal(parsed.origin, "https://odphoxozclrshqjgwbqk.supabase.co")
         const isAuth = parsed.pathname.startsWith("/auth/v1/")
-        assert.ok(isAuth || parsed.pathname.startsWith("/rest/v1/"))
+        const isStorage = parsed.pathname.startsWith("/storage/v1/")
+        assert.ok(
+          isAuth || isStorage || parsed.pathname.startsWith("/rest/v1/"),
+        )
         const path =
-          parsed.pathname.replace(isAuth ? "/auth/v1" : "/rest/v1", "") +
-          parsed.search
+          parsed.pathname.replace(
+            isAuth ? "/auth/v1" : isStorage ? "/storage/v1" : "/rest/v1",
+            "",
+          ) + parsed.search
         const result = JSON.parse(
           db.run(
             [
@@ -56,14 +61,16 @@ test(
               "-e",
               `
         let input=''; process.stdin.on('data',c=>input+=c); process.stdin.on('end',async()=>{
-          try {const o=JSON.parse(input); const r=await fetch('http://127.0.0.1:'+o.port+o.path,
+          try {const o=JSON.parse(input);
+            if(o.init.body?.type==='Buffer')o.init.body=Buffer.from(o.init.body.data);
+            const r=await fetch('http://127.0.0.1:'+o.port+o.path,
             {...o.init,redirect:'error',signal:AbortSignal.timeout(5000)});
             const text=await r.text(); console.log(JSON.stringify({status:r.status,text}));
           }catch{process.exitCode=1}
         });`,
             ],
             JSON.stringify({
-              port: isAuth ? 9999 : 3000,
+              port: isAuth ? 9999 : isStorage ? 5000 : 3000,
               path,
               init: {
                 headers: init.headers,
@@ -87,6 +94,14 @@ test(
           GITHUB_RUN_ATTEMPT: "1",
         },
         (sql) => db.sql(sql),
+      )
+      assert.equal(
+        db
+          .sql(
+            "select owner_id from storage.objects where bucket_id='phase0-recovery' and name='synthetic/proof.txt'",
+          )
+          .trim(),
+        "01000000-0000-4000-8000-000000000001",
       )
     } finally {
       globalThis.fetch = original

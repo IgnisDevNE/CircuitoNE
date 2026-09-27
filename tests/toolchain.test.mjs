@@ -26,3 +26,18 @@ test('Dependabot keeps React renderer updates together and Node types on the app
   assert.match(config, /react:\s+patterns: \['react', 'react-dom', '@types\/react', '@types\/react-dom'\]\s+update-types: \['minor', 'patch'\]/)
   assert.match(config, /ignore:\s+- dependency-name: '@types\/node'\s+versions: \['>=25'\]/)
 })
+
+test('Dependabot keeps Node images on the approved major and CodeQL steps together', () => {
+  const config = read('.github/dependabot.yml')
+  const docker = config.split('package-ecosystem: docker')[1]?.split('- package-ecosystem:')[0]
+  const actions = config.split('package-ecosystem: github-actions')[1]
+  assert.match(docker, /ignore:\s+- dependency-name: 'library\/node'\s+versions: \['>=25'\]/)
+  assert.match(actions, /codeql:\s+patterns: \['github\/codeql-action\*'\]/)
+})
+
+test('CodeQL initialization and analysis use the same immutable action revision', () => {
+  const workflow = read('.github/workflows/codeql.yml')
+  const pins = [...workflow.matchAll(/uses: github\/codeql-action\/(init|analyze)@([a-f0-9]{40})/g)]
+  assert.deepEqual(pins.map((match) => match[1]), ['init', 'analyze'])
+  assert.equal(pins[0][2], pins[1][2])
+})

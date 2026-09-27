@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { totp, checkHomologationRest } from "../scripts/homologation-rest.mjs"
+import { storageFixture } from "../scripts/homologation-storage.mjs"
 
 test("real TOTP follows RFC 6238 and rejects invalid input", () => {
   assert.equal(totp("GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ", 59000), "287082")
@@ -58,6 +59,7 @@ test("sessions use public credentials, MFA is real, and failure still revokes sy
     "enroll-response",
     "verify-response",
     "residue",
+    "storage-exposed",
   ]) {
     const calls = []
     let mfa = false
@@ -77,6 +79,23 @@ test("sessions use public credentials, MFA is real, and failure still revokes sy
       assert.equal(init.redirect, "error")
       assert.ok(init.signal)
       const path = new URL(url).pathname
+      if (path.startsWith("/storage/v1/")) {
+        if (path.endsWith("/bucket/" + storageFixture.bucket)) {
+          assert.equal(init.headers.apikey, "eyJ.synthetic-admin")
+          return Response.json({
+            id: storageFixture.bucket,
+            name: storageFixture.bucket,
+            public: false,
+            file_size_limit: 1024,
+            allowed_mime_types: ["text/plain"],
+          })
+        }
+        assert.equal(init.headers.apikey, env.SUPABASE_PUBLISHABLE_KEY)
+        return init.headers.Authorization === "Bearer " + token(1) ||
+          failure === "storage-exposed"
+          ? new Response(storageFixture.bytes)
+          : Response.json({}, { status: 404 })
+      }
       if (path.startsWith("/auth/v1/admin/")) {
         assert.equal(init.headers.apikey, "eyJ.synthetic-admin")
         if (path.endsWith("/users")) return Response.json({ users: [] })
@@ -166,6 +185,11 @@ test("sessions use public credentials, MFA is real, and failure still revokes sy
     try {
       let inventories = 0
       const query = (sql) => {
+        if (sql.includes("select owner_id from storage.objects")) return uid(1)
+        if (sql.startsWith("begin;")) {
+          assert.match(sql, /Synthetic Storage policy collision/)
+          return ""
+        }
         assert.match(sql, /begin read only/)
         for (const n of [1, 2, 3, 5]) assert.ok(sql.includes(uid(n)))
         inventories++
@@ -178,6 +202,11 @@ test("sessions use public credentials, MFA is real, and failure still revokes sy
       if (failure !== "none")
         await assert.rejects(checkHomologationRest(env, query))
       else await checkHomologationRest(env, query)
+      if (failure === "none")
+        assert.ok(
+          calls.some((call) => call.url.includes("/storage/v1/")),
+          "Homologation must prepare and verify the owned Storage fixture",
+        )
       if (["none", "challenge", "enroll-response"].includes(failure))
         assert.ok(
           deleted,

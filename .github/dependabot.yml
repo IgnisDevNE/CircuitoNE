@@ -5,6 +5,9 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 3
+    ignore:
+      - dependency-name: 'library/node'
+        versions: ['>=25']
   - package-ecosystem: npm
     directory: /
     schedule:
@@ -25,3 +28,7 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 3
+    groups:
+      codeql:
+        patterns: ['github/codeql-action*']
+        update-types: ['minor', 'patch']

@@ -41,15 +41,38 @@ export async function createRestoreDatabase() {
       .filter((key) => process.env[key])
       .map((key) => [key, process.env[key]]),
   )
-  const run = (args, input) =>
-    execFileSync(engine, args, {
-      env: childEnv,
-      input,
-      encoding: "utf8",
-      stdio: ["pipe", "pipe", "pipe"],
-      timeout: 300000,
-      maxBuffer: 32 * 1024 * 1024,
-    })
+  const run = (args, input) => {
+    try {
+      return execFileSync(engine, args, {
+        env: childEnv,
+        input,
+        encoding: "utf8",
+        stdio: ["pipe", "pipe", "pipe"],
+        timeout: 300000,
+        maxBuffer: 32 * 1024 * 1024,
+      })
+    } catch (error) {
+      // Native errors include argv/environment and captured output; do not propagate them.
+      if (args[0] === "exec" && args[3] === "psql") {
+        const lines = String(error.stderr ?? "").split(/\r?\n/)
+        const diagnostic = [
+          "Fixtures de homologação incompletas",
+          "Restored private grants invalid",
+          "Restored application RLS missing",
+          "Restored constraint not validated",
+          "Homologation lock already held",
+          "Protected homologation child failed",
+        ].find((message) =>
+          lines.some((line) => line.endsWith(`ERROR:  ${message}`)),
+        )
+        if (diagnostic) throw new Error(diagnostic)
+      }
+      const status = Number.isInteger(error.status)
+        ? error.status
+        : "unavailable"
+      throw new Error(`Disposable ${engine} ${args[0]} failed (exit ${status})`)
+    }
+  }
   const sql = (text) =>
     run(
       [

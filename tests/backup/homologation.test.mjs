@@ -47,7 +47,7 @@ test(
       assert.throws(
         () => db.sql(script),
         (error) =>
-          String(error.stderr).includes("Homologation lock already held"),
+          error.message === "Homologation lock already held",
       )
       db.sql(
         "select pg_terminate_backend(pid) from pg_locks where locktype='advisory' and classid=119 and objid=32 and objsubid=2 and pid<>pg_backend_pid()",
@@ -56,7 +56,7 @@ test(
       assert.throws(
         () => db.sql(script),
         (error) =>
-          String(error.stderr).includes("Protected homologation child failed"),
+          error.message === "Protected homologation child failed",
       )
       assert.equal(
         db

@@ -10,6 +10,26 @@ test('CI preserves LCOV and leaves publication to the protected workflow', () =>
   assert.doesNotMatch(workflow, /\n  codecov:|id-token: write|codecov\/codecov-action/);
 });
 
+test('fork candidates keep tests and coverage artifacts without access to the publisher secret', () => {
+  const quality = workflow.match(/^  quality:\r?\n([\s\S]*?)(?=^  database:)/m)?.[1];
+  assert.ok(quality);
+  assert.doesNotMatch(quality, /^    if:|secrets\.|environment:|id-token: write/m);
+  assert.match(workflow, /on:\s+pull_request:/);
+  assert.match(quality, /run: pnpm check/);
+  assert.match(quality, /run: pnpm test:coverage/);
+  assert.match(quality, /name: codecov-lcov\s+path: coverage\/lcov\.info/);
+  const publisher = readFileSync(new URL('../.github/workflows/codecov-publish.yml', import.meta.url), 'utf8');
+  const guard = publisher.match(/    if: >-\r?\n([\s\S]*?)(?=    runs-on:)/)?.[1];
+  assert.ok(guard);
+  for (const [headRepository, expected] of [['IgnisDevNE/CircuitoNE', true], ['external/CircuitoNE', false]]) {
+    const github = { event: { workflow_run: {
+      conclusion: 'success', repository: { full_name: 'IgnisDevNE/CircuitoNE' },
+      head_repository: { full_name: headRepository }, event: 'pull_request',
+    } } };
+    assert.equal(runInNewContext(guard, { github }), expected);
+  }
+});
+
 test('coverage is informational and cannot replace application checks or the independent acceptance suite', () => {
   const config = readFileSync(new URL('../codecov.yml', import.meta.url), 'utf8');
   assert.match(config, /project:\s+default:\s+informational: true/);

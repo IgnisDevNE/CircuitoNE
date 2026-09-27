@@ -45,7 +45,7 @@ test(
             `set circuitone.seed_target='odphoxozclrshqjgwbqk';\n${smoke}`,
           ),
         (error) =>
-          String(error.stderr).includes("Fixtures de homologação incompletas"),
+          error.message === "Fixtures de homologação incompletas",
       )
       source.sql(
         `set circuitone.seed_target='disposable'; set circuitone.seed_time='2026-09-26T12:00Z';\n` +
@@ -119,7 +119,7 @@ test(
       }
       writeFileSync(join(root, "manifest.json"), JSON.stringify(manifest))
       await assert.rejects(restoreBackup(root), (error) =>
-        String(error.stderr).includes("Restored private grants invalid"),
+        error.message === "Restored private grants invalid",
       )
       writeFileSync(
         join(root, "storage/restore-private/nested/proof.txt"),

@@ -20,3 +20,9 @@ test('Node 24 LTS is used consistently by local tools, CI and the container', ()
 
   assert.match(read('Dockerfile'), /^FROM docker\.io\/library\/node:24\.21\.0-alpine@sha256:[a-f0-9]{64} AS build/m)
 })
+
+test('Dependabot keeps React renderer updates together and Node types on the approved major', () => {
+  const config = read('.github/dependabot.yml')
+  assert.match(config, /react:\s+patterns: \['react', 'react-dom', '@types\/react', '@types\/react-dom'\]\s+update-types: \['minor', 'patch'\]/)
+  assert.match(config, /ignore:\s+- dependency-name: '@types\/node'\s+versions: \['>=25'\]/)
+})

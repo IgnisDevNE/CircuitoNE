@@ -62,6 +62,7 @@ export async function createRestoreDatabase() {
           "Restored constraint not validated",
           "Homologation lock already held",
           "Protected homologation child failed",
+          "Synthetic Storage policy collision",
         ].find((message) =>
           lines.some((line) => line.endsWith(`ERROR:  ${message}`)),
         )

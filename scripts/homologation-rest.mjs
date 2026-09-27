@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { createHmac } from "node:crypto"
 import { execFileSync } from "node:child_process"
+import { prepareHomologationStorage } from "./homologation-storage.mjs"
 
 // RFC 6238, somente para o fator temporário da fixture. Nunca grava o segredo.
 export function totp(secret, milliseconds = Date.now()) {
@@ -178,6 +179,16 @@ export async function checkHomologationRest(
       trackSession(session.data.access_token)
     }
     const jwt = (n) => sessions.find((session) => session.n === n).jwt
+    const object = await prepareHomologationStorage(
+      env,
+      jwt(1),
+      jwt(5),
+      admin,
+      sessionQuery,
+    )
+    console.log(
+      `Synthetic private Storage verified: ${object.bucket}/${object.name}, ${object.size} bytes, SHA-256 ${object.sha256}.`,
+    )
     const anon = await rest(
       `profiles?select=id,kind,name&owner_id=eq.${uid(1)}`,
     )

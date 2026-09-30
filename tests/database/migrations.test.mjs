@@ -263,11 +263,10 @@ ${messageSeed}
       "--agent",
       "no",
     ).toString()
+    const normalize = text => text.replaceAll("\r\n", "\n").replace(/[ \t]+$/gm, "").trim()
     assert.equal(
-      generated.replaceAll("\r\n", "\n").trim(),
-      readFileSync("src/types/database.generated.ts", "utf8")
-        .replaceAll("\r\n", "\n")
-        .trim(),
+      normalize(generated),
+      normalize(readFileSync("src/types/database.generated.ts", "utf8")),
       "Tipos devem corresponder ao schema reconstruído",
     )
   },

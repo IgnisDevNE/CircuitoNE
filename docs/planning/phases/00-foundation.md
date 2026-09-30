@@ -1,6 +1,6 @@
 # Fase 0 — Preparar a base para desenvolver
 
-**Estado em 27/09/2026:** em execução; SSR/Node 24/TypeScript 7 concluídos (#35/#36), pods dev/produção publicados e retomada por login instalada. PR #115 integrada em `859ef29321c2573f0398d1f9ea313a0d13fb6893`, CI/QA/promoção confirmados. A fase não está concluída; [evidências e bloqueios](../../reviews/phase-0.md). O escopo aprovado agora inclui o schema completo do MVP, com dados exclusivamente sintéticos. [Índice e regras comuns](../implementation-plan.md).
+**Estado em 30/09/2026 UTC:** em execução; SSR/Node 24/TypeScript 7 concluídos (#35/#36), pods dev/produção publicados, schema completo integrado e [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) concluída. A [homologação protegida 36659781488](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/36659781488) aplicou migrações e seeds sintéticos em `CircuitoNE-dev` no SHA `8eaaa48821428be21d85ae8a56e1b0ee740b5222` e passou SQL/REST/Auth/MFA. A [restauração protegida 36666380554](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/36666380554) recuperou banco e Storage privados em destino descartável; [negativas da esteira](../../reviews/phase-zero-operation-proofs-20260927.md) também foram registradas. Faltam a homologação protegida no SHA final de `main` da [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32) e o reboot/login real da [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43). [Revisão de saída](../../reviews/phase-0.md) e [índice](../implementation-plan.md).
 
 **Entrada:** arquitetura aprovada; inventário de 27 rotas e [achados UI-01–18](../../reviews/prototype-audit.md). **Saída:** aplicação executável em React Router Framework/Node/Caddy, testes e homologação operacionais, contratos sob autoridade independente e nenhum P0/P1 aberto no caminho que receberá dados reais.
 
@@ -8,20 +8,20 @@
 
 **Plano aprovado em 26/09/2026 (prevalece sobre a ordem histórica abaixo):** consolidar evidências → preparar quatro fatias de schema em bancos descartáveis e mudanças da esteira → concluir negativas do QA e preparar container Linux do agente → retirar autoridade temporária e fechar #31 → aplicar/homologar no CircuitoNE-dev e concluir recuperação #32/#43 → revisão completa/OWASP. Aproveitar o acesso de manutenção durante o bootstrap; não ativar migração remota antes do isolamento.
 
-**Checkpoint de 27/09/2026:** quatro fatias de schema integradas e suíte SQL/concurrency sob aceite canônico v2; PR #126 integrada em `f99736f`, promoção QA `dd2fa1d`. A negativa descartável #127 comprovou falha SQL independente apesar de comandos falsos no CI, e cancelamento publicado no SHA antigo com nova avaliação do SHA novo, sem alterar `accepted`. Preparação de homologação/backup/receipt/Storage integrada na #128/#137; CI Linux, promoção/rollback de imagem, Access permitido/negado e rotação do PAT demonstrados. #30 encerrada pelo caso genuíno #130. Revogações e negativas concluídas aguardam revisão final #31; faltam homologação hospedada #32, recuperação completa dev e reboot real #43. Não marcar a fase como concluída por esses ensaios locais. [Evidências da negativa](https://github.com/IgnisDevNE/CircuitoNE/issues/31#issuecomment-5852322951).
+**Checkpoint de 27/09/2026:** quatro fatias de schema integradas e suíte SQL/concurrency sob aceite canônico v2; PR #126 integrada em `f99736f`, promoção QA `dd2fa1d`. A negativa descartável #127 comprovou falha SQL independente apesar de comandos falsos no CI, e cancelamento publicado no SHA antigo com nova avaliação do SHA novo, sem alterar `accepted`. Preparação de homologação/backup/receipt/Storage integrada na #128/#137; CI Linux, promoção/rollback de imagem, Access permitido/negado e rotação do PAT demonstrados. #30 encerrada pelo caso genuíno #130. A revisão posterior concluiu a #31; homologação e recuperação completa de dev passaram em 30/09. O reboot real da #43 permanece. [Evidências da negativa](https://github.com/IgnisDevNE/CircuitoNE/issues/31#issuecomment-5852322951).
 
 O agente de implementação executará integralmente em container Linux no Podman, sem perfil/discos Windows, chaves, sessões humanas ou socket do engine. Receberá apenas token temporário do App emitido pelo mantenedor fora desse ambiente. Esta sessão Windows é de manutenção. A #30 foi encerrada com a atualização genuína #130 e evidências vinculadas; não fabricar upgrades como prova. A #104 é o último gate técnico pré-release e não bloqueia a fase zero; produção permanece em espera, com cadastros e backup legível desativados.
 
-| Fatia F0-T4 | Issue | Entrada e entrega |
+| Fatia F0-T4 concluída | Issue encerrada | Entrega homologada em `CircuitoNE-dev` |
 |---|---|---|
-| 1 Identidade e atuações | [#116](https://github.com/IgnisDevNE/CircuitoNE/issues/116) | Regras aprovadas; conta privada, perfis, taxonomia, materiais, RLS e seeds |
-| 2 Coletivos | [#117](https://github.com/IgnisDevNE/CircuitoNE/issues/117) | Contratos da #116; proprietário, aprovação, perfis/permissões e vínculos atômicos |
-| 3 Eventos | [#118](https://github.com/IgnisDevNE/CircuitoNE/issues/118) | #117; eventos/lineup, publicação, cancelamento e agenda |
-| 4 Mensagens e ciclo de vida | [#119](https://github.com/IgnisDevNE/CircuitoNE/issues/119) | #118 local integrado em `1cf7764`; schema/RPCs, testes e seeds em revisão. Executor Auth/Storage é #23/#21 nas fases de produto; homologação após #31/#43 na #32 |
+| 1 Identidade e atuações | [#116](https://github.com/IgnisDevNE/CircuitoNE/issues/116) | Conta privada, perfis, taxonomia, materiais, RLS e seeds |
+| 2 Coletivos | [#117](https://github.com/IgnisDevNE/CircuitoNE/issues/117) | Proprietário, aprovação, perfis/permissões e vínculos atômicos |
+| 3 Eventos | [#118](https://github.com/IgnisDevNE/CircuitoNE/issues/118) | Eventos/lineup, publicação, cancelamento e agenda |
+| 4 Mensagens e ciclo de vida | [#119](https://github.com/IgnisDevNE/CircuitoNE/issues/119) | Schema/RPCs, testes e seeds integrados; migrações e seeds sintéticos homologados no dev no SHA `8eaaa48`. Executor Auth/Storage da interface é #23/#21 nas fases de produto |
 
-Cada fatia inclui migrações, constraints/índices/grants/RLS, RPCs atômicas, tipos e seeds determinísticos, com TDD SQL e revisão Sol/low. Implementação descartável pode começar; aplicação remota aguarda #31 e pré-requisitos de destino/recuperação de #43. UI, jornadas Auth e operação de moderação continuam nas fases de produto. Nenhuma issue exige seu próprio encerramento antes de começar a correção.
+Cada fatia inclui migrações, constraints/índices/grants/RLS, RPCs atômicas, tipos e seeds determinísticos, com TDD SQL e revisão Sol/low. A aplicação remota em dev passou no SHA `8eaaa48` após o gate da #31; backup e restauração completa de banco/Storage passaram, com RPO de 4714 s e RTO de 52 s. UI, jornadas Auth e operação de moderação continuam nas fases de produto. Nenhuma issue exige seu próprio encerramento antes de começar a correção.
 
-**Sprint de 23/09/2026:** o responsável pediu para executar primeiro as correções e preparações da fase 0 que não dependem de isolamento, deixando a retirada das credenciais temporárias e o fechamento da #31 por último. Isso não libera jobs com secrets, migrações no projeto compartilhado nem promoção: esses passos aguardam o gate de isolamento de F0-T2 e serão verificados antes da saída da fase.
+**Plano histórico de 23/09/2026:** o responsável pediu para executar primeiro as correções e preparações da fase 0 que não dependiam de isolamento. O gate da #31 foi concluído antes da homologação protegida; as restrições abaixo descrevem a sequência de implementação, não bloqueios atuais.
 
 Com F0-T1/T3 integradas, abrir primeiro F0-T14 (dependências) e F0-T15 (decisões/pré-requisitos), em paralelo ao trabalho independente de F0-T2 e F0-T6. Corrigir F0-T7–T10; migrar F0-T11/T12; concluir F0-T4/T5 e o review de fase. Estabilizar a toolchain de F0-T14 antes do aceite final dos testes/SSR. F0-T13 pode avançar quando houver cobertura real, mas a dependência externa do Codecov não bloqueia a fase. Dependências específicas abaixo prevalecem sobre essa sequência resumida.
 
@@ -33,7 +33,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 **Issues tratadas:** Nenhuma pendência própria nova.
 
-**Estado:** integrado pelo PR #2, com CI verde; isolamento forte e homologação integrada continuam nas tarefas seguintes. **Dependência:** nenhuma. **Risco:** médio, cadeia de entrega.
+**Estado:** integrado pelo PR #2, com CI verde; isolamento e homologação protegida foram concluídos depois nas tarefas F0-T2/F0-T4. **Dependência:** nenhuma. **Risco:** médio, cadeia de entrega.
 
 - Entrega: baseline, lockfile, versões Node/pnpm, `main` protegida, CODEOWNERS, App implementador e CI sem secrets para PRs.
 - Verificação: instalação limpa, testes existentes, TypeScript, build, auditoria e container. Confirmar identidade do App e origem dos checks; não enfraquecer proteção para facilitar merge.
@@ -46,7 +46,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 **Issues tratadas:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31); sua conclusão libera os trabalhos que exigem autoridade independente.
 
-**Estado:** revogações e negativas concluídas; revisão final na [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31), conforme [registro](../../reviews/agent-authority-closure-20260927.md). Aceite canônico, retomada, promoção e fechamento pós-merge validados na #58. **Dependência:** F0-T1. **Risco:** alto.
+**Estado:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) concluída após revisão independente e de segurança, CI pós-merge e promoção QA; [registro](../../reviews/agent-authority-closure-20260927.md). Aceite canônico, retomada, promoção e fechamento pós-merge validados na #58. **Dependência:** F0-T1. **Risco:** alto.
 
 - Entrega: emissor da chave do App fora do implementador; ambiente sem credencial humana/admin, inclusive acessos temporários de manutenção de SSH/Codecov; QA canônico fora das instalações desse App; verificador com comando, dependências e identidade próprios.
 - Testar primeiro: a identidade implementadora não escreve QA, não altera sua versão aprovada, settings/secrets, aprovações ou promoção. Usar recursos de teste controlados para provas negativas, sem mutações destrutivas em produção.
@@ -61,14 +61,14 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 **Issues tratadas:** Nenhuma pendência própria nova; a troca de runtime fica em F0-T12.
 
-**Estado:** container estático validado no Windows; entrega provisória. **Dependência:** F0-T1. **Risco:** baixo.
+**Estado:** container estático validado no Windows como entrega provisória, depois substituído pelo runtime SSR de F0-T12. **Dependência:** F0-T1. **Risco:** baixo.
 
 - Aceite: home, bundle, link profundo, 404 de asset e bloqueio de caminhos internos; root filesystem protegido e execução sem privilégios. Preservar os demais containers do host.
-- Documentação: URL/porta e comandos verificados. O preview atual só é substituído depois do aceite de F0-T12; não confundir preview com homologação integrada.
+- Documentação: URL/porta e comandos verificados; o preview estático foi substituído após o aceite de F0-T12.
 
 ## F0-T4 — Preparar Supabase e migrações reproduzíveis
 
-**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) antes de operações com credenciais; [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) na parte de região/destino antes de conectar ambiente compartilhado.
+**Bloqueios por issue:** gates de isolamento da [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) e região/destino da [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) satisfeitos antes da homologação protegida. A recuperação restante da #43 não bloqueou a aplicação de migrações sintéticas.
 
 **Manutenção pontual autorizada em 22/09/2026:** validar somente as credenciais dev por job manual em `main`, após review/merge e aprovação do environment, sem aplicação, migração ou dados reais. Essa verificação está preparada no PR #45 e delimitada na ADR 0003; não encerra #31 nem libera as demais operações bloqueadas. Registrar o resultado remoto em #32 antes de afirmar que token/senha funcionam.
 
@@ -83,7 +83,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 ## F0-T5 — Homologar e promover pelo GitHub
 
-**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31); [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32) na parte de migrações já validada por F0-T4; [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) na parte de destino/domínio de homologação. Registrar esse aceite parcial de [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32), sem exigir fechar a própria issue antes de implementar o pipeline.
+**Bloqueios por issue:** isolamento da [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31), migrações da [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32) e destino/domínio da [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) satisfeitos para a primeira homologação. A #32 continua aberta para conferir negativas e promoção/rollback no SHA final; a #43 para reboot/login real.
 
 **Issues tratadas:** [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32), homologação e promoção de teste.
 
@@ -109,7 +109,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 ## F0-T7 — Corrigir renderização de Markdown e URLs
 
-**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) antes de conectar dados reais; a correção isolada do renderizador do protótipo foi integrada na [PR #82](https://github.com/IgnisDevNE/CircuitoNE/pull/82) com aceite canônico. O isolamento final de credenciais permanece na #31.
+**Bloqueios por issue na implementação original:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) antes de conectar dados reais; o controle foi encerrado depois. A correção isolada do renderizador do protótipo foi integrada na [PR #82](https://github.com/IgnisDevNE/CircuitoNE/pull/82) com aceite canônico.
 
 **Issues tratadas:** [#11](https://github.com/IgnisDevNE/CircuitoNE/issues/11) integralmente, incluindo renderização segura no servidor/navegador.
 
@@ -137,7 +137,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 ## F0-T9 — Conter o mock e corrigir escopos de interface
 
-**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) antes da aplicação compartilhada dos contratos de autorização; [#40](https://github.com/IgnisDevNE/CircuitoNE/issues/40) na integração do registro revisado das invariantes aprovadas em 22/09/2026. Schema/RLS/RPCs e testes SQL entram na F0 (#116–#119); integração da autorização nas interfaces e jornadas permanece nas fases de produto.
+**Bloqueios por issue:** gate da [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) concluído; as invariantes da [#40](https://github.com/IgnisDevNE/CircuitoNE/issues/40) foram incorporadas ao schema/RLS/RPCs e aos testes SQL das #116–#119. Integração da autorização nas interfaces e jornadas permanece nas fases de produto.
 
 **Issues tratadas:** [#12](https://github.com/IgnisDevNE/CircuitoNE/issues/12)/[#13](https://github.com/IgnisDevNE/CircuitoNE/issues/13)/[#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14)/[#22](https://github.com/IgnisDevNE/CircuitoNE/issues/22)/[#28](https://github.com/IgnisDevNE/CircuitoNE/issues/28) na contenção do mock e troca de contexto. Autorização real e persistência não são encerradas por uma correção de UI.
 
@@ -178,7 +178,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 **Bloqueios por issue:** [#35](https://github.com/IgnisDevNE/CircuitoNE/issues/35) para linha Node coerente; [#11](https://github.com/IgnisDevNE/CircuitoNE/issues/11) antes de servir conteúdo renderizado no servidor; bloqueios de F0-T11 propagam-se.
 
-**Issues tratadas:** Evidência de runtime contribui para [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32); a issue só encerra após homologação integrada.
+**Issues tratadas:** o runtime contribuiu para [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32); a homologação integrada passou, mas a issue ainda requer conferir negativas e promoção/rollback no SHA final.
 
 **Dependência:** F0-T11; F0-T3 é a referência do preview anterior. **Risco:** médio.
 
@@ -227,7 +227,8 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 **Dependência:** regras/propostas já inventariadas; decisões de produto podem avançar sem código. **Responsáveis:** produto e mantenedor. A preparação com credenciais depende do isolamento de F0-T2.
 
 - Resolver na fase zero: idade/CPF/recuperação/retenção, arquivos e dados sociais, verificação/suspensão e invariantes de coletivos, catálogo de perfis e permissões (#66), tempo/publicação/agenda de eventos, iniciação/moderação de mensagens. Propostas continuam propostas até aprovação; não inventar resposta para encerrar issue.
-- Estado em 26/09/2026: ambos os projetos estão em São Paulo; produção `ukyoyrmebwadmuzkswdw` validada por conexão de leitura. Guard de ambiente, SMTP2GO separado, dev em sandbox com auditoria em `ignisdev@magalz.space`, domínios/HTTPS e pods estão implantados. Ensaio SMTP sintético passou; novos cadastros de produção estão desativados e redirects continuam vazios até callback Auth revisado. Backup dev e restauração PostgreSQL passaram; faltam recuperação completa do Storage/checksum independente, RPO/RTO medidos, reboot real. O acesso permitido/negado no Access e a rotação equivalente do PAT já passaram em 27/09. As evidências atuais ficam em #43 e nos guias operacionais. #104 é o último gate técnico pré-release, sem dados reais antes dele.
+- Estado inicial em 26/09/2026: ambos os projetos estão em São Paulo; produção `ukyoyrmebwadmuzkswdw` validada por conexão de leitura. Guard de ambiente, SMTP2GO separado, dev em sandbox com auditoria em `ignisdev@magalz.space`, domínios/HTTPS e pods estão implantados. Ensaio SMTP sintético passou; novos cadastros de produção estão desativados e redirects continuam vazios até callback Auth revisado. O acesso permitido/negado no Access e a rotação do PAT passaram em 27/09. Depois, o [backup dev 36660527063](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/36660527063) passou com recibo independente; a [restauração completa 36660875225](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/36660875225) falhou sem perder a cópia válida. Faltam corrigir e repetir a restauração, medir RPO/RTO e ensaiar reboot real. #104 é o último gate técnico pré-release, sem dados reais antes dele.
+- Atualização de 30/09/2026: a [reexecução 36666380554](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/36666380554) recuperou banco e Storage sintéticos com RPO 4714 s e RTO 52 s. O item operacional restante da #43 é o reboot/login real do Windows, com retomada dos pods e HTTPS.
 - Aceite: cada decisão tem responsável, registro aprovado e exemplos de aceite/negação nos contratos afetados; SMTP de dev é validado com cópia somente à caixa de auditoria controlada, e o de produção com destino de teste controlado antes de reativar cadastros. Marcar evidências por pré-requisito e remover apenas o bloqueio correspondente.
 - Documentação: atualizar regras canônicas, ambiente/spec pertinente e issues; implementação persistente, deploy final e ensaio completo de restauração continuam nas fases correspondentes. Sem testes artificiais para decisões documentais.
 
@@ -237,7 +238,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 |---|---|---|
 | Defeitos autônomos de Markdown, dinheiro, estado de rota e semântica (#11/#17/#22/#27) | Corrigir e encerrar com evidência de todos os critérios aplicáveis ao protótipo | Critério ainda não demonstrado, explicitamente atribuído a uma tarefa; não fechar só porque o exemplo deixou de falhar |
 | Dependências (#34–#37), decisões e pré-requisitos (#38–#43/#66) | Resolver antes de estabilizar a base e antes das tarefas dependentes | Incompatibilidade externa demonstrada ou decisão humana pendente, com responsável e impacto exato |
-| Infraestrutura (#29–#32) | Concluir caso Dependabot, isolamento e homologação | #29 encerrada; Codecov próprio e Dependabot com relatório/checks/comentário comprovados. #30 encerrada com o registro/política de forks integrados. #31/#32 bloqueiam a saída correspondente da fase |
+| Infraestrutura (#29–#32) | Concluir caso Dependabot, isolamento e homologação | #29/#30/#31 encerradas; Codecov próprio, Dependabot, isolamento e homologação protegida comprovados. Conferir critérios remanescentes da #32 antes de encerrá-la |
 | Achados que incluem persistência/autorizações e funcionalidades ainda inexistentes | Antecipar schema, invariantes, RLS/RPCs, seeds e testes SQL completos na F0 | Interfaces e jornadas integradas continuam nas fases 1–5; manter suas issues abertas até aceite integral, sem backend provisório |
 | SEO e qualidade integrada (#26/#28 e validação final) | Corrigir metadados estáticos, SSR com fixtures, determinismo e estados já testáveis | Consultas/paginação/dados reais e validação do produto final permanecem nas tarefas de domínio e F6-T3 |
 

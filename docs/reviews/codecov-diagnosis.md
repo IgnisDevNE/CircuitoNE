@@ -1,5 +1,7 @@
 # Codecov — diagnóstico e regularização
 
+**Histórico:** a [#30](https://github.com/IgnisDevNE/CircuitoNE/issues/30) foi encerrada depois do comentário numérico e da PR Dependabot genuína. As datas abaixo identificam os estados anteriores.
+
 ## Reavaliação de 23/09/2026
 
 A conta pessoal autenticada já abre a organização IgnisDevNE e as configurações de CircuitoNE na instância própria. O GitHub App `ignis-dev-codecov` continua instalado com `Pull requests:write`; a chave privada presente no servidor foi aceita pela API do GitHub. A chave local é outra chave válida do mesmo App, portanto a diferença de arquivo não prova falha de integração.

@@ -1,6 +1,6 @@
 # ADR 0012 — Agente Linux e integrações controladas
 
-Data: 26/09/2026; evidências atualizadas em 27/09/2026. Estado: direção aprovada; revogações e negativas concluídas, revisão final na [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31).
+Data: 26/09/2026; evidências atualizadas em 27/09/2026. Estado: adotada; revogações, negativas e revisão final aceitas na [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31).
 
 ## Decisão
 
@@ -22,7 +22,7 @@ Após merge **e promoção QA do SHA exato**, o mantenedor sincroniza o checkout
 
 Requisitos locais controlam o binário oficial, não revogam a autoridade cloud da conta. O cliente independente confirmou essa limitação; após retirar as conexões GitHub/Supabase, a mesma credencial recebeu catálogo fresco sem esses namespaces e ambas as chamadas de leitura foram recusadas sem resultado. Isso comprova a retirada dessas integrações, não restrição de todos os recursos cloud nem uma tentativa de escrita remota. Reconectá-las exige retirar/substituir a autenticação do agente e repetir o aceite. [Evidência](../reviews/evidence/agent-cloud-discovery-20260927.json).
 
-Em 27/09, as instalações perderam as concessões temporárias: implementador sem Actions/Workflows write e Members read; Promoter sem Workflows. Publisher permanece sem escrita nos testes. As duas cópias locais QA identificadas foram removidas; suas chaves protegidas no GitHub continuam atendendo à esteira. A chave do emissor permanece somente no Windows de manutenção. O reensaio no container registrou sete HTTP 403 e criação/limpeza de branch comum. [Registro do gate](../reviews/agent-authority-closure-20260927.md). A #31 aguarda a revisão final desse registro antes da execução remota da #32; login ou CI verde isoladamente não fecham o controle.
+Em 27/09, as instalações perderam as concessões temporárias: implementador sem Actions/Workflows write e Members read; Promoter sem Workflows. Publisher permanece sem escrita nos testes. As duas cópias locais QA identificadas foram removidas; suas chaves protegidas no GitHub continuam atendendo à esteira. A chave do emissor permanece somente no Windows de manutenção. O reensaio no container registrou sete HTTP 403 e criação/limpeza de branch comum. [Registro do gate](../reviews/agent-authority-closure-20260927.md). A #31 foi concluída após a PR #138, o CI pós-merge 36303857609 e a promoção QA 36304015996 do SHA exato; a [aplicação e os testes em Supabase-dev](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/36659781488) passaram posteriormente. Login ou CI verde isoladamente não fecharam o controle.
 
 Usar apenas flags seria insuficiente: outro processo poderia omiti-las. Montar a pasta Windows ou a chave privada simplificaria a operação, mas violaria a separação aprovada. Um serviço próprio de emissão de tokens não é necessário nesta etapa.
 

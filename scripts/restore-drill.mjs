@@ -172,6 +172,7 @@ export async function createRestoreDatabase() {
       )
   }
   try {
+    console.log("Restore stage: start disposable PostgreSQL")
     run([
       "run",
       "-d",
@@ -201,6 +202,7 @@ export async function createRestoreDatabase() {
       await delay(500)
     }
     assert.ok(ready, "Isolated PostgreSQL initialization did not complete")
+    console.log("Restore stage: prepare disposable roles and Storage volume")
     sql(
       `alter role supabase_storage_admin password '${password}'; alter role authenticator password '${password}';`,
     )
@@ -401,11 +403,13 @@ export async function createRestoreDatabase() {
 }
 
 export async function restoreBackup(root) {
+  console.log("Restore stage: verify extracted archive")
   verifyBackupContents(root)
   const start = performance.now()
   const manifest = JSON.parse(readFileSync(join(root, "manifest.json"), "utf8"))
   const db = await createRestoreDatabase()
   try {
+    console.log("Restore stage: import database dump")
     db.run(["cp", join(root, "db.dump"), `${db.name}:/tmp/restore.dump`])
     db.run([
       "exec",
@@ -420,6 +424,7 @@ export async function restoreBackup(root) {
       "postgres",
       "/tmp/restore.dump",
     ])
+    console.log("Restore stage: validate database metadata and access")
     // Local passwords are independent of owners/ACL restored from the hosted database dump.
     const snapshotSql =
       "select json_build_object('objects',(select coalesce(json_agg(o order by o.bucket_id,o.name),'[]') from storage.objects o),'buckets',(select coalesce(json_agg(b order by b.id),'[]') from storage.buckets b))"
@@ -446,13 +451,16 @@ export async function restoreBackup(root) {
       and not exists(select from pg_depend d where d.classid='pg_class'::regclass and d.objid=c.oid and d.deptype='e')) then raise exception 'Restored application RLS missing'; end if;
       if exists(select from pg_constraint c join pg_namespace n on n.oid=c.connamespace
       where n.nspname in('public','private') and not c.convalidated) then raise exception 'Restored constraint not validated'; end if; end $$;`)
+    console.log("Restore stage: import Storage object bytes")
     await db.populate(root, snapshot.objects)
+    console.log("Restore stage: start isolated Storage API")
     await db.startApi()
     assert.equal(
       db.sql(snapshotSql).trim(),
       before,
       "Storage startup modified restored object metadata",
     )
+    console.log("Restore stage: verify Storage API, ownership and hashes")
     let privateObjects = 0
     let ownerChecks = 0
     for (const object of snapshot.objects) {

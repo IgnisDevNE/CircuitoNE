@@ -263,6 +263,7 @@ ${messageSeed}
       "--agent",
       "no",
     ).toString()
+    console.log("GENERATED_BASE64=" + Buffer.from(generated).toString("base64"))
     assert.equal(
       generated.replaceAll("\r\n", "\n").trim(),
       readFileSync("src/types/database.generated.ts", "utf8")

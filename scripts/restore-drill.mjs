@@ -206,6 +206,7 @@ export async function createRestoreDatabase() {
     sql(
       `alter role supabase_storage_admin password '${password}'; alter role authenticator password '${password}';`,
     )
+    sql("create role supabase_realtime_admin nologin;")
     run(["volume", "create", volume])
     return {
       name,

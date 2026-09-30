@@ -76,6 +76,10 @@ test(
         appendFileSync(join(root, "storage/restore-private/large.bin"), chunk)
         largeHash.update(chunk)
       }
+      source.sql(`do $$ begin
+        if not exists(select from pg_roles where rolname='supabase_realtime_admin')
+        then create role supabase_realtime_admin nologin; end if;
+      end $$; create schema restore_realtime_owner_test authorization supabase_realtime_admin;`)
       source.dump(join(root, "db.dump"))
       const dump = readFileSync(join(root, "db.dump"))
       const manifest = {

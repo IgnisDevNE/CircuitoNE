@@ -1,8 +1,9 @@
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteError } from 'react-router'
+import { fixtureNow } from './data/mock'
 import './index.css'
 
 export function loader() {
-  return { renderedAt: Date.now() }
+  return { renderedAt: process.env.CIRCUITONE_RUNTIME === 'preview' ? fixtureNow : Date.now() }
 }
 
 export function meta() {

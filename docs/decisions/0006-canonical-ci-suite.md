@@ -1,6 +1,6 @@
 # ADR 0006 — Aceite canônico e promoção da suíte na esteira
 
-Data: 22/09/2026. **Estado:** direção aprovada; check obrigatório e primeira promoção da suíte validados. O isolamento de credenciais da #31 / F0-T2 permanece pendente.
+Data: 22/09/2026. **Estado:** direção aprovada; check obrigatório e primeira promoção da suíte validados. O isolamento do implementador foi aceito no escopo da #31 / F0-T2 em 27/09/2026.
 
 ## Contexto
 
@@ -18,13 +18,13 @@ Usar Git e Actions, sem criar middleware ou framework próprio. O contrato de ve
 
 ## Consequências e limites
 
-**Detalhamento de 27/09/2026:** o schema completo exige aceite de banco além do navegador. O runner integrado pela [QA PR #24](https://github.com/IgnisDevNE/CircuitoNE-QA/pull/24) mantém dependências e comandos em W e oráculos SQL/concorrência em Q; SQL candidato é dado enviado a um PostgreSQL descartável separado do executor, sem acesso ao host ou ao publicador. Ambos os jobs precisam passar; o estado v2 registra duas árvores. O estado E2E anterior é apenas predecessor da primeira promoção SQL revisada. A [spec](../specs/canonical-ci-suite.md) registra a promoção inicial ainda pendente, sem declarar a #31 concluída.
+**Detalhamento de 27/09/2026:** o schema completo exige aceite de banco além do navegador. O runner integrado pela [QA PR #24](https://github.com/IgnisDevNE/CircuitoNE-QA/pull/24) mantém dependências e comandos em W e oráculos SQL/concorrência em Q; SQL candidato é dado enviado a um PostgreSQL descartável separado do executor, sem acesso ao host ou ao publicador. Ambos os jobs precisam passar; o estado v2 registra duas árvores. O estado E2E anterior é apenas predecessor da primeira promoção SQL revisada. A proposta SQL revisada foi promovida em [QA 36289277886](https://github.com/IgnisDevNE/CircuitoNE-QA/actions/runs/36289277886); a #31 concluiu depois dos ensaios negativos e do gate de autoridade.
 
 - Reduzir processamento local de aceite; manter testes rápidos locais para TDD e diagnóstico.
 - Separar aprovação de testes, execução do candidato e publicação/promoção. O implementador pode propor testes, mas não aprovar sua referência ou atestar a própria entrega.
 - Invalidar aceite antes do merge quando a suíte/base avançar; coordenar a integração e a promoção anterior para impedir entrada com resultado desatualizado. Tratar promoção como operação auditável e condicionada ao estado atual, com retentativa e histórico; um merge não pode apagar testes aceitos por outro PR.
 - O repositório QA, a suíte inicial, o App publicador e o check obrigatório com origem fixada foram preparados; a primeira promoção pós-merge foi validada nas PRs #56, #57 e #59. Esta decisão não dispensa homologação, revisão ou gates.
-- Não alegar proteção contra credenciais administrativas disponíveis ao agente por outro caminho. O isolamento de credenciais permanece pendência da [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31); a escolha de CI não exige VM local nem encerra automaticamente essa issue.
+- Não alegar proteção contra credenciais administrativas disponíveis ao agente por outro caminho. O isolamento foi aceito na [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) por prova separada no container, não pelo CI sozinho. A escolha de CI não exige VM local nem torna o Windows de manutenção isolado.
 
 ## Alternativas consideradas
 

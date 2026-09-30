@@ -1,5 +1,7 @@
 # Revisão inicial de segurança e gate por fase
 
+**Registro histórico da análise inicial em 21/09/2026.** Schema/RLS, SMTP2GO e isolamento do agente/QA foram implementados depois; a [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) está encerrada. Este texto não substitui a revisão OWASP final da fase zero nem afirma segurança do produto ainda mockado.
+
 Referência: [OWASP Top 10:2025](https://top10.owasp.org/2025/), verificada em 21/09/2026. Esta é uma análise do protótipo e do plano, não um pentest ou certificação. Backend, Auth e RLS ainda não existem na aplicação; não podem ser declarados seguros por não haver falhas em um scan do frontend.
 
 ## Fronteiras e ameaças

@@ -1,6 +1,6 @@
 # ADR 0003 — Toolchain e testes da preparação
 
-Data: 22/09/2026; revisão em 23/09/2026. Estado: atualização coordenada de Node 24 proposta na fase 0; CI e homologação integrada ainda pendentes. Não altera a arquitetura aprovada na [ADR 0002](0002-modular-monolith-ssr.md).
+Data: 22/09/2026; revisão em 30/09/2026. Estado: Node 24 e TypeScript 7 implantados e verificados com SSR/CI; a [homologação integrada 36659781488](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/36659781488) passou. A [PR #141](https://github.com/IgnisDevNE/CircuitoNE/pull/141) elevou o Supabase CLI de 2.117.0 para 2.118.0, mantendo o snapshot de tipos revisado. Os parágrafos abaixo preservam o contexto da decisão inicial. Não altera a arquitetura aprovada na [ADR 0002](0002-modular-monolith-ssr.md).
 
 ## Contexto e decisão
 

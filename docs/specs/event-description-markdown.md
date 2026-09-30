@@ -1,6 +1,6 @@
 # Markdown da descrição de eventos
 
-Estado: implementado pela [PR #82](https://github.com/IgnisDevNE/CircuitoNE/pull/82) em 23/09/2026. CI de `main` e [promoção da suíte QA](https://github.com/IgnisDevNE/CircuitoNE-QA/actions/runs/35923261808) passaram. A [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) ainda exige o isolamento final de credenciais da esteira; conectar conteúdo real depende da identidade e autorização previstas em F1/F3.
+Estado: implementado pela [PR #82](https://github.com/IgnisDevNE/CircuitoNE/pull/82) em 23/09/2026. CI de `main` e [promoção da suíte QA](https://github.com/IgnisDevNE/CircuitoNE-QA/actions/runs/35923261808) passaram. A [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) foi encerrada; conectar conteúdo real depende da identidade e autorização previstas em F1/F3.
 
 O editor oferece título, subtítulo, negrito, itálico, lista simples e link. A página pública renderiza somente parágrafos, esses formatos e quebras de linha. Links externos precisam de URL absoluta HTTP ou HTTPS e abrem em nova aba com `noopener noreferrer`. URLs malformadas ou com outros protocolos aparecem sem link. Imagens Markdown e HTML bruto não são renderizados. Uma futura prévia deve usar o mesmo componente da página pública.
 

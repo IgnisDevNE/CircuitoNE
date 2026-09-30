@@ -1,6 +1,6 @@
 # Prompt #55b — Diagnóstico de isolamento do Orbit
 
-**Registro histórico:** este relatório, seu probe e as evidências anexas documentam o ensaio da [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31). Não são necessários para construir ou executar a aplicação. O setup local do Orbit será refeito separadamente; remover seus arquivos locais não altera o resultado histórico nem conclui o isolamento pendente.
+**Registro histórico:** este relatório, seu probe e as evidências anexas documentam um ensaio inicial da [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31). Não são necessários para construir ou executar a aplicação. O setup local do Orbit será refeito separadamente; a #31 foi concluída depois por isolamento do container, QA independente e revogações, conforme o [registro final](agent-authority-closure-20260927.md).
 
 Data: 22/09/2026 (America/Fortaleza); repetição instrumentada dos checks nativos às 14:33–14:34. Projeto: CircuitoNE. Escopo: parte de F0-T2 / [issue #31](https://github.com/IgnisDevNE/CircuitoNE/issues/31), **sem encerrar a issue nem liberar implementação de regras reais**.
 

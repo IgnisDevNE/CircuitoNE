@@ -1,6 +1,6 @@
 # ADR 0004 — Codecov Cloud com identidade temporária
 
-Data: 22/09/2026. Estado: **histórico**; integração Cloud implantada e depois substituída pela [ADR 0007](0007-codecov-self-hosted-target.md). O primeiro relatório próprio foi processado em 23/09/2026; comentário de PR e encerramento da [issue #30](https://github.com/IgnisDevNE/CircuitoNE/issues/30) ainda dependem de validação.
+Data: 22/09/2026. Estado: **histórico**; integração Cloud implantada e depois substituída pela [ADR 0007](0007-codecov-self-hosted-target.md). O primeiro relatório próprio foi processado em 23/09/2026; o comentário numérico em PR e o caso Dependabot genuíno validaram o encerramento da [#30](https://github.com/IgnisDevNE/CircuitoNE/issues/30) posteriormente. O restante descreve a decisão antiga.
 
 O responsável instalou o App oficial do Codecov no repositório público e solicitou configurá-lo. [Codecov Cloud](https://app.codecov.io/gh/IgnisDevNE/CircuitoNE) foi o destino operacional inicial do CI. A organização e CircuitoNE foram confirmados no painel autenticado. O bloqueio OAuth da instância própria [#29](https://github.com/IgnisDevNE/CircuitoNE/issues/29) foi resolvido na migração posterior. Nenhum serviço dessa instância foi removido ou reconfigurado nesta decisão.
 

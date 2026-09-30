@@ -130,8 +130,8 @@ export const audiovisuais: AVProfile[] = [
 ]
 
 // Fixtures must render identically on the server and during browser hydration.
-const now = Date.parse('2026-09-22T15:00:00.000Z')
-const days = (n: number) => new Date(now + n * 86400000).toISOString()
+export const fixtureNow = Date.parse('2026-09-22T15:00:00.000Z')
+const days = (n: number) => new Date(fixtureNow + n * 86400000).toISOString()
 
 // ---- Eventos ----
 export const eventos: Evento[] = [

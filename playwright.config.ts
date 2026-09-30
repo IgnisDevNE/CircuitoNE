@@ -20,7 +20,7 @@ export default defineConfig({
   ],
   webServer: {
     command: 'pnpm build && pnpm preview',
-    env: { HOST: '127.0.0.1', PORT: '5182' },
+    env: { HOST: '127.0.0.1', PORT: '5182', CIRCUITONE_RUNTIME: 'preview' },
     url: 'http://127.0.0.1:5182',
     reuseExistingServer: false,
     timeout: 120_000,

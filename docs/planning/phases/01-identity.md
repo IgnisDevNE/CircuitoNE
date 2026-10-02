@@ -1,40 +1,50 @@
 # Fase 1 — Identidade, conta e autenticação
 
-**Estado:** planejada. **Entrada:** gate da fase 0 aprovado, SMTP de homologação e decisões D-02/D-03 resolvidas para os caminhos afetados. **Risco principal:** exposição de identidade e sessões. [Índice e gates comuns](../implementation-plan.md).
+**Estado em 02/10/2026:** planejada; o schema de identidade já foi entregue/homologado na fase zero. **Entrada:** aceite final da F0 após reboot/login da #43; decisões de identidade #38/#40 aprovadas. **Risco principal:** exposição de identidade e sessões. [Índice e gates comuns](../implementation-plan.md).
 
-## F1-T1 — Identidade privada e unicidade
+## Primeira fatia após o gate da fase zero
 
-**Bloqueios por issue:** [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31)/[#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32) concluídas; [#38](https://github.com/IgnisDevNE/CircuitoNE/issues/38) para contrato de identidade; [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) na decisão de região/destino. Gate da fase zero permanece obrigatório.
+**F1-T1a — sessão SSR, login e logout com duas contas Auth sintéticas de teste**, sem abrir cadastro. Antes do ensaio, conferir ou preparar as identidades pelo procedimento protegido de homologação; as credenciais ficam somente no contexto de teste, sem senhas fixas no repositório. Reutilizar o schema, as RPCs, tipos e políticas entregues em #116–#119. Responsáveis: implementação no container isolado, revisão Sol/low e mantenedor nos gates protegidos. Escopo nas [#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14)/[#23](https://github.com/IgnisDevNE/CircuitoNE/issues/23), sem encerrar suas partes de cadastro, recuperação e manutenção ainda ausentes.
 
-**Issues tratadas:** [#19](https://github.com/IgnisDevNE/CircuitoNE/issues/19) na integridade/validação no banco, complementando F0-T8.
+1. Fixar critérios e testes canônicos: visitante sem sessão, senha incorreta, login válido, recarga SSR, logout e duas sessões distintas; conta suspensa só vê motivo/suporte. Erro não cria sucesso local nem revela outra conta.
+2. Implementar cliente Supabase por requisição e validação de identidade no servidor, usando a sessão do usuário e sem `service_role`. Cookies seguros, respostas privadas sem cache compartilhado e proteção CSRF no caminho mutante. Não substituir o mock inteiro de uma vez nem criar autorização nominal para teste.
+3. Validar no dev com contas sintéticas existentes, testes REST negativos e navegador, revisão Sol/low e homologação no SHA da PR; produção continua em espera. Migração somente se os testes demonstrarem lacuna no contrato homologado.
 
-**Dependência:** F0-T2/T4/T5. **Regras:** RN-01/03/04/31–34/36. D-02/D-03 e contato WhatsApp aprovados pelo responsável em 22/09/2026; integrar os registros revisados de #38 e RN-36 na #40 antes de fixar a versão dos contratos afetados, sem exigir a implementação de coletivos para criar conta.
+Essa fatia antecipa somente a base de sessão/login/logout de F1-T3; o restante de F1-T3 continua após onboarding. Não depende de envio de código: o estado confirmado das contas sintéticas é preparado no ensaio protegido, nunca por um endpoint público de bypass ou exceção de autorização da aplicação. **F1-T2 depende da [#147](https://github.com/IgnisDevNE/CircuitoNE/issues/147)** para canal/provedor de confirmação do celular, limites/custo e prova de entrega restrita. SMTP2GO é e-mail. Configurar callbacks exatos somente quando houver handler revisado; allowlist permanece vazia até lá. Não liberar cadastro incompleto para contornar essa dependência.
 
-- Testar primeiro: anônimo e conta B não leem dados de A; CPF/celular ausentes, inválidos ou duplicados após normalização; duas gravações simultâneas; nascimento inválido; recusa abaixo de 18 anos e aceitação no aniversário de 18 anos, inclusive por chamada direta; UFs de todas as regiões aceitas; gênero vazio ou “não informar” aceito no cadastro e na edição; esquema privado não exposto por API/view.
-- Entrega: migração da conta privada, vínculo com Auth e campos mínimos de atuação necessários ao onboarding; constraints, grants, RLS e tipos gerados. Sem senha duplicada no banco de aplicação.
-- Aceite: dados pessoais fora de respostas públicas/logs; duplicação impedida pelo banco; erro recuperável sem revelar a identidade de outro titular. CPF único não é verificação de identidade.
-- Documentação: dicionário dos campos, matriz de acesso, política de CPF/nascimento e nota da migração com recuperação.
+## F1-T1 — Integrar o contrato de identidade existente
+
+**Bloqueios por issue:** #31/#32 e decisões #38/#40 concluídas; região/destino/SMTP dev da #43 satisfeitos. Falta apenas reboot/login da #43 para o gate geral F0. A #147 bloqueia confirmação de celular/cadastro, não a fatia F1-T1a.
+
+**Issues tratadas:** #14/#23 na sessão inicial e #19 nas fronteiras de entrada; demais critérios permanecem abertos.
+
+**Dependência:** F0-T2/T4/T5 e gate F0. **Regras:** RN-01/03/04/31–34/36/37. Não recriar as migrações, grants/RLS e tipos da fase zero (#116–#119), já homologados em `CircuitoNE-dev` no SHA `1f0eed7`.
+
+- Testar primeiro as fronteiras novas de servidor/UI; reutilizar os contratos SQL existentes de unicidade, idade, privacidade e concorrência. Mudança comprovadamente necessária no banco recebe teste SQL vermelho antes de migração nova.
+- Entrega: mapear os tipos/RPCs existentes no runtime por identidade de requisição, sem senha duplicada no banco de aplicação, sessão global ou respostas privadas públicas. O cadastro transacional e recuperável entra em F1-T2.
+- Aceite: identidade A não lê/muda B; erros não revelam dados de outro titular; CPF único não é verificação de identidade. Sessões e dados pessoais não aparecem em logs/artefatos de CI.
+- Documentação: contrato de sessão/entrada, evidência de TDD e homologação na PR; atualizar dicionário/modelo somente se houver mudança real.
 
 ## F1-T2 — Cadastro, confirmação e onboarding recuperável
 
-**Bloqueios por issue:** [#38](https://github.com/IgnisDevNE/CircuitoNE/issues/38); [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) na parte de SMTP/callbacks validada. Herda os bloqueios de F1-T1.
+**Bloqueios por issue:** [#147](https://github.com/IgnisDevNE/CircuitoNE/issues/147) para confirmar celular e limitar envios. #38/#40 encerradas e SMTP dev da #43 comprovado; callback/allowlist de Auth será implementado e validado nesta jornada, não está pronto só porque o SMTP funciona. Herda o gate de F1-T1.
 
 **Issues tratadas:** [#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14)/[#15](https://github.com/IgnisDevNE/CircuitoNE/issues/15)/[#19](https://github.com/IgnisDevNE/CircuitoNE/issues/19)/[#23](https://github.com/IgnisDevNE/CircuitoNE/issues/23) na identidade/cadastro real; partes de coletivo e mensagens seguem abertas.
 
 **Dependência:** F1-T1 e SMTP operacional. **Escopo:** substituir o cadastro/login demo por persistência real.
 
 - Testar primeiro: e-mail/CPF/celular duplicados, senha inválida, celular ausente/não confirmado, código incorreto/expirado/reutilizado, reenvio limitado, falha após criação no Auth, retry e retorno a cadastro incompleto; escolha de WhatsApp igual ao celular, diferente sem número adicional e diferente com número válido/inválido; contato adicional não substitui confirmação do celular nem permite recuperação automática.
-- Entrega: formulário com senha/confirmar, celular obrigatório confirmado por código (RN-32), escolha/contato privado de WhatsApp (RN-36), Auth e operação transacional dos dados de aplicação + primeira atuação mínima. Auth e Postgres não formam uma transação distribuída: registrar estado incompleto e retomar com idempotência, sem sucesso falso ou perfil público órfão. Canal/provedor de código e limites operacionais são pré-requisitos de #43 para este caminho.
+- Entrega: formulário com senha/confirmar, celular obrigatório confirmado por código (RN-32), escolha/contato privado de WhatsApp (RN-36), Auth e operação transacional dos dados de aplicação + primeira atuação mínima. Auth e Postgres não formam uma transação distribuída: registrar estado incompleto e retomar com idempotência, sem sucesso falso ou perfil público órfão. Canal/provedor de código e limites operacionais são pré-requisitos da #147 para este caminho.
 - Aceite: recarregar mantém o progresso já persistido; telas explicam o estado real. Ramos que criam coletivo/solicitam entrada só ficam disponíveis após F3-T1/T3/T5; não simular conclusão desses ramos nesta fase.
 - Documentação: sequência de cadastro, transições, expiração/limpeza de onboarding abandonado e responsabilidades de compensação.
 
 ## F1-T3 — Sessão SSR, login, logout e recuperação
 
-**Bloqueios por issue:** [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) na parte de SMTP/callbacks; partes de cadastro de [#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14)/[#15](https://github.com/IgnisDevNE/CircuitoNE/issues/15) entregues em F1-T2, sem exigir encerramento das partes de outros domínios.
+**Bloqueios por issue:** SMTP dev da #43 satisfeito; callback/allowlist exige implementação e prova na #23. Cadastro das #14/#15 entregue em F1-T2 para recuperação/onboarding; sessão/login/logout iniciais antecipados em F1-T1a sem depender de cadastro novo. Não exigir encerramento de partes de outros domínios.
 
 **Issues tratadas:** [#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14)/[#23](https://github.com/IgnisDevNE/CircuitoNE/issues/23) na sessão, login/logout e recuperação; completar [#23](https://github.com/IgnisDevNE/CircuitoNE/issues/23) com F1-T4.
 
-**Dependência:** F1-T1/T2 e runtime F0-T11/T12.
+**Dependência:** F1-T1 e runtime F0-T11/T12; F1-T2 apenas para recuperação/onboarding restante. A base de sessão/login/logout é antecipada em F1-T1a.
 
 - Testar primeiro: login correto/incorreto, refresh concorrente, sessão expirada, link de recuperação inválido, redirect externo malicioso, CSRF, logout e duas contas em requisições/cache distintos.
 - Entrega: integração oficial Supabase SSR, cliente por requisição, validação de identidade no servidor, callbacks restritos e jornadas de recuperação. Celular obrigatório/único/previamente confirmado segue RN-32; sem acesso aos contatos, o suporte aplica conferência documental privada conforme RN-33, sem transferir conta por CPF alegado. Não autorizar apenas com `getSession()` nem manter sessão global no Node.
@@ -43,7 +53,7 @@
 
 ## F1-T4 — Alterar dados e proteger operações sensíveis
 
-**Bloqueios por issue:** [#38](https://github.com/IgnisDevNE/CircuitoNE/issues/38); [#23](https://github.com/IgnisDevNE/CircuitoNE/issues/23) na parte de sessão/recuperação validada em F1-T3, sem exigir encerrar a manutenção de conta antes de iniciá-la.
+**Bloqueios por issue:** decisões da #38 já aprovadas; [#23](https://github.com/IgnisDevNE/CircuitoNE/issues/23) na parte de sessão/recuperação validada em F1-T3, sem exigir encerrar a manutenção de conta antes de iniciá-la.
 
 **Issues tratadas:** [#23](https://github.com/IgnisDevNE/CircuitoNE/issues/23) integralmente nos fluxos de conta; contribuir para [#14](https://github.com/IgnisDevNE/CircuitoNE/issues/14) e para o ciclo de vida posterior.
 

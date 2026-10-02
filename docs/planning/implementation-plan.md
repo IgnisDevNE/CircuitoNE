@@ -1,6 +1,6 @@
 # Plano de implementação
 
-**Revisão 4 — 26/09/2026.** Planos executáveis para a [arquitetura aprovada](../specs/architecture-mvp.md). A fase zero concentra adaptação à stack, limpeza, upgrades e remoção antecipada de bloqueios. Cada tarefa distingue issues de entrada das que deve resolver. Os documentos detalham trabalho futuro; não declaram a implementação concluída.
+**Revisão 5 — 02/10/2026.** Planos executáveis para a [arquitetura aprovada](../specs/architecture-mvp.md). A fase zero concentra adaptação à stack, limpeza, upgrades e remoção antecipada de bloqueios. Cada tarefa distingue issues de entrada das que deve resolver. Os documentos detalham trabalho futuro; não declaram a implementação concluída.
 
 ## Fases e dependências
 
@@ -29,11 +29,12 @@ São **38 tarefas**, identificadas nos planos. F0-T14 trata dependências e F0-T
 
 ## Estado real e próximo passo
 
-- GitHub/App, CI, documentação e preview estático foram integrados pelo [PR #2](https://github.com/IgnisDevNE/CircuitoNE/pull/2) em 22/09/2026. F0-T1/T3 não equivalem a fase zero completa.
-- SSR/Node 24/TypeScript 7 estão validados (#35/#36); dev usa pods com fixtures e produção serve espera. Banco completo antecipado para F0 (#116–#119); Auth e jornadas de produto continuam pendentes.
-- F0-T2 está parcial: o QA independente já executa o aceite obrigatório, retoma após aprovação, promove a suíte e fecha a proposta após o merge ([controle de mudanças](../controls/change-control.md)); o ensaio real da automação encerrou a [#58](https://github.com/IgnisDevNE/CircuitoNE/issues/58). Faltam os ensaios negativos mais amplos, a prova completa de concorrência/promoção e a retirada das credenciais humanas/chaves do ambiente implementador ([#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31)).
-- Codecov próprio: relatório, checks e comentário numérico comprovados (#30); falta uma atualização genuína compatível do Dependabot. Forks mantêm testes/LCOV como artefatos sem token.
-- Próximo trabalho: partir de `main` atualizada e branch nova; seguir a ordem aprovada em 26/09 no plano da F0: schema completo/infra, isolamento, homologação e recuperação. Resolver o máximo de bloqueios na fase zero; preparação com fixtures pode avançar sem tratar pendências como aprovadas. [Parecer por PR do Dependabot](../reviews/dependabot-2026-09-22.md).
+- SSR/Node 24/TypeScript 7 e o schema completo do MVP (#116–#119) estão integrados. O dev mantém fixtures na interface; produção serve apenas espera, sem cadastro ou dados reais.
+- [#30](https://github.com/IgnisDevNE/CircuitoNE/issues/30) e [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) estão encerradas: Codecov próprio/Dependabot genuíno comprovados e implementador isolado, com autoridade QA independente. As decisões #38–#42/#66 estão registradas; não são novas decisões pendentes.
+- [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32) concluída pela [homologação 37072463740](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/37072463740), no SHA `1f0eed78017becf03126a742b3351e9a1462ac74`: manifesto, cinco migrações, quatro seeds sintéticos e SQL/REST/Auth/MFA validados; CI também comprovou promoção/rollback da imagem em destino descartável. [Revisão de saída e recibos](../reviews/phase-0.md).
+- **Único gate operacional restante da fase zero:** reboot/login real da [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43), adiado pelo mantenedor em 02/10 para a próxima janela. Planejar hoje não autoriza reiniciar nem declarar a fase concluída. Após a prova e revisão de qualquer falha, registrar o aceite da fase.
+- **Continuação proposta:** uma fatia de sessão SSR/login/logout com duas contas Auth sintéticas de teste (F1-T1a), reutilizando o schema, antes do cadastro completo. [Plano e critérios](phases/01-identity.md#primeira-fatia-após-o-gate-da-fase-zero). A confirmação operacional do celular fica na [#147](https://github.com/IgnisDevNE/CircuitoNE/issues/147), bloqueando F1-T2, sem bloquear essa fatia. Callbacks só serão configurados quando houver handler revisado.
+- [#104](https://github.com/IgnisDevNE/CircuitoNE/issues/104) permanece o último gate técnico pré-release; [#144](https://github.com/IgnisDevNE/CircuitoNE/issues/144) trata disponibilidade e [#145](https://github.com/IgnisDevNE/CircuitoNE/issues/145) manutenção do QA. As issues de produto permanecem abertas até suas jornadas reais passarem. Nenhum dado real antes dos gates de lançamento.
 
 ## Contrato comum de cada tarefa
 
@@ -68,27 +69,21 @@ Os blocos **Bloqueios por issue** dos planos registram requisitos de entrada. **
 
 ## Pendências e condições de encerramento
 
-| ID | Pendência / responsável | Efeito e aceite |
-|---|---|---|
-| [DEF-01](https://github.com/IgnisDevNE/CircuitoNE/issues/29) | Autorizar OAuth CodeCov na IgnisDevNE / proprietário da organização | Sincronizar associação sem 403 e confirmar organização na conta. Deferido; não bloqueia testes locais, planejamento ou demais tarefas |
-| [DEF-02](https://github.com/IgnisDevNE/CircuitoNE/issues/30) | Publicar cobertura no Codecov / mantenedor + implementação F0-T13 | Relatório/checks/comentário próprios comprovados; falta PR genuína compatível do Dependabot. Artefatos sem token para forks |
-| [F0-T2](https://github.com/IgnisDevNE/CircuitoNE/issues/31) | Isolamento do QA/emissor/implementador / mantenedor | Barreira antes de aplicação remota/integração; preparação de schema/RLS/RPCs sintéticos em banco descartável autorizada em 26/09; demonstrar testes negativos, incluindo ausência de credenciais administrativas locais |
-| [F0-T4/T5](https://github.com/IgnisDevNE/CircuitoNE/issues/32) | Credenciais e fluxo real de homologação / mantenedor + implementação | Testar o fluxo no projeto correto; não promover só por CI verde |
-| [D-02/D-03](https://github.com/IgnisDevNE/CircuitoNE/issues/38) | Idade, CPF, recuperação e retenção / responsável pelo produto | Decisões aprovadas em 22/09/2026; integrar registro revisado antes dos contratos afetados da fase 1. Implementação e isolamento seguem pendentes |
-| [D-08/D-10](https://github.com/IgnisDevNE/CircuitoNE/issues/39) | Arquivos/cotas e dados sociais / responsável pelo produto | Decisões aprovadas em 22/09/2026; integrar registro revisado antes das tarefas afetadas da fase 2. Uploads e edição real seguem pendentes |
-| [D-01/D-09, RN-20/21/36](https://github.com/IgnisDevNE/CircuitoNE/issues/40) | Verificação/suspensão, diretório, perfil padrão, invariantes e contato WhatsApp / responsável pelo produto | Decisões aprovadas em 22/09/2026; integrar registro revisado antes dos contratos afetados. WhatsApp entra na fase 1, padrão da conta na fase 2 e coletivos na fase 3; implementação pendente |
-| [D-04/D-05](https://github.com/IgnisDevNE/CircuitoNE/issues/41) | Tempo e estados do evento / responsável pelo produto | Decisão ratificada em 23/09/2026; integrar registro e implementar/testar na fase 4 |
-| [D-06/D-07, RN-29/34/37](https://github.com/IgnisDevNE/CircuitoNE/issues/42) | Iniciação/moderação de mensagens, suspensão e retenção / responsável pelo produto | Decisão ratificada em 23/09/2026; integrar registro; operação de privacidade completa antes do beta |
-| [Perfis de acesso](https://github.com/IgnisDevNE/CircuitoNE/issues/66) | Catálogo, Membro inicial e propriedade / responsável pelo produto | Decisão ratificada em 23/09/2026; integrar registro e implementar/testar na fase 3 |
-| [Região, domínio, recuperação](https://github.com/IgnisDevNE/CircuitoNE/issues/43) | Região Supabase, DNS, SMTP, RPO/RTO / responsável operacional | Definir nas tarefas correspondentes, antes de dados reais/liberação |
-
-As decisões [#38](https://github.com/IgnisDevNE/CircuitoNE/issues/38)–[#42](https://github.com/IgnisDevNE/CircuitoNE/issues/42) e a preparação [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) são antecipadas para F0-T15; o momento limite das tabelas continua indicando qual implementação fica bloqueada se não forem resolvidas. F0-T14 acompanha [#34](https://github.com/IgnisDevNE/CircuitoNE/issues/34)–[#37](https://github.com/IgnisDevNE/CircuitoNE/issues/37) e os PRs de dependências. O alvo é encerrar o máximo na fase zero, mantendo abertas as partes que realmente dependem de funcionalidades futuras.
+| Estado / issues | Responsável e próximo aceite |
+|---|---|
+| Concluídas: #29/#30, #31, #32, #34–#42/#66, #116–#119 | Evidências nas issues e na [revisão de saída](../reviews/phase-0.md). Decisão aprovada e schema homologado não equivalem a UI de produto pronta. |
+| [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43), único gate F0 restante | Mantenedor combina reboot/login; implementação compara a recuperação com o preflight. Conferir tarefa, pods, serviços existentes, IP da VM, tunnel, DNS/HTTPS e Access, sem alterar serviços alheios. |
+| [#147](https://github.com/IgnisDevNE/CircuitoNE/issues/147), F1-T2 | Mantenedor escolhe canal/provedor de código para celular e limites/custo; implementação prova envio restrito e confirmação. Bloqueia cadastro integrado, não sessão sintética F1-T1a. |
+| #12–#28, produto | Implementação das fases 1–6 e revisão de produto. Cada issue mantém seu aceite; partes resolvidas no schema não encerram fluxos ainda simulados. O alerta CodeQL de imagem continua na [#21](https://github.com/IgnisDevNE/CircuitoNE/issues/21). |
+| [#145](https://github.com/IgnisDevNE/CircuitoNE/issues/145), manutenção QA | Mantenedor/identidade QA corrigem a entrada obsoleta em PR próprio antes de atualizar a Action; não ampliar o token do implementador. |
+| [#144](https://github.com/IgnisDevNE/CircuitoNE/issues/144), pré-release | Mantenedor define disponibilidade do Supabase antes do lançamento; não bloqueia ensaios sintéticos. |
+| [#104](https://github.com/IgnisDevNE/CircuitoNE/issues/104), último gate técnico pré-release | Chave fora do agente, cifra de banco e Storage, restauração cifrada, falha fechada, backup de produção e revisão de segurança antes de qualquer dado real. |
 
 ## Revisão crítica do plano
 
 Preservar componentes úteis; limpar os riscos identificados, sem reescrita geral ou exclusão automática por métricas de código morto. O roteador precisa mudar por SSR, enquanto detalhes de formulários são extraídos conforme seus testes. Não tocar arquivos locais de outros trabalhos sem revisão própria.
 
-Supabase gerenciado permanece dependência externa. Homologação compartilhada não recebe reset de PR; testes destrutivos usam banco descartável. Ambos os projetos ativos estão em São Paulo, mas ainda sem schema de negócio. Backup de Postgres não recupera automaticamente objetos do Storage. Runtime em um host exige plano de recuperação.
+Supabase gerenciado permanece dependência externa. Homologação compartilhada não recebe reset de PR; testes destrutivos usam banco descartável. Ambos os projetos ativos estão em São Paulo; `CircuitoNE-dev` tem o schema completo homologado e dados sintéticos, enquanto produção permanece sem migrações de negócio. Backup de Postgres não recupera automaticamente objetos do Storage. Runtime em um host exige plano de recuperação.
 
 CPF obrigatório exige tratamento de titularidade alegada, recuperação e retenção. Criação de coletivo não libera privilégios: a fila de aprovação e o papel operacional são funcionalidades novas, com telas e testes próprios. Limites de abuso precisam proteger a operação acessível diretamente, inclusive Supabase, e não só o proxy do frontend.
 

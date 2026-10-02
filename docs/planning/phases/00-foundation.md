@@ -1,6 +1,6 @@
 # Fase 0 — Preparar a base para desenvolver
 
-**Estado em 30/09/2026 UTC:** em execução; SSR/Node 24/TypeScript 7 concluídos (#35/#36), pods dev/produção publicados, schema completo integrado e [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) concluída. A [homologação protegida 36659781488](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/36659781488) aplicou migrações e seeds sintéticos em `CircuitoNE-dev` no SHA `8eaaa48821428be21d85ae8a56e1b0ee740b5222` e passou SQL/REST/Auth/MFA. A [restauração protegida 36666380554](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/36666380554) recuperou banco e Storage privados em destino descartável; [negativas da esteira](../../reviews/phase-zero-operation-proofs-20260927.md) também foram registradas. Faltam a homologação protegida no SHA final de `main` da [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32) e o reboot/login real da [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43). [Revisão de saída](../../reviews/phase-0.md) e [índice](../implementation-plan.md).
+**Estado em 02/10/2026 UTC:** fundação implementada; falta apenas o reboot/login real da [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) para o aceite final da fase. SSR/Node 24/TypeScript 7, schema completo, Codecov e isolamento (#31) concluídos. A [homologação protegida final 37072463740](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/37072463740) validou manifesto, migrações e quatro seeds sintéticos no SHA `1f0eed78017becf03126a742b3351e9a1462ac74`, com SQL/REST/Auth/MFA; encerra a [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32). A [restauração 36666380554](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/36666380554) recuperou banco/Storage privados em destino descartável. Reinício adiado pelo mantenedor para amanhã; nenhuma alteração de produção autorizada por esse adiamento. [Recibos e revisão de saída](../../reviews/phase-0.md), [continuação planejada](01-identity.md#primeira-fatia-após-o-gate-da-fase-zero).
 
 **Entrada:** arquitetura aprovada; inventário de 27 rotas e [achados UI-01–18](../../reviews/prototype-audit.md). **Saída:** aplicação executável em React Router Framework/Node/Caddy, testes e homologação operacionais, contratos sob autoridade independente e nenhum P0/P1 aberto no caminho que receberá dados reais.
 
@@ -83,7 +83,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 
 ## F0-T5 — Homologar e promover pelo GitHub
 
-**Bloqueios por issue:** isolamento da [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31), migrações da [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32) e destino/domínio da [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) satisfeitos para a primeira homologação. A #32 continua aberta para conferir negativas e promoção/rollback no SHA final; a #43 para reboot/login real.
+**Bloqueios por issue:** isolamento da [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31), migrações da [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32) e destino/domínio da [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) satisfeitos para a primeira homologação. A #32 foi concluída com homologação protegida, negativas e promoção/rollback no SHA `1f0eed7`; a #43 continua aberta somente para reboot/login real e seu registro.
 
 **Issues tratadas:** [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32), homologação e promoção de teste.
 
@@ -238,7 +238,7 @@ Por orientação do responsável em 22/09/2026, abrir PR ao final da fase ou em 
 |---|---|---|
 | Defeitos autônomos de Markdown, dinheiro, estado de rota e semântica (#11/#17/#22/#27) | Corrigir e encerrar com evidência de todos os critérios aplicáveis ao protótipo | Critério ainda não demonstrado, explicitamente atribuído a uma tarefa; não fechar só porque o exemplo deixou de falhar |
 | Dependências (#34–#37), decisões e pré-requisitos (#38–#43/#66) | Resolver antes de estabilizar a base e antes das tarefas dependentes | Incompatibilidade externa demonstrada ou decisão humana pendente, com responsável e impacto exato |
-| Infraestrutura (#29–#32) | Concluir caso Dependabot, isolamento e homologação | #29/#30/#31 encerradas; Codecov próprio, Dependabot, isolamento e homologação protegida comprovados. Conferir critérios remanescentes da #32 antes de encerrá-la |
+| Infraestrutura (#29–#32) | Concluir caso Dependabot, isolamento e homologação | #29/#30/#31/#32 encerradas; Codecov próprio, Dependabot, isolamento e homologação protegida comprovados |
 | Achados que incluem persistência/autorizações e funcionalidades ainda inexistentes | Antecipar schema, invariantes, RLS/RPCs, seeds e testes SQL completos na F0 | Interfaces e jornadas integradas continuam nas fases 1–5; manter suas issues abertas até aceite integral, sem backend provisório |
 | SEO e qualidade integrada (#26/#28 e validação final) | Corrigir metadados estáticos, SSR com fixtures, determinismo e estados já testáveis | Consultas/paginação/dados reais e validação do produto final permanecem nas tarefas de domínio e F6-T3 |
 

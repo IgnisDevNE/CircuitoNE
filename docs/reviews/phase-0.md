@@ -1,17 +1,28 @@
 # Fase zero — revisão de saída e checkpoint histórico
 
-## Revisão de saída — 30/09/2026
+## Revisão de saída — atualizada em 02/10/2026
 
-**Estado: condicional; a fase zero ainda não está encerrada.** Esta seção prevalece sobre o checkpoint histórico abaixo. SSR/Node 24/TypeScript 7, schema do MVP, suíte canônica isolada, Codecov próprio, pods dev/produção e restauração sintética estão integrados. Nenhum dado real foi admitido; produção mantém a página de espera, novos cadastros desativados e nenhuma migração ou backup legível.
+**Estado: condicional somente pelo reboot/login real da #43; a fase zero ainda não está encerrada.** Esta seção prevalece sobre o checkpoint histórico abaixo. SSR/Node 24/TypeScript 7, schema do MVP, suíte canônica isolada, Codecov próprio, pods dev/produção e restauração sintética estão integrados. Nenhum dado real foi admitido; produção mantém a página de espera, novos cadastros desativados e nenhuma migração ou backup legível.
 
 | Área revisada | Evidência e resultado | Limite do aceite |
 |---|---|---|
 | Rotas, SSR e componentes | React Router Framework/Node/Caddy compilaram e passaram no CI. Recarga direta de rota pública passou no QA canônico. | Telas ainda usam fixtures; jornadas reais permanecem nas [issues #12–#28](https://github.com/IgnisDevNE/CircuitoNE/issues/12) e fases de produto. |
-| Banco e políticas | Cinco migrações e quatro seeds sintéticos passaram na [homologação protegida 36659781488](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/36659781488), com SQL, RLS, REST, Auth e MFA. Produção não recebeu migração. | Repetir no SHA final de `main`, conferir manifesto/checksums e fechar [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32) somente após todos os critérios. |
+| Banco e políticas | Cinco migrações e quatro seeds sintéticos validados na [homologação final 37072463740](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/37072463740), com SQL, RLS, REST, Auth e MFA no SHA `1f0eed7`. Produção não recebeu migração. | [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32) concluída; próximas mudanças executáveis exigem nova homologação do seu SHA. |
 | Entrega e autoridade | [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) encerrada após negativas de autoridade. CI, CodeQL, Codecov e QA canônico passaram nos SHAs integrados. [Negativas, concorrência e rollback](phase-zero-operation-proofs-20260927.md) estão registrados. | Toda mudança exige PR, revisão independente, aceite do SHA exato e promoção QA. |
 | Ambientes e recuperação | [Backup dev 36660527063](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/36660527063) e [restauração isolada 36666380554](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/36666380554) recuperaram banco e dois objetos privados, com hashes, grants/RLS e conteúdo sintético; RPO 4.714 s e RTO 52 s no ensaio. Inspeção sem reiniciar confirmou pods, tarefa de retomada, serviço cloudflared, DNS e HTTPS. | Falta **reboot/login real** e verificação dos serviços existentes para fechar [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43). |
 
 Subagentes Sol/low, somente leitura, revisaram rotas/SSR, SQL/RLS, QA/CI, homologação, backup e coerência documental em 30/09. Nenhum novo P0/P1 foi confirmado na fundação implementada. A divergência documental de RPO/RTO foi corrigida. Isso não aprova Auth e fluxos de produto ainda simulados nem substitui uma avaliação do produto antes do lançamento.
+
+### Recibo final de homologação — 02/10/2026
+
+- Origem `main`: `1f0eed78017becf03126a742b3351e9a1462ac74`, PR #146. [CI 36671371086](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/36671371086) e CodeQL passaram; QA `accepted=3018e86c578d9efe0f447e30af22ecdc56c0d734` registra o mesmo `source_main_sha`.
+- [Execução protegida 37072463740](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/37072463740), aprovação `magalz` no environment Homologação, terminou em sucesso às 22:38:33 UTC. Destino único `odphoxozclrshqjgwbqk` (`CircuitoNE-dev`); nenhum reset, deploy ou mudança de produção.
+- [Manifesto 11255620919](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/37072463740/artifacts/11255620919), SHA-256 `b0776bec82e35b3b5f4af543f9b3c63e897c722522dc492a8485087aed532088`. O job conferiu origem/destino/bytes, CA e pooler; migrações, quatro seeds idempotentes e SQL/REST/Auth/MFA passaram sob trava de sessão.
+- [Prova de imagem 11077993018](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/36671371086/artifacts/11077993018): candidata `1f0eed7` promovida em destino descartável e rollback para `cf9e2df`; `failedHealthDetected=true`. Artefato registra os IDs imutáveis, sem dados ou credenciais.
+- [Negativas e concorrência](phase-zero-operation-proofs-20260927.md): CI `36666082735` e cancelamento sem aprovação `36666182023` preservados; não repetir provas satisfeitas apenas para produzir outro recibo. Revisão Sol/low da homologação confirmou os critérios, sem novo bloqueio de banco/esteira.
+- O host está sincronizado com esse SHA e o QA. Preflight em 02/10: pods/HTTPS saudáveis, serviço cloudflared ativo, tarefa de retomada instalada; último boot continua em 25/09. **Não é prova de reboot.** O mantenedor adiou a janela para o dia seguinte; a #43 permanece aberta.
+
+Esta atualização é somente documental: referencia o SHA executável homologado acima e não altera migrations, seeds, testes, runtime ou esteira. Sua PR exige CI/QA e revisão; não exige reaplicar o mesmo banco para registrar um recibo. Qualquer mudança executável posterior segue o gate normal de homologação.
 
 ### Segurança — OWASP Top 10:2025
 
@@ -23,16 +34,16 @@ Categorias conforme a [lista oficial](https://top10.owasp.org/2025/). A revisão
 | A02 Security Misconfiguration | Guard de ambiente, produção sem cadastro/callbacks, dev por Cloudflare Access. Recuperação após reboot sem prova. | [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43). |
 | A03 Software Supply Chain Failures | Lockfile, Actions fixadas, CodeQL, auditoria, revisão e Dependabot genuíno; PRs #139–#141 passaram CI. Advertência obsoleta do publicador QA não bloqueia hoje. | [#145](https://github.com/IgnisDevNE/CircuitoNE/issues/145). |
 | A04 Cryptographic Failures | HTTPS e segredos fora dos commits; backup dev contém somente dados sintéticos. Cifra de banco **e Storage** com restauração cifrada é o último gate técnico pré-release. | [#104](https://github.com/IgnisDevNE/CircuitoNE/issues/104); nenhum dado real até fechá-la. |
-| A05 Injection | Markdown sanitizado e funções SQL com `search_path` controlado; testes associados. Jornadas com entradas reais ainda serão entregues. | Fases 1–5. |
+| A05 Injection | Markdown sanitizado e funções SQL com `search_path` controlado. O [alerta CodeQL #1](https://github.com/IgnisDevNE/CircuitoNE/security/code-scanning/1), High, em `ImageField` permanece aberto: a revisão Sol/low não demonstrou execução JS no contexto `img`, mas isso não prova falso positivo. A exposição atual é sintética, sem persistência compartilhada. | [Triagem #21](https://github.com/IgnisDevNE/CircuitoNE/issues/21#issuecomment-5962502981): validar URL/MIME/tamanho e cenários maliciosos antes de arquivos reais/F2-T3; não dispensar o alerta por CI verde. |
 | A06 Insecure Design | Regras, invariantes e quatro fatias do schema revisadas; concorrência e negativas exercitadas. Auth/moderação de produto pendentes. | [#15](https://github.com/IgnisDevNE/CircuitoNE/issues/15), [#23](https://github.com/IgnisDevNE/CircuitoNE/issues/23). |
 | A07 Authentication Failures | SMTP dev sandbox e MFA sintético; produção sem novos usuários/callbacks. Não há login nominal que autorize acesso real. | Fase 1 antes de contas reais. |
-| A08 Software or Data Integrity Failures | Checksums, SHA, suíte QA canônica, aprovação do último push, imagem imutável e rollback negativo. | [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32) até a homologação final. |
+| A08 Software or Data Integrity Failures | Checksums, SHA, suíte QA canônica, aprovação do último push, imagem imutável e rollback negativo. | [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32) concluída com recibo acima. |
 | A09 Security Logging and Alerting Failures | Auditoria e recibos de execução existem; alerta de disponibilidade de produção não foi provado. | [#144](https://github.com/IgnisDevNE/CircuitoNE/issues/144) antes do lançamento. |
 | A10 Mishandling of Exceptional Conditions | Destino/SHA errados, falhas de migração/smoke, concorrência, corrupção, cópia incompleta e rollback foram ensaiados com falha fechada. Falta retomada após reboot. | [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43). |
 
 ### Pendências para decisão de saída
 
-- **Bloqueiam a fase zero:** [#32](https://github.com/IgnisDevNE/CircuitoNE/issues/32) requer homologação protegida no SHA final de `main`, manifesto e promoção; [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43) requer reboot/login real, pods, DNS, HTTPS e demais serviços retomados. Mantenedor aprova operações protegidas; implementação registra as provas. Este documento não fecha nenhuma das duas.
+- **Bloqueia a fase zero:** somente [#43](https://github.com/IgnisDevNE/CircuitoNE/issues/43), reboot/login real, pods, DNS, HTTPS e demais serviços retomados. Mantenedor combina a janela e entra no Windows; implementação confere e registra as provas. A #32 foi concluída após a homologação final; esta atualização não dispensa o reboot.
 - **Produto:** as issues abaixo permanecem abertas porque exigem UI, Auth, persistência ou jornada integrada ainda simuladas. As P1 impedem dados reais até correção, mas não a fase seguinte com fixtures. Responsáveis: implementação e revisão de produto.
 - **Pré-release/manutenção:** [#104](https://github.com/IgnisDevNE/CircuitoNE/issues/104) é o último gate técnico antes de dados reais; [#144](https://github.com/IgnisDevNE/CircuitoNE/issues/144) decide disponibilidade do Supabase Free; [#145](https://github.com/IgnisDevNE/CircuitoNE/issues/145) elimina entrada obsoleta do publicador QA. Responsável, impacto e aceite estão em cada issue.
 
@@ -46,7 +57,7 @@ Categorias conforme a [lista oficial](https://top10.owasp.org/2025/). A revisão
 | [#24](https://github.com/IgnisDevNE/CircuitoNE/issues/24), [#25](https://github.com/IgnisDevNE/CircuitoNE/issues/25) | Agenda e conversas integradas; fases 4/5. |
 | [#26](https://github.com/IgnisDevNE/CircuitoNE/issues/26), [#27](https://github.com/IgnisDevNE/CircuitoNE/issues/27), [#28](https://github.com/IgnisDevNE/CircuitoNE/issues/28) | SEO, acessibilidade e estados de consulta do produto; fases 1–6. |
 
-Após integrar este registro, confirmar CI/QA e homologação protegida no **SHA final**. Somente após a prova real de reboot/login, as evidências nas issues e a revisão de qualquer falha nova a fase zero poderá ser declarada encerrada. [#104](https://github.com/IgnisDevNE/CircuitoNE/issues/104) permanece fora da fase zero.
+Após integrar esta atualização documental, confirmar CI/QA e promoção. Somente após a prova real de reboot/login da #43, seu recibo e a revisão de qualquer falha nova a fase zero poderá ser declarada encerrada. A próxima fatia é sessão SSR com contas sintéticas; [#147](https://github.com/IgnisDevNE/CircuitoNE/issues/147) trata o provedor de confirmação de celular antes de F1-T2, sem impedir essa fatia. [#104](https://github.com/IgnisDevNE/CircuitoNE/issues/104) permanece fora da fase zero.
 
 ---
 

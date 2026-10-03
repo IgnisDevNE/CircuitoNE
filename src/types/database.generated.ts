@@ -221,6 +221,9 @@ isOneToOne: false
 "get_account_deletion_status":
 { Args: Record<PropertyKey, never>; Returns: Json
                            },
+"get_account_session":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
 "get_collective_access":
 { Args: { "target": string }; Returns: Json
                            },

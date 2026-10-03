@@ -1,6 +1,6 @@
 # Fase 1 — Identidade, conta e autenticação
 
-**Estado em 02/10/2026:** planejada; o schema de identidade já foi entregue/homologado na fase zero. **Entrada:** aceite final da F0 após reboot/login da #43; decisões de identidade #38/#40 aprovadas. **Risco principal:** exposição de identidade e sessões. [Índice e gates comuns](../implementation-plan.md).
+**Estado em 02/10/2026:** em execução pela [PR #150](https://github.com/IgnisDevNE/CircuitoNE/pull/150); o schema de identidade já foi entregue/homologado na fase zero. **Entrada:** F0 aceita após reboot e retomada manual da #43; decisões de identidade #38/#40 aprovadas. **Risco principal:** exposição de identidade e sessões. [Índice e gates comuns](../implementation-plan.md).
 
 ## Primeira fatia após o gate da fase zero
 
@@ -12,9 +12,18 @@
 
 Essa fatia antecipa somente a base de sessão/login/logout de F1-T3; o restante de F1-T3 continua após onboarding. Não depende de envio de código: o estado confirmado das contas sintéticas é preparado no ensaio protegido, nunca por um endpoint público de bypass ou exceção de autorização da aplicação. **F1-T2 depende da [#147](https://github.com/IgnisDevNE/CircuitoNE/issues/147)** para canal/provedor de confirmação do celular, limites/custo e prova de entrega restrita. SMTP2GO é e-mail. Configurar callbacks exatos somente quando houver handler revisado; allowlist permanece vazia até lá. Não liberar cadastro incompleto para contornar essa dependência.
 
+## Contrato da primeira sessão real
+
+- Dev usa Supabase Auth por requisição no servidor, com chave publicável e cookies HttpOnly/Secure/SameSite=Lax. O servidor valida o usuário com getUser e consulta get_account_session pela identidade autenticada; não confia em user_metadata.
+- A nova RPC projeta somente id, nome, estado e motivo do próprio titular. Identidade excluída ou ban Auth vigente retorna null; confirmação de e-mail/celular ausente não concede estado ativo. Suspensão da aplicação e exclusão pendente preservam a projeção restrita.
+- POST /entrar e /sair exigem a origem exata https://circuitone-dev.magalz.space; GET não encerra sessão. Formulário limitado a 4 KB, e-mail a 254 e senha a 256 caracteres. Respostas de identidade são privadas e sem cache, inclusive cookies de renovação. Senha não retorna na resposta.
+- Preview conserva o protótipo sintético. Em dev, /entrar, /cadastro, /painel e /coletivo usam o guard real. A conta própria tem login/logout; funcionalidades ainda não integradas exibem indisponibilidade. Cadastro/recuperação/MFA continuam nas tarefas seguintes. Produção permanece em espera.
+- Teste SQL vermelho comprovado no [CI 37081198074](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/37081198074): função ausente antes da migração. Testes unitários exercitam o SDK real com transporte sintético; testes do build verificam documentos SSR e respostas de dados. Não equivalem à homologação protegida real, ainda obrigatória no SHA integrado antes de publicar a imagem dev.
+- AWS em sa-east-1: sandbox, um destinatário verificado, teto imposto de US$ 1/mês. Nenhum SMS enviado. A credencial root auditada é somente manutenção; a [#147](https://github.com/IgnisDevNE/CircuitoNE/issues/147#issuecomment-5963423552) exige identidade mínima própria e ensaio restrito antes de onboarding.
+
 ## F1-T1 — Integrar o contrato de identidade existente
 
-**Bloqueios por issue:** #31/#32 e decisões #38/#40 concluídas; região/destino/SMTP dev da #43 satisfeitos. Falta apenas reboot/login da #43 para o gate geral F0. A #147 bloqueia confirmação de celular/cadastro, não a fatia F1-T1a.
+**Bloqueios por issue:** #31/#32 e decisões #38/#40 concluídas; região/destino/SMTP dev da #43 satisfeitos. Reboot e retomada manual da #43 concluídos; falha da tarefa automática acompanha [#149](https://github.com/IgnisDevNE/CircuitoNE/issues/149). A #147 bloqueia confirmação de celular/cadastro, não a fatia F1-T1a.
 
 **Issues tratadas:** #14/#23 na sessão inicial e #19 nas fronteiras de entrada; demais critérios permanecem abertos.
 

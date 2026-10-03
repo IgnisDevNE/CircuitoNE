@@ -116,6 +116,7 @@ test(
       check()
       checkDefaults()
       queryFile("tests/database/identity-profiles.sql")
+      queryFile("tests/database/account-session.sql")
       queryFile("tests/database/collectives.sql")
       queryFile("tests/database/events.sql")
       queryFile("tests/database/messages.sql")

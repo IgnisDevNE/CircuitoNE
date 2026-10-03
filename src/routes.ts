@@ -31,6 +31,7 @@ const paths = [
 ]
 
 export default [
-  ...paths.map((path, index) => route(path === '/' ? '' : path.slice(1), './routes/legacy.tsx', { id: `page-${index}` })),
+  ...paths.map((path, index) => route(path === '/' ? '' : path.slice(1), './routes/identity.tsx', { id: `page-${index}` })),
+  route('sair', './routes/identity.tsx', { id: 'logout' }),
   route('*', './routes/not-found.tsx'),
 ] satisfies RouteConfig

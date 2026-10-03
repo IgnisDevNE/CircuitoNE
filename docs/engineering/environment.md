@@ -4,7 +4,7 @@ O ambiente do **implementador** e a sincronização pós-PR do Windows estão no
 
 ## Hospedagem local SSR
 
-O responsável escolheu Podman neste Windows, com migração futura para Debian. A aplicação já usa React Router Framework com SSR, Node 24 e Caddy; ainda usa fixtures, sem integração de Auth ou banco. Supabase gerenciado continua sendo o destino aprovado para banco, Auth e Storage.
+O responsável escolheu Podman neste Windows, com migração futura para Debian. A aplicação já usa React Router Framework com SSR, Node 24 e Caddy; a versão publicada ainda usa fixtures. A sessão SSR está implementada no código; sua integração completa em navegador continua na #23 antes da publicação do login. Supabase gerenciado continua sendo o destino aprovado para banco, Auth e Storage.
 
 Um pod por ambiente compartilha somente o namespace de rede. Node fica em `127.0.0.1:3000`, acessível apenas dentro do pod; Caddy publica 8080. A [ADR 0011](../decisions/0011-container-loopback-proxy.md) registra o motivo e os limites. A rede padrão `podman` funciona pelo Windows; a rede customizada falhou no encaminhamento WSL deste host.
 
@@ -116,6 +116,8 @@ O caminho alternativo foi validado executando a CLI em um container Linux tempor
 Testes destrutivos e `reset` usam banco descartável local/CI. Homologação compartilhada recebe migrações revisadas, em sequência, com bloqueio de concorrência e registro de SHA/checksum. Preview usa somente dados fictícios. Produção nunca é destino de teste de schema.
 
 Os dois projetos ficam em São Paulo; destinos e referências devem ser validados antes de dados reais. Banco e arquivos têm estratégias próprias de backup; registrar retenção, responsáveis, perda aceitável e tempo de recuperação. Testar restauração de ambos antes do beta; não presumir que backup de Postgres recupera objetos de Storage.
+
+A sessão própria da PR #150 foi homologada no backend pelo [workflow 37084567978](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/37084567978), integrado ea76c8a3bb1cd7cb5748a84d07cd4bea8f005c0f, manifesto SHA-256 f17781bdcb91e675fe61ae9e8ef7e171b03470b9e3020ee16a7eb7a56cad499f, artefato 11259687568. RPC, seeds e SQL/REST/Auth/MFA passaram; a imagem publicada não foi substituída. O próximo checkpoint de SSR compilado usa processos com ambiente filtrado e sessões sintéticas em stdin; o worker nunca recebe PG/management/service role. Não guardar cookies, tokens, HTML ou dumps como evidência. Navegador/senha e aceite QA completo continuam #23.
 
 ## Backup
 

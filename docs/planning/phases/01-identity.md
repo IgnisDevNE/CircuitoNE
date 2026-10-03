@@ -21,6 +21,14 @@ Essa fatia antecipa somente a base de sessão/login/logout de F1-T3; o restante 
 - Teste SQL vermelho comprovado no [CI 37081198074](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/37081198074): função ausente antes da migração. Testes unitários exercitam o SDK real com transporte sintético; testes do build verificam documentos SSR e respostas de dados. Não equivalem à homologação protegida real, ainda obrigatória no SHA integrado antes de publicar a imagem dev.
 - AWS em sa-east-1: sandbox, um destinatário verificado, teto imposto de US$ 1/mês. Nenhum SMS enviado. A credencial root auditada é somente manutenção; a [#147](https://github.com/IgnisDevNE/CircuitoNE/issues/147#issuecomment-5963423552) exige identidade mínima própria e ensaio restrito antes de onboarding.
 
+## Checkpoint protegido de SSR compilado
+
+A [homologação 37084567978](https://github.com/IgnisDevNE/CircuitoNE/actions/runs/37084567978) passou no integrado ea76c8a3bb1cd7cb5748a84d07cd4bea8f005c0f, manifesto SHA-256 f17781bdcb91e675fe61ae9e8ef7e171b03470b9e3020ee16a7eb7a56cad499f e artefato 11259687568. Nova RPC, seeds e SQL/REST/Auth/MFA validados somente no CircuitoNE-dev; nenhum deploy.
+
+A próxima fatia acrescenta ao mesmo smoke uma aplicação SSR compilada com Auth/RPC reais, usando as sessões temporárias já criadas para as duas fixtures reservadas. Build e worker recebem ambiente público filtrado; tokens entram somente por stdin, sem chaves administrativas, arquivos ou logs. Falha ainda exige revogação/inventário zero no finally. O teste verifica visitante, identidade A/B em documento/data e novas Requests, privacidade, ausência de tokens no conteúdo e logout de A sem afetar B.
+
+Esse checkpoint não equivale ao aceite canônico de navegador: não testa senha, formulário/hidratação, transporte HTTP/TLS, aceitação de Secure pelo browser ou renovação com cookies atualizados. Limpeza de cookies no logout não prova rejeição imediata do cookie/JWT antigo. Não criar senha nominal nem promover o login publicado a homologado por essa prova parcial. A [#23](https://github.com/IgnisDevNE/CircuitoNE/issues/23#issuecomment-5963927325) mantém responsável QA/mantenedor, bloqueios e aceite de navegador/senha; a [#151](https://github.com/IgnisDevNE/CircuitoNE/issues/151) registra a discrepância do inventário Codecov. Após revisão e merge desta fatia, executar novamente o workflow protegido no SHA integrado antes de registrar resultado real.
+
 ## F1-T1 — Integrar o contrato de identidade existente
 
 **Bloqueios por issue:** #31/#32 e decisões #38/#40 concluídas; região/destino/SMTP dev da #43 satisfeitos. Reboot e retomada manual da #43 concluídos; falha da tarefa automática acompanha [#149](https://github.com/IgnisDevNE/CircuitoNE/issues/149). A #147 bloqueia confirmação de celular/cadastro, não a fatia F1-T1a.

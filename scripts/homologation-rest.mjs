@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { createHmac } from "node:crypto"
 import { execFileSync } from "node:child_process"
 import { prepareHomologationStorage } from "./homologation-storage.mjs"
+import { checkHomologationSsr } from "./homologation-ssr.mjs"
 
 // RFC 6238, somente para o fator temporário da fixture. Nunca grava o segredo.
 export function totp(secret, milliseconds = Date.now()) {
@@ -98,6 +99,7 @@ export async function checkHomologationRest(
         ),
       },
     ),
+  ssrCheck = checkHomologationSsr,
 ) {
   const admin = await checkHomologationAuthority(env)
   const userHeaders = (jwt) => ({
@@ -175,7 +177,8 @@ export async function checkHomologationRest(
       assert.equal(session.status, 200)
       assert.equal(session.data.user.id, uid(n))
       assert.ok(session.data.access_token)
-      sessions.push({ n, jwt: session.data.access_token })
+      assert.ok(session.data.refresh_token, "Synthetic refresh token required");
+      sessions.push({ n, jwt: session.data.access_token, refresh_token: session.data.refresh_token })
       trackSession(session.data.access_token)
     }
     const jwt = (n) => sessions.find((session) => session.n === n).jwt
@@ -187,6 +190,7 @@ export async function checkHomologationRest(
       assert.deepEqual(Object.keys(own.data).sort(), ["id", "name", "reason", "state"]);
       assert.equal(own.data.id, uid(n));
       assert.equal(own.data.state, n === 2 ? "suspended" : n === 3 ? "deletion_pending" : "active");
+      sessions.find(session => session.n === n).name = own.data.name;
     }
     const object = await prepareHomologationStorage(
       env,
@@ -289,6 +293,7 @@ export async function checkHomologationRest(
     assert.equal(verified.status, 200)
     assert.ok(verified.data.access_token)
     sessions.find((session) => session.n === 1).jwt = verified.data.access_token
+    if (verified.data.refresh_token) sessions.find(session => session.n === 1).refresh_token = verified.data.refresh_token;
     trackSession(verified.data.access_token)
     const sensitive = await professionals(jwt(1))
     assert.equal(sensitive.status, 200)
@@ -307,6 +312,7 @@ export async function checkHomologationRest(
     const revoked = await professionals(jwt(1))
     assert.equal(revoked.status, 200)
     assert.deepEqual(revoked.data, [])
+    await ssrCheck(env, [1,5].map(n => {const session=sessions.find(item=>item.n===n);return {id:uid(n),name:session.name,access_token:session.jwt,refresh_token:session.refresh_token};}));
   } finally {
     // A lost enrollment response can leave a factor whose ID was never received.
     const cleanups = await Promise.allSettled([

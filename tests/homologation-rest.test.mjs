@@ -61,6 +61,7 @@ test("sessions use public credentials, MFA is real, and failure still revokes sy
     "residue",
     "storage-exposed",
     "account-crossed",
+    "ssr-worker",
   ]) {
     const calls = []
     let mfa = false
@@ -144,7 +145,7 @@ test("sessions use public credentials, MFA is real, and failure still revokes sy
           unknownSession = true
           throw new Error("response lost after session creation")
         }
-        return Response.json({ user: { id: uid(n) }, access_token: token(n) })
+        return Response.json({ user: { id: uid(n) }, access_token: token(n), refresh_token: `synthetic-refresh-${n}` })
       }
       if (path.endsWith("/factors")) {
         enrolledFactor = true
@@ -214,9 +215,26 @@ test("sessions use public credentials, MFA is real, and failure still revokes sy
         )
         return unknownSession || failure === "residue" ? "1" : "0"
       }
+      let ssrCalls = 0;
+      const ssr = async (config, identities) => {
+        ssrCalls++;
+        assert.equal(config, env);
+        assert.deepEqual(identities.map(identity => identity.id), [uid(1), uid(5)]);
+        for (const [index, identity] of identities.entries()) {
+          const n = index === 0 ? 1 : 5;
+          assert.equal(identity.access_token, token(n));
+          assert.equal(identity.refresh_token, 'synthetic-refresh-' + n);
+          assert.equal(identity.name, 'Sintética');
+        }
+        if (failure === 'ssr-worker') throw Error('worker failed');
+      };
       if (failure !== "none")
-        await assert.rejects(checkHomologationRest(env, query))
-      else await checkHomologationRest(env, query)
+        await assert.rejects(checkHomologationRest(env, query, ssr))
+      else await checkHomologationRest(env, query, ssr);
+      if (['none','ssr-worker'].includes(failure)) {
+        assert.equal(ssrCalls, 1, 'Protected smoke must execute compiled SSR with real sessions');
+        for (const n of [1,5]) assert.ok(calls.some(call => new URL(call.url).pathname.endsWith('/logout') && call.headers.Authorization === 'Bearer ' + token(n)), 'SSR failure must revoke both synthetic sessions');
+      }
       if (failure === 'none') assert.ok(calls.some(call => call.url.endsWith('rpc/get_account_session')), 'Homologation must validate the minimal own-account projection')
       if (failure === "none")
         assert.ok(

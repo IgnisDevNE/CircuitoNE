@@ -98,3 +98,40 @@ test("real SSR document and data routes preserve session cookies, privacy and ac
     Object.assign(process.env, saved);
   }
 });
+
+
+test('protected SSR checker exercises two compiled accounts and rejects crossed identity', async () => {
+  const {verifySsrSessions}=await import('../../scripts/homologation-ssr.mjs');
+  const {createRequestHandler}=await import('react-router');
+  const build=await import('../../build/server/index.js');
+  const handler=createRequestHandler(build,'production');
+  const saved={...process.env};const originalFetch=globalThis.fetch;
+  Object.assign(process.env,{CIRCUITONE_RUNTIME:'development',SUPABASE_PROJECT_REF:'odphoxozclrshqjgwbqk',SUPABASE_URL:'https://odphoxozclrshqjgwbqk.supabase.co',SUPABASE_PUBLISHABLE_KEY:'sb_publishable_synthetic'});
+  const identities=[1,5].map(n=> {
+    const id='01000000-0000-4000-8000-'+String(n).padStart(12,'0');
+    const access_token=['eyJhbGciOiJIUzI1NiJ9',Buffer.from(JSON.stringify({sub:id,exp:Math.floor(Date.now()/1000)+3600})).toString('base64url'),Buffer.from('synthetic-signature').toString('base64url')].join('.');
+    return {id,name:'Identidade sintética '+n,access_token,refresh_token:'synthetic-refresh-'+n};
+  });
+  let crossed=false; const logouts=[];
+  globalThis.fetch=async (url,init) => {
+    assert.equal(new URL(url).origin,process.env.SUPABASE_URL);
+    const header=new Headers(init.headers).get('Authorization');
+    const index=identities.findIndex(identity=>header==='Bearer '+identity.access_token);
+    assert.ok(index>=0);
+    const identity=identities[index];const path=new URL(url).pathname;
+    if(path==='/auth/v1/user')return Response.json({id:identity.id,email:'fixture-'+index+'@example.invalid'});
+    if(path==='/rest/v1/rpc/get_account_session')return Response.json({id:identity.id,name:crossed?identities[1-index].name:identity.name,state:'active',reason:null});
+    if(path==='/auth/v1/logout'){logouts.push(identity.id);return new Response(null,{status:204});}
+    throw Error('Unexpected synthetic provider request');
+  };
+  try {
+    await verifySsrSessions(handler,identities);
+    assert.deepEqual(logouts,[identities[0].id]);
+    crossed=true;
+    await assert.rejects(verifySsrSessions(handler,identities));
+  } finally {
+    globalThis.fetch=originalFetch;
+    for(const key of Object.keys(process.env))if(!(key in saved))delete process.env[key];
+    Object.assign(process.env,saved);
+  }
+});

@@ -1,0 +1,34 @@
+{
+  "capturedAt": "2026-10-03T00:05:19Z",
+  "bootUtc": "2026-10-02T23:58:54.500Z",
+  "mainSha": "f344477178beeae04ad47e11c437bbf880997e46",
+  "qaAcceptedSha": "f322d423442f40e864ff982e476974e2ecabfb98",
+  "resumeMode": "manual",
+  "automaticTaskResult": 1,
+  "automaticTaskRunUtc": "2026-10-02T23:59:12Z",
+  "installedAndReviewedScriptSHA256": "32a53edd43344a6d3e46b4bb42ac445b1fa6bf421700e7203eb6c1ef99f95af3",
+  "projectContainers": [
+    {
+      "name": "circuitone-pod-app",
+      "healthy": true
+    },
+    {
+      "name": "circuitone-pod-proxy",
+      "healthy": true
+    },
+    {
+      "name": "circuitone-production-app",
+      "healthy": true
+    },
+    {
+      "name": "circuitone-production-proxy",
+      "healthy": true
+    }
+  ],
+  "cloudflaredStatus": "Running",
+  "productionHTTPStatus": 200,
+  "devVisitorHTTPStatus": 302,
+  "tlsVerification": true,
+  "otherProjectsRestarted": false,
+  "automaticRecoveryIssue": 149
+}

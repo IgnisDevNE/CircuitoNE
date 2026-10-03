@@ -60,6 +60,7 @@ test("sessions use public credentials, MFA is real, and failure still revokes sy
     "verify-response",
     "residue",
     "storage-exposed",
+    "account-crossed",
   ]) {
     const calls = []
     let mfa = false
@@ -171,6 +172,20 @@ test("sessions use public credentials, MFA is real, and failure still revokes sy
       }
       if (path.endsWith("/professional_details"))
         return Response.json(mfa ? [{ profile_id: profile(8) }] : [])
+      if (path.endsWith("get_account_session")) {
+        if (!init.headers.Authorization) return Response.json({}, { status: 401 });
+        const n = Number(
+          JSON.parse(
+            Buffer.from(init.headers.Authorization.split(".")[1], "base64url").toString(),
+          ).session_id.slice(-12),
+        );
+        return Response.json({
+          id: uid(failure === "account-crossed" ? 99 : n),
+          name: "Sintética",
+          state: n === 2 ? "suspended" : n === 3 ? "deletion_pending" : "active",
+          reason: null,
+        });
+      }
       if (path.endsWith("get_collective_member_activity"))
         return Response.json({}, { status: 403 })
       if (path.endsWith("get_messages"))
@@ -202,6 +217,7 @@ test("sessions use public credentials, MFA is real, and failure still revokes sy
       if (failure !== "none")
         await assert.rejects(checkHomologationRest(env, query))
       else await checkHomologationRest(env, query)
+      if (failure === 'none') assert.ok(calls.some(call => call.url.endsWith('rpc/get_account_session')), 'Homologation must validate the minimal own-account projection')
       if (failure === "none")
         assert.ok(
           calls.some((call) => call.url.includes("/storage/v1/")),

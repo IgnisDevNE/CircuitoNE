@@ -179,6 +179,15 @@ export async function checkHomologationRest(
       trackSession(session.data.access_token)
     }
     const jwt = (n) => sessions.find((session) => session.n === n).jwt
+    const anonymousAccount = await rest("rpc/get_account_session", undefined, {});
+    assert.ok([401, 403].includes(anonymousAccount.status));
+    for (const [n] of fixtures) {
+      const own = await rest("rpc/get_account_session", jwt(n), {});
+      assert.equal(own.status, 200);
+      assert.deepEqual(Object.keys(own.data).sort(), ["id", "name", "reason", "state"]);
+      assert.equal(own.data.id, uid(n));
+      assert.equal(own.data.state, n === 2 ? "suspended" : n === 3 ? "deletion_pending" : "active");
+    }
     const object = await prepareHomologationStorage(
       env,
       jwt(1),

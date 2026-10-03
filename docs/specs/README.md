@@ -5,7 +5,7 @@ Esta pasta reúne especificações de arquitetura, requisitos técnicos e infrae
 | Documento | Estado | Escopo |
 |---|---|---|
 | [Arquitetura do MVP](architecture-mvp.md) | Stack SSR/Node/Caddy implantada; integrações de produto pendentes | Stack, responsabilidades, segurança, hospedagem e critérios de implementação |
-| [Ambientes e dados de teste](environments-and-test-data.md) | Homologação de migrações/seeds e restauração isolada de banco/Storage sintéticos passaram; reboot real segue na #43 | Domínios prod/dev, separação de banco, Auth, seeds e testes após migrações |
+| [Ambientes e dados de teste](environments-and-test-data.md) | Homologação de migrações/seeds e restauração isolada de banco/Storage sintéticos passaram; reboot e retomada manual aceitos; diagnóstico automático na #149 | Domínios prod/dev, separação de banco, Auth, seeds e testes após migrações |
 | [Estilos musicais](music-styles.md) e [catálogo JSON](estilos-musicais.json) | Taxonomia aprovada em 23/09/2026; implementação pendente | Dois seletores por estilo, subestilo opcional, múltiplas escolhas e filtro |
 | [Markdown da descrição de eventos](event-description-markdown.md) | Implementado e validado em F0-T7; conteúdo real depende dos gates de produto | Formatos, URLs, renderização segura e regressões |
 | [Aceite canônico e promoção da suíte](canonical-ci-suite.md) | Gate obrigatório, promoção pós-merge, isolamento e ensaios finais concluídos na [#31](https://github.com/IgnisDevNE/CircuitoNE/issues/31) | Integridade, execução confiável no CI e atualização da referência após revisão, merge e validação |

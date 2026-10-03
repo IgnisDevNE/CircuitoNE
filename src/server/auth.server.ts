@@ -103,6 +103,8 @@ export async function identityLoader(request: Request): Promise<Response> {
   if (path === "/sair") return reply({ error: "Use o botão Sair." }, 405, headers);
   if (process.env.CIRCUITONE_RUNTIME === "preview" || !process.env.CIRCUITONE_RUNTIME)
     return reply({ preview: true }, 200, headers);
+  if (process.env.CIRCUITONE_RUNTIME !== 'development') return reply({error:'Serviço indisponível.'},503,headers)
+  if (path !== '/entrar' && path !== '/cadastro' && !path.startsWith('/painel') && !path.startsWith('/coletivo/')) return reply({preview:true},200,headers)
   if (path === "/cadastro") return reply({ unavailable: true }, 200, headers);
   try {
     const client = session(request, headers);

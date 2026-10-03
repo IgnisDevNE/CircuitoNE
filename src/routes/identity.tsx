@@ -7,8 +7,9 @@ import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
   type HeadersFunction,
+  type MetaFunction,
 } from "react-router";
-import LegacyRoute from "./legacy";
+import LegacyRoute, {meta as fixtureMeta} from "./legacy";
 import { Input } from "../components/ui/form";
 import { Button, Panel } from "../components/ui/primitives";
 import { identityAction, identityLoader, type IdentityData } from "../server/auth.server";
@@ -22,7 +23,7 @@ export const headers: HeadersFunction = ({ loaderHeaders, actionHeaders }) => {
   for (const value of actionHeaders.getSetCookie()) result.append("Set-Cookie", value);
   return result;
 };
-export const meta = () => [{ title: "Minha conta · CIRCUITO NE" }];
+export const meta: MetaFunction = args => (args.loaderData as IdentityData | undefined)?.preview ? fixtureMeta(args) : [{title:"Minha conta · CIRCUITO NE"}];
 
 export default function IdentityPage() {
   const data = useLoaderData<IdentityData>();

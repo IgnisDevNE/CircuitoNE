@@ -214,3 +214,7 @@ test("restricted identity sees reason at login and deleted identity clears its s
   expect(deleted.headers.get("set-cookie")).toContain("Max-Age=0");
   expect((await deleted.json()).account).toBeUndefined();
 });
+
+test('public fixture routes remain available without an Auth session in development',async()=>{
+ const response=await load('','/eventos/ev-porto');expect(response.status).toBe(200);expect((await response.json()).preview).toBe(true);expect(calls).toEqual([])
+})

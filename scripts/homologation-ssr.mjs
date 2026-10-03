@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createServerClient, serializeCookieHeader } from "@supabase/ssr";
 import { validateRuntimeEnv } from "./start-runtime.mjs";
 
 const ref = "odphoxozclrshqjgwbqk";
@@ -66,6 +65,7 @@ export async function checkHomologationSsr(env, identities, run = spawnSync) {
 }
 
 export async function verifySsrSessions(handler, identities) {
+  const { createServerClient, serializeCookieHeader } = await import("@supabase/ssr");
   verifyIdentities(identities);
   assert.notEqual(
     identities[0].name,

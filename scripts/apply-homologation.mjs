@@ -201,7 +201,8 @@ if (
       ])
     } else if (mode === "rest") {
       const { checkHomologationRest } = await import("./homologation-rest.mjs")
-      await checkHomologationRest()
+      const { checkHomologationSsr } = await import("./homologation-ssr.mjs")
+      await checkHomologationRest(env, undefined, checkHomologationSsr)
     } else throw new Error("Unknown homologation operation")
     console.log(
       "Protected homologation operation succeeded; no production changed.",

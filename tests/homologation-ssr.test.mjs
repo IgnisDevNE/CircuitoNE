@@ -87,3 +87,33 @@ test("worker failure or forged receipt blocks homologation without exposing sess
     );
   }
 });
+
+test("recovery can import maintenance helpers without frontend dependencies", async () => {
+  const { mkdtempSync, mkdirSync, copyFileSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const { spawnSync } = await import("node:child_process");
+  const root = mkdtempSync(join(tmpdir(), "circuitone-ssr-import-"));
+  try {
+    mkdirSync(join(root, "scripts"));
+    for (const file of [
+      "homologation-rest.mjs",
+      "homologation-storage.mjs",
+      "homologation-ssr.mjs",
+      "start-runtime.mjs",
+    ])
+      copyFileSync(join("scripts", file), join(root, "scripts", file));
+    const imported = spawnSync(
+      process.execPath,
+      [
+        "--input-type=module",
+        "-e",
+        "await import('./scripts/homologation-rest.mjs'); await import('./scripts/homologation-ssr.mjs');",
+      ],
+      { cwd: root, encoding: "utf8" },
+    );
+    assert.equal(imported.status, 0, imported.stderr);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

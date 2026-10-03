@@ -2,7 +2,6 @@ import assert from "node:assert/strict"
 import { createHmac } from "node:crypto"
 import { execFileSync } from "node:child_process"
 import { prepareHomologationStorage } from "./homologation-storage.mjs"
-import { checkHomologationSsr } from "./homologation-ssr.mjs"
 
 // RFC 6238, somente para o fator temporário da fixture. Nunca grava o segredo.
 export function totp(secret, milliseconds = Date.now()) {
@@ -99,7 +98,7 @@ export async function checkHomologationRest(
         ),
       },
     ),
-  ssrCheck = checkHomologationSsr,
+  ssrCheck,
 ) {
   const admin = await checkHomologationAuthority(env)
   const userHeaders = (jwt) => ({
@@ -312,7 +311,20 @@ export async function checkHomologationRest(
     const revoked = await professionals(jwt(1))
     assert.equal(revoked.status, 200)
     assert.deepEqual(revoked.data, [])
-    await ssrCheck(env, [1,5].map(n => {const session=sessions.find(item=>item.n===n);return {id:uid(n),name:session.name,access_token:session.jwt,refresh_token:session.refresh_token};}));
+    // Only the protected apply caller opts into the compiled application check.
+    if (ssrCheck)
+      await ssrCheck(
+        env,
+        [1, 5].map((n) => {
+          const session = sessions.find((item) => item.n === n)
+          return {
+            id: uid(n),
+            name: session.name,
+            access_token: session.jwt,
+            refresh_token: session.refresh_token,
+          }
+        }),
+      )
   } finally {
     // A lost enrollment response can leave a factor whose ID was never received.
     const cleanups = await Promise.allSettled([

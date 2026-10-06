@@ -1,27 +1,18 @@
-import { Link, useParams } from '../../router'
-import { useStore } from '../../context/StoreContext'
-import { usePageTitle } from '../../lib/usePageTitle'
-import { Badge, Button, Empty, Panel, btnClass } from '../../components/ui/primitives'
+import { Link } from 'react-router'
+import { Badge, Button, Panel, btnClass } from '../../components/ui/primitives'
 import { DuotoneImage } from '../../components/ui/DuotoneImage'
 import { AccentScope } from '../../components/ui/AccentScope'
 import { Markdown } from '../../components/ui/Markdown'
 import { useToast } from '../../context/ToastContext'
-import { eventoNaoEncerrado, fmtDataHora, tipoEventoLabel } from '../../lib/utils'
+import { fmtDataHora, tipoEventoLabel } from '../../lib/utils'
+import type { EventPageData } from '../../server/mappers/events'
 
-export function EventPage() {
-  const { id } = useParams()
-  const { eventos, coletivos, now } = useStore()
+export function EventPage({ evento: ev, coletivo: col, periodo, situacao }: EventPageData) {
   const toast = useToast()
-  const ev = eventos.find((e) => e.id === id)
-  usePageTitle(ev ? ev.nome : 'Evento')
-
-  if (!ev) return <Empty>Evento não encontrado. <Link to="/eventos" className="text-[var(--accent-text)] underline">Voltar</Link></Empty>
-
-  const col = coletivos.find((c) => c.id === ev.coletivoId)
-  const naoEncerrado = eventoNaoEncerrado(ev, now)
+  const cancelado = situacao === 'cancelled'
 
   return (
-    <AccentScope color={col?.corPredominante ?? '#ff2040'}>
+    <AccentScope color={col?.cor ?? '#ff2040'}>
       <div className="space-y-8">
         <Link to="/eventos" className="inline-block font-mono text-xs text-[var(--color-muted)] hover:text-[var(--accent-text)]">← eventos/</Link>
 
@@ -32,7 +23,10 @@ export function EventPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone="accent">{tipoEventoLabel(ev)}</Badge>
             {ev.gratuito ? <Badge tone="ok">Gratuito</Badge> : <Badge tone="neutral">Ingresso</Badge>}
-            {!naoEncerrado && <Badge tone="warn">Evento passado</Badge>}
+            {situacao === 'draft' && <Badge tone="warn">Rascunho</Badge>}
+            {cancelado && <Badge tone="warn">Cancelado</Badge>}
+            {!cancelado && periodo === 'ongoing' && <Badge tone="warn">Em andamento</Badge>}
+            {!cancelado && periodo === 'past' && <Badge tone="warn">Evento passado</Badge>}
           </div>
           <h1 className="mt-3 font-display text-4xl font-bold text-glow sm:text-5xl">{ev.nome}</h1>
           {col && (
@@ -63,17 +57,19 @@ export function EventPage() {
                   <dd>{ev.local}<br />{ev.cidade}/{ev.estado}</dd>
                 </div>
               </dl>
-              <div className="mt-4">
-                {ev.gratuito ? (
-                  <Button variant="solid" className="w-full" onClick={() => toast('Entrada gratuita — é só chegar!', 'ok')}>
-                    Entrada gratuita
-                  </Button>
-                ) : (
-                  <a href={ev.ingressoLink} target="_blank" rel="noopener noreferrer" className={btnClass('solid', 'md', 'w-full')}>
-                    Comprar ingresso ↗
-                  </a>
-                )}
-              </div>
+              {!cancelado && (
+                <div className="mt-4">
+                  {ev.gratuito ? (
+                    <Button variant="solid" className="w-full" onClick={() => toast('Entrada gratuita — é só chegar!', 'ok')}>
+                      Entrada gratuita
+                    </Button>
+                  ) : (
+                    <a href={ev.ingressoLink} target="_blank" rel="noopener noreferrer" className={btnClass('solid', 'md', 'w-full')}>
+                      Comprar ingresso ↗
+                    </a>
+                  )}
+                </div>
+              )}
             </Panel>
 
             <Panel title={`line-up (${ev.lineup.length})`}>

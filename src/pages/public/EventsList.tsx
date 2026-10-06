@@ -1,22 +1,18 @@
 import { useState } from 'react'
-import { Link } from '../../router'
-import { useStore } from '../../context/StoreContext'
-import { usePageTitle } from '../../lib/usePageTitle'
+import { Link } from 'react-router'
 import { Badge, Empty, SectionHeading } from '../../components/ui/primitives'
 import { DuotoneImage } from '../../components/ui/DuotoneImage'
-import { eventoNaoEncerrado, fmtDataHora, porProximidade, tipoEventoLabel } from '../../lib/utils'
+import { fmtDataHora, tipoEventoLabel } from '../../lib/utils'
+import type { Evento } from '../../data/types'
 
-export function EventsList() {
-  usePageTitle('Eventos Programados')
-  const { eventos, now } = useStore()
+/** Agenda: a ordem já vem do banco (em andamento primeiro, depois futuros por início). */
+export function EventsList({ ongoing, future }: { ongoing: Evento[]; future: Evento[] }) {
   const [estado, setEstado] = useState<string | null>(null)
 
-  const futuros = eventos
-    .filter((e) => eventoNaoEncerrado(e, now))
-    .filter((e) => !estado || e.estado === estado)
-    .sort((a, b) => porProximidade(a, b, now))
-
-  const estados = [...new Set(eventos.filter((e) => eventoNaoEncerrado(e, now)).map((e) => e.estado))]
+  const todos = [...ongoing, ...future]
+  const emAndamento = new Set(ongoing.map((e) => e.id))
+  const visiveis = todos.filter((e) => !estado || e.estado === estado)
+  const estados = [...new Set(todos.map((e) => e.estado))]
 
   return (
     <div>
@@ -33,11 +29,11 @@ export function EventsList() {
         ))}
       </div>
 
-      {futuros.length === 0 ? (
+      {visiveis.length === 0 ? (
         <Empty>Nenhum evento futuro cadastrado.</Empty>
       ) : (
         <ul className="space-y-4">
-          {futuros.map((e) => (
+          {visiveis.map((e) => (
             <li key={e.id}>
               <Link to={`/eventos/${e.id}`} className="group grid gap-4 border border-[var(--color-line)] transition-colors hover:border-[var(--accent)] sm:grid-cols-[220px_1fr]">
                 <DuotoneImage src={e.capa} alt={`Capa do evento ${e.nome}`} className="aspect-[16/9] w-full sm:aspect-auto sm:h-full" />
@@ -45,6 +41,7 @@ export function EventsList() {
                   <div className="mb-2 flex flex-wrap items-center gap-2">
                     <Badge tone="accent">{tipoEventoLabel(e)}</Badge>
                     {e.gratuito ? <Badge tone="ok">Gratuito</Badge> : <Badge tone="neutral">Ingresso</Badge>}
+                    {emAndamento.has(e.id) && <Badge tone="warn">Em andamento</Badge>}
                   </div>
                   <h3 className="font-display text-xl font-bold group-hover:text-[var(--accent-text)]">{e.nome}</h3>
                   <p className="mt-1 font-mono text-sm text-[var(--color-muted)]">{fmtDataHora(e.inicio)}</p>

@@ -216,5 +216,5 @@ test("restricted identity sees reason at login and deleted identity clears its s
 });
 
 test('public fixture routes remain available without an Auth session in development',async()=>{
- const response=await load('','/eventos/ev-porto');expect(response.status).toBe(200);expect((await response.json()).preview).toBe(true);expect(calls).toEqual([])
+ const response=await load('','/artistas/art-anerie');expect(response.status).toBe(200);expect((await response.json()).preview).toBe(true);expect(calls).toEqual([])
 })

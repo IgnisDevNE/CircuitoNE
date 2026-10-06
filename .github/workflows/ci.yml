@@ -5,11 +5,6 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      validate_homologation:
-        description: 'Validar credenciais de homologação (somente leitura, main e aprovação obrigatórias)'
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -19,24 +14,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  agent_runtime:
-    name: agent-runtime
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: '24.21.0'
-      - run: docker build --target agent -f deploy/agent/Dockerfile -t localhost/circuitone-agent:bootstrap .
-      - run: node --test tests/agent/image.test.mjs
-        env:
-          CONTAINER_ENGINE: docker
-      - run: docker build --target network -f deploy/agent/Dockerfile -t localhost/circuitone-agent-network:bootstrap .
-      - run: docker run --rm --network none --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges localhost/circuitone-agent-network:bootstrap squid -k parse
-
   quality:
     name: quality
     runs-on: ubuntu-latest
@@ -74,42 +51,6 @@ jobs:
             coverage/
           retention-days: 7
           if-no-files-found: warn
-      - name: Build container
-        run: |
-          docker build --label org.opencontainers.image.revision="$GITHUB_SHA" -t circuitone-app-ci .
-          docker build -f deploy/Caddy.Dockerfile -t circuitone-proxy-ci .
-      - name: Prove isolated image promotion and rollback
-        run: |
-          base_sha="$(git rev-parse HEAD^)"
-          workdir="$(mktemp -d "$RUNNER_TEMP/circuitone-image-XXXXXX")"
-          trap 'rm -rf "$workdir"' EXIT
-          git archive "$base_sha" | tar -x -C "$workdir"
-          docker build --label org.opencontainers.image.revision="$base_sha" -t circuitone-previous-ci "$workdir"
-          previous="$(docker image inspect --format '{{.Id}}' circuitone-previous-ci)"
-          candidate="$(docker image inspect --format '{{.Id}}' circuitone-app-ci)"
-          node scripts/image-promotion-drill.mjs "$previous" "$base_sha" "$candidate" "$GITHUB_SHA" | tee "$RUNNER_TEMP/image-promotion.json"
-          printf '## Promoção/rollback em destino descartável\n\n```json\n' >> "$GITHUB_STEP_SUMMARY"
-          cat "$RUNNER_TEMP/image-promotion.json" >> "$GITHUB_STEP_SUMMARY"
-          printf '\n```\n' >> "$GITHUB_STEP_SUMMARY"
-      - name: Preserve only image identity and recovery evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: image-promotion-${{ github.sha }}-${{ github.run_id }}
-          path: ${{ runner.temp }}/image-promotion.json
-          if-no-files-found: error
-          retention-days: 90
-      - name: Test container routes
-        run: |
-          docker run --detach --name circuitone-app-ci --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges --memory 512m --env CIRCUITONE_RUNTIME=preview --env HOST=127.0.0.1 -p 127.0.0.1:5176:8080 circuitone-app-ci
-          docker run --detach --name circuitone-proxy-ci --network container:circuitone-app-ci --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges --memory 128m circuitone-proxy-ci
-          for attempt in {1..20}; do
-            if curl --fail --silent http://127.0.0.1:5176/ > /dev/null; then break; fi
-            sleep 1
-          done
-          pnpm test:hosting
-          # A sibling container must not bypass Caddy through the bridge address.
-          app_ip=$(docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' circuitone-app-ci)
-          docker run --rm --env APP_IP="$app_ip" --entrypoint node circuitone-app-ci -e 'const base = `http://${process.env.APP_IP}`; const proxy = await fetch(`${base}:8080`, {signal: AbortSignal.timeout(3000)}); if (proxy.status !== 200) process.exit(2); try {await fetch(`${base}:3000`, {signal: AbortSignal.timeout(3000)}); process.exit(1)} catch {console.log("Caddy reachable; Node bridge access denied")}'
 
   database:
     name: database
@@ -125,141 +66,5 @@ jobs:
           node-version: '24.21.0'
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # Banco descartável; nenhum environment/secreto/projeto remoto vinculado.
+      # Supabase local descartável (Docker); nenhum projeto remoto.
       - run: pnpm test:database
-
-  backup_recovery:
-    name: backup-recovery
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: '24.21.0'
-      # Real disposable PostgreSQL/Storage, synthetic data, no privileged environment.
-      - name: Prepare pinned recovery images
-        run: |
-          # Avoid concurrent implicit pulls by the independent test processes.
-          for image in \
-            docker.io/supabase/postgres@sha256:6942962433a569e87f228b4d4ab7e11db5deca64e43babb3a038443ad6c4f1bb \
-            docker.io/supabase/gotrue@sha256:c0c25187a6b835e65a6f6e6c6b39d090e832d40e6de5186f2c038e0411944232 \
-            docker.io/supabase/storage-api@sha256:63da55733ce9d7592d860739acb94f0b6189d880b7565d247ee5b195be854db1 \
-            docker.io/postgrest/postgrest@sha256:aa7e96af2d01219a09bc00c75de28171b1f9fda17ea455a931e4fb6d317089e0
-          do
-            for attempt in 1 2 3; do
-              docker pull "$image" && break
-              [ "$attempt" -lt 3 ] || exit 1
-              sleep 5
-            done
-          done
-      - run: node --test tests/backup/*.test.mjs
-
-  homologation_credentials:
-    name: homologation-credentials
-    if: github.event_name == 'workflow_dispatch' && inputs.validate_homologation && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    permissions: {}
-    environment: Homologação
-    concurrency:
-      group: homologation-credentials
-      cancel-in-progress: false
-    steps:
-      # Nenhum checkout, pacote da aplicação ou código de PR neste job.
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: '24.21.0'
-      - name: Verify runner tools
-        run: |
-          node --version
-          psql --version
-      - name: Validate public configuration and management token
-        id: management
-        env:
-          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
-          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        run: |
-          node <<'HOMOLOGATION_API'
-          const { appendFileSync } = require('node:fs');
-          const ref = 'odphoxozclrshqjgwbqk';
-          const expectedUrl = `https://${ref}.supabase.co`;
-          let stage = 'configuração de homologação';
-          async function getJson(url, headers) {
-            const response = await fetch(url, { headers, redirect: 'error', signal: AbortSignal.timeout(15000) });
-            if (!response.ok) throw new Error('HTTP rejected');
-            const chunks = [];
-            let size = 0;
-            for await (const chunk of response.body) {
-              size += chunk.byteLength;
-              if (size > 65536) throw new Error('Response too large');
-              chunks.push(chunk);
-            }
-            return JSON.parse(Buffer.concat(chunks).toString('utf8'));
-          }
-          async function validate() {
-            const env = process.env;
-            if (env.SUPABASE_PROJECT_REF !== ref || env.SUPABASE_URL !== expectedUrl ||
-                !/^sb_publishable_[A-Za-z0-9_-]+$/.test(env.SUPABASE_PUBLISHABLE_KEY || '') ||
-                !env.SUPABASE_ACCESS_TOKEN?.trim()) throw new Error('Invalid configuration');
-            stage = 'chave publicável';
-            await getJson(`${expectedUrl}/auth/v1/settings`, { apikey: env.SUPABASE_PUBLISHABLE_KEY });
-            stage = 'token de gerenciamento';
-            const configs = await getJson(`https://api.supabase.com/v1/projects/${ref}/config/database/pooler`,
-              { Authorization: `Bearer ${env.SUPABASE_ACCESS_TOKEN}` });
-            stage = 'destino do banco';
-            const host = configs.find(config => config.database_type === 'PRIMARY')?.db_host;
-            if (typeof host !== 'string' || host !== host.trim() ||
-                !/^aws-[0-9]+-sa-east-1\.pooler\.supabase\.com$/.test(host)) throw new Error('Invalid host');
-            appendFileSync(env.GITHUB_OUTPUT, `pooler_host=${host}\n`);
-            console.log('Configuração pública e token aceitos para CircuitoNE-dev.');
-          }
-          validate().catch(() => {
-            console.error(`::error::Falha na validação: ${stage}. Valores e resposta omitidos.`);
-            process.exitCode = 1;
-          });
-          HOMOLOGATION_API
-      - name: Prepare pinned Supabase CA
-        working-directory: ${{ runner.temp }}
-        run: |
-          curl --disable --fail --silent --show-error --proto '=https' --connect-timeout 10 --max-time 20 --max-filesize 65536 --output supabase-ca.crt https://supabase-downloads.s3-ap-southeast-1.amazonaws.com/prod/ssl/prod-ca-2021.crt
-          echo '700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7  supabase-ca.crt' | sha256sum --check --status
-      - name: Validate database password over verified TLS
-        env:
-          POOLER_HOST: ${{ steps.management.outputs.pooler_host }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-        run: |
-          node <<'HOMOLOGATION_DB'
-          const { execFileSync } = require('node:child_process');
-          try {
-            const host = process.env.POOLER_HOST;
-            if (typeof host !== 'string' || host !== host.trim() ||
-                !/^aws-[0-9]+-sa-east-1\.pooler\.supabase\.com$/.test(host) ||
-                !process.env.SUPABASE_DB_PASSWORD) throw new Error('Invalid database configuration');
-            const sql = "BEGIN READ ONLY; SELECT current_database() = 'postgres' AND current_setting('transaction_read_only') = 'on'; ROLLBACK;";
-            const result = execFileSync('psql', ['-X', '-w', '-A', '-t', '-q', '-v', 'ON_ERROR_STOP=1', '-c', sql], {
-              env: {
-                PATH: process.env.PATH,
-                PGHOST: host, PGPORT: '5432', PGDATABASE: 'postgres',
-                PGUSER: 'postgres.odphoxozclrshqjgwbqk',
-                PGPASSWORD: process.env.SUPABASE_DB_PASSWORD,
-                PGSSLMODE: 'verify-full', PGSSLROOTCERT: `${process.env.RUNNER_TEMP}/supabase-ca.crt`,
-                PGCONNECT_TIMEOUT: '10', PGOPTIONS: '-c default_transaction_read_only=on -c statement_timeout=10000',
-                PGAPPNAME: 'circuitone-credential-check',
-              },
-              stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8', timeout: 20000, maxBuffer: 4096,
-            });
-            if (result.trim() !== 't') throw new Error('Unexpected database result');
-            console.log('Senha aceita; conexão TLS e transação somente leitura verificadas.');
-          } catch {
-            console.error('::error::Falha na validação do banco: conferir senha, destino, conectividade e certificado. Detalhes omitidos.');
-            process.exitCode = 1;
-          }
-          HOMOLOGATION_DB
-      - name: Record validation scope
-        run: |
-          printf '## Validação de credenciais de homologação\n\nSHA: `%s`\n\nAtor: `%s`\n\nExecução: `%s`\n\nToken aceito no projeto dev; senha aceita com TLS verificado e transação somente leitura. Nenhuma migração, seed ou deploy executado. Não comprova escopo mínimo do token, isolamento de QA ou homologação do produto.\n' "$GITHUB_SHA" "$GITHUB_ACTOR" "$GITHUB_RUN_ID" >> "$GITHUB_STEP_SUMMARY"

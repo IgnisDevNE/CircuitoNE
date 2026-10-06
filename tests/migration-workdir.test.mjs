@@ -20,10 +20,7 @@ import { createHash } from "node:crypto"
 
 import { spawnSync } from "node:child_process"
 
-import {
-  prepareLocalDatabase,
-  prepareHomologation,
-} from "../scripts/prepare-local-db.mjs"
+import { prepareLocalDatabase } from "../scripts/prepare-local-db.mjs"
 
 const first = "20260922052133_adapter_first.sql"
 
@@ -37,11 +34,9 @@ test("migrações preservam bytes, ordem e checksum em cópia descartável, sem 
   assert.ok(basename(root).startsWith("circuitone-migrations-"))
 
   try {
-    const source = join(root, "docs/migrations")
+    const source = join(root, "supabase/migrations")
 
     mkdirSync(source, { recursive: true })
-
-    mkdirSync(join(root, "supabase"))
 
     const config = readFileSync("supabase/config.toml")
 
@@ -61,7 +56,7 @@ test("migrações preservam bytes, ordem e checksum em cópia descartável, sem 
 
     assert.ok(basename(workdir).startsWith("supabase-run-"))
 
-    assert.deepEqual(readdirSync(root).sort(), ["docs", "supabase", "temp"])
+    assert.deepEqual(readdirSync(root).sort(), ["supabase", "temp"])
 
     assert.deepEqual(readdirSync(join(workdir, "supabase/migrations")), [
       first,
@@ -125,9 +120,7 @@ test("preparo local recusa temp redirecionado por link, sem escrever no destino"
   assert.ok(basename(root).startsWith("circuitone-migrations-"))
 
   try {
-    mkdirSync(join(root, "docs/migrations"), { recursive: true })
-
-    mkdirSync(join(root, "supabase"))
+    mkdirSync(join(root, "supabase/migrations"), { recursive: true })
 
     writeFileSync(
       join(root, "supabase/config.toml"),
@@ -165,76 +158,5 @@ test("preparo local recusa argumentos de destino remoto antes de qualquer opera�
     assert.match(result.stderr, /não aceita argumentos/)
 
     assert.equal(result.stdout, "")
-  }
-})
-
-test("protected plan fixes source SHA and every seed/smoke byte without enabling automatic seeds", () => {
-  const root = mkdtempSync(join(tmpdir(), "circuitone-migrations-"))
-
-  try {
-    for (const dir of ["docs/migrations", "supabase/seeds", "tests/database"])
-      mkdirSync(join(root, dir), { recursive: true })
-
-    writeFileSync(
-      join(root, "supabase/config.toml"),
-      readFileSync("supabase/config.toml"),
-    )
-
-    writeFileSync(join(root, "docs/migrations", first), "select 1;")
-
-    const files = ["identity", "collectives", "events", "messages"].map(
-      (file) => `supabase/seeds/${file}.sql`,
-    )
-
-    files.push(
-      "tests/database/default-grants.sql",
-      "tests/database/homologation-smoke.sql",
-    )
-
-    for (const file of files)
-      writeFileSync(join(root, file), `-- reviewed ${file}\r\nselect 1;`)
-
-    const sha = "a".repeat(40)
-
-    const before = prepareHomologation(root, sha)
-
-    const manifest = JSON.parse(
-      readFileSync(join(before, "manifest.json"), "utf8"),
-    )
-
-    assert.equal(manifest.sourceSha, sha)
-
-    assert.equal(manifest.projectRef, "odphoxozclrshqjgwbqk")
-
-    assert.equal(manifest.seedReference, "2026-09-26T12:00:00.000Z")
-
-    for (const file of files) {
-      const item = manifest.inputs.find((item) => item.file === file)
-
-      assert.equal(
-        item.sha256,
-        createHash("sha256")
-          .update(readFileSync(join(root, file)))
-          .digest("hex"),
-      )
-
-      assert.deepEqual(
-        readFileSync(join(before, file)),
-        readFileSync(join(root, file)),
-      )
-    }
-
-    writeFileSync(join(root, files[0]), "-- altered seed")
-
-    const after = prepareHomologation(root, sha)
-
-    assert.notDeepEqual(
-      readFileSync(join(before, "manifest.json")),
-      readFileSync(join(after, "manifest.json")),
-    )
-
-    assert.throws(() => prepareHomologation(root, "invalid-sha"), /SHA/)
-  } finally {
-    rmSync(root, { recursive: true, force: true })
   }
 })

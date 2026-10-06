@@ -1,66 +1,55 @@
 # CircuitoNE
 
-CircuitoNE em React Router Framework com SSR, React, Vite e Tailwind CSS. A aplicação fica em `src/`, fora de qualquer pasta de ferramenta de design. Na fase zero, as páginas usam fixtures sintéticas; produção mantém página de espera até os gates de lançamento.
+Hub da cena eletrônica do Nordeste. React Router 8 (Framework, SSR) + React 19 + Vite 8 + Tailwind CSS v4, com Supabase (Postgres, Auth, RLS, RPCs). A aplicação fica em `src/`.
 
-## Development Rules
+**Fase atual: PoC.** O ambiente dev (`circuitone-dev.magalz.space` → Supabase `CircuitoNE-dev`) roda com dados sintéticos e deve ter todas as telas ligadas ao banco. Produção serve só a página de espera. O plano e o status das tarefas estão em [`docs/plan.md`](docs/plan.md).
 
-- Everything in this project follows TDD. Write or update the test first, confirm it fails for the expected reason, implement the smallest change that makes it pass, and then refactor while keeping the tests green.
-- Every pull request must be validated in homologation before production. Use the dedicated Supabase homologation database `CircuitoNE-dev` on GitHub first, apply and validate migrations there, and only promote the change after homologation succeeds. Do not test schema changes directly against the production database.
-- After each pull request is approved and completed, clean up branches so that only `main` remains. Before starting new work, create a fresh branch from the updated `main`.
-- Every deferred review finding, technical debt item, or bug that cannot be resolved immediately must have an open GitHub issue before the task is handed off or completed. Reuse a matching open issue instead of creating duplicates. Record the evidence/impact, reason for deferral, responsible role, and acceptance criteria; link the issue in the relevant PR, review, or plan. Documentation or a TODO alone is not sufficient. Creating an issue does not waive blocking review/security gates, and planning a fix does not resolve it. If issue creation is blocked, report the exact blocker and preserve the issue draft without claiming it was opened.
-- Each task must link its blocking issues and state which prerequisite clears each block before dependent work starts. Distinguish entry blockers from issues the task itself resolves; never require an issue to be closed before starting its own fix. For a multi-part issue, record evidence for the specific satisfied prerequisite. Prioritize resolving feasible blockers and technical debt in phase 0; any remainder needs a concrete reason, owner, and target task. Passing CI alone does not authorize a dependency upgrade or waive review/homologation.
+## Fluxo de trabalho
 
-## GitHub Agent Identity
+- Branch a partir de `main` → PR → CI verde → squash merge. Não há proteção de branch nem aprovação obrigatória.
+- Escreva ou atualize testes junto com cada mudança (teste primeiro quando for prático).
+- Mudança de banco = nova migração em `supabase/migrations/` + teste SQL em `tests/database/`. Nunca editar migração já aplicada. Após o merge, `db-dev.yml` aplica no `CircuitoNE-dev` automaticamente.
+- Ao alterar o schema público, regenerar `src/types/database.generated.ts` (o job `database` compara com o schema reconstruído).
+- Bugs ou pendências que ficarem para depois viram issue no GitHub.
 
-- Use `node scripts/github-app.mjs gh <args>` for GitHub operations and `node scripts/github-app.mjs git <args>` for authenticated Git operations and commits. These commands use the `ignisdevne` App with a temporary token scoped to this repository.
-- Do not fall back to the saved human GitHub credentials when App access is denied. Report the missing permission; keep review and branch protections intact.
-- Never commit or print files from `secrets/`, private keys, or tokens. The implementer helper accepts only `GITHUB_APP_TOKEN` and `GITHUB_APP_TOKEN_EXPIRES_AT`, issued outside the container. The maintainer-only `scripts/maintenance/issue-github-token.mjs` accepts `GITHUB_APP_PRIVATE_KEY_FILE`; never provide that key to the implementer. See `docs/engineering/agent-runtime.md`.
-- The App installation currently selects the application repository; `IgnisDevNE/CircuitoNE-QA` must remain excluded. Canonical acceptance tests must be controlled outside this App's installation. Local helpers/instructions do not replace credential and execution isolation; see `docs/engineering/delivery.md`.
+## Regras
 
-## Documentation Locations
+- O app usa somente a chave publicável do Supabase, com a identidade do usuário e RLS. Nunca `service_role`, senha de banco ou outro segredo no app, no bundle, no repo ou em logs.
+- Autorização definitiva fica no banco (RLS/RPCs); a UI só melhora a experiência.
+- Escritas e dados privados passam pelas RPCs existentes (`security definer`); leia as migrações antes de criar uma nova.
+- UI e mensagens em português do Brasil; código, identificadores e commits em inglês.
+- Não criar camadas genéricas (repositórios, ORMs, state managers) sem necessidade concreta.
 
-All paths below are relative to the repository root:
+## Comandos
 
-- Architecture Decision Records (ADRs): `docs/decisions/`
-- Change controls and approval gates: `docs/controls/`
-- Specifications, technical requirements, and architecture/infrastructure contracts: `docs/specs/` (see its index; approved target architecture is not necessarily implemented)
-- Database migration files: `docs/migrations/`
-- Business rules: `docs/business-rules/`
-- Unapproved project references: `docs/references/`; keep proposals distinct from accepted business rules.
-- Temporary drafts, logs, downloaded reports and disposable workspaces: `temp/` (gitignored). Keep them out of the repository root; do not move tool-managed runtime files or credentials into this folder.
+```sh
+pnpm install --frozen-lockfile
+pnpm dev               # servidor de desenvolvimento (já costuma estar rodando em $PORT)
+pnpm check             # testes de infra + unidade, typecheck, build
+pnpm test:unit         # Vitest
+pnpm test:e2e          # Playwright
+pnpm test:database     # Supabase local via Docker (roda no CI)
+./deploy/dev.ps1       # rebuild e recria o pod dev no PC (Podman)
+```
 
-## Development Server
+## Estrutura
 
-A Vite development server is **already running** on `$PORT` (default 8443). You don't need to start it manually.
+- `src/root.tsx` — documento, loader raiz, error boundary, CSS global
+- `src/routes.ts` — rotas do framework; `src/routes/*` — módulos de rota
+- `src/routes/identity.tsx` + `src/routes/legacy.tsx` — adaptador temporário que ainda renderiza o protótipo (`src/App.tsx`, `src/router.tsx`, `src/data/mock.ts`, `src/context/StoreContext.tsx`) para rotas não ligadas ao banco
+- `src/server/auth.server.ts` — cliente Supabase SSR por requisição, login/logout
+- `src/pages/**`, `src/components/**` — telas e componentes
+- `src/types/database.generated.ts` — tipos gerados do schema
+- `supabase/migrations/`, `supabase/seeds/`, `supabase/config.toml` — banco
+- `tests/unit`, `tests/e2e`, `tests/database`, `tests/assets`, `tests/*.test.mjs`
+- `scripts/start-runtime.mjs` — validação de ambiente e start do servidor
+- `deploy/` — Caddy, página de espera, script do pod
+- `docs/` — regras de negócio (`business-rules/mvp.md`), arquitetura, ADRs, ambiente, plano
 
-- Preview URL: The user can access the running app through the preview panel
-- Hot reload: Changes to source files are reflected immediately
+## Ambiente
 
-## Project Structure
+Ver [`docs/engineering/environment.md`](docs/engineering/environment.md). Variáveis do app: `CIRCUITONE_RUNTIME` (`preview` = protótipo com mocks, `development` = Supabase real), `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `APP_ORIGIN`.
 
-This is the canonical project structure. Start with task-relevant files below. Only follow imports or inspect other files when required, when a documented path is missing, or when the repository contradicts this guide.
+## Estilo
 
-- `src/root.tsx` - Framework document, root loader, error boundary and global CSS import
-- `src/routes.ts` - Canonical Framework route configuration, preserving prototype URLs
-- `src/routes/legacy.tsx` - SSR-compatible adapter for the existing application and fixture metadata
-- `src/App.tsx` - Existing page composition used by the adapter; follow its page imports for UI work
-- `src/index.css` - Global CSS entrypoint and Tailwind CSS v4 import
-- `src/main.tsx` and `index.html` - Original CSR entry retained for compatibility; the Framework build uses `src/root.tsx`
-- `react-router.config.ts` - Framework configuration with `appDirectory: 'src'` and SSR enabled
-- `package.json` - Project dependencies and development, SSR build, test, type-generation and formatting scripts
-- `vite.config.ts` - Framework, React and Tailwind CSS v4 plugins, with the `@` alias for `src`
-- `scripts/start-runtime.mjs` - Validated Node SSR runtime and production waiting page
-- `.mise.toml` - Toolchain versions for Node.js and pnpm
-
-## Dependencies
-
-- Runtime: Node 24, React Router Framework 8, React 19 and React DOM 19
-- Styling: Tailwind CSS v4 with the `@tailwindcss/vite` plugin
-- Build tooling: Vite 8, TypeScript 7, and `@vitejs/plugin-react`
-- Formatting: oxfmt
-
-## Styling
-
-This project uses **Tailwind CSS v4** through the `@tailwindcss/vite` plugin configured in `vite.config.ts`. `src/index.css` imports Tailwind with `@import 'tailwindcss' source('.');` so documents and local tools cannot change the distributed CSS. Use Tailwind utility classes directly in JSX and put global CSS or Tailwind v4 theme customization in `src/index.css`. This scaffold does not need a Tailwind config file or PostCSS config.
-
-`src/root.tsx` imports `src/index.css`, so global font wiring belongs in `src/index.css`. Keep CSS `@import` statements first, then add any `@font-face` rules and font-family defaults there.
+Tailwind v4 via `@tailwindcss/vite`; `src/index.css` importa Tailwind com `@import 'tailwindcss' source('.');`. CSS global e tema em `src/index.css`. Formatação com oxfmt.

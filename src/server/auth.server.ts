@@ -1,5 +1,9 @@
 import { parseCookieHeader, serializeCookieHeader } from "@supabase/ssr";
-import { createSupabaseServerClient, privateHeaders } from "./supabase.server";
+import {
+  createSupabaseServerClient,
+  privateHeaders,
+  type SupabaseServerClient,
+} from "./supabase.server";
 
 export type AccountSession = {
   id: string;
@@ -42,9 +46,72 @@ async function boundedForm(request: Request) {
   return new URLSearchParams(text + decoder.decode());
 }
 
+/** Pathname of the page, without the `.data` suffix that single-fetch (client-side form posts and loads) appends. */
+const routePath = (request: Request) => new URL(request.url).pathname.replace(/\.data$/, "");
+
+const states = ["active", "suspended", "incomplete", "deletion_pending"];
+
+/** True when the request carries Supabase auth cookies for any project (sb-<ref>-auth-token[.n]). */
+export const hasAuthCookie = (request: Request) =>
+  parseCookieHeader(request.headers.get("cookie") ?? "").some(({ name }) =>
+    /^sb-[^=]+-auth-token(\.\d+)?$/.test(name),
+  );
+
+export type SessionResult =
+  | { kind: "anonymous" }
+  | { kind: "account"; account: AccountSession }
+  | { kind: "error"; message: string };
+
+/**
+ * Server-side session check shared by every private route: `getUser()` validates the JWT with Auth
+ * (never `getSession()` or user_metadata) and `get_account_session` returns the application state.
+ * An invalidated identity clears this project's auth cookies (into `headers`) and counts as anonymous.
+ */
+export async function readAccountSession(
+  client: SupabaseServerClient,
+  request: Request,
+  headers: Headers,
+): Promise<SessionResult> {
+  const { data, error } = await client.auth.getUser();
+  if (
+    error &&
+    error.name !== "AuthSessionMissingError" &&
+    error.status !== 401 &&
+    !["bad_jwt", "session_not_found", "refresh_token_not_found"].includes(error.code ?? "")
+  )
+    return { kind: "error", message: "Não foi possível verificar sua sessão. Tente novamente." };
+  if (!data.user) return { kind: "anonymous" };
+  const result = await client.rpc("get_account_session");
+  if (result.error)
+    return { kind: "error", message: "Não foi possível verificar sua conta. Tente novamente." };
+  if (!result.data) {
+    // Invalidated identity: remove only this project's cookies, preserving Access.
+    const authCookie =
+      "sb-" + new URL(process.env.SUPABASE_URL!).hostname.split(".")[0] + "-auth-token";
+    for (const { name } of parseCookieHeader(request.headers.get("cookie") ?? "")) {
+      if (name === authCookie || name.startsWith(authCookie + "."))
+        headers.append(
+          "Set-Cookie",
+          serializeCookieHeader(name, "", {
+            path: "/",
+            httpOnly: true,
+            secure: true,
+            sameSite: "lax",
+            maxAge: 0,
+          }),
+        );
+    }
+    return { kind: "anonymous" };
+  }
+  const account = result.data as unknown as AccountSession;
+  if (account.id !== data.user.id || !states.includes(account.state))
+    return { kind: "error", message: "Conta indisponível." };
+  return { kind: "account", account };
+}
+
 export async function identityLoader(request: Request): Promise<Response> {
   const headers = privateHeaders();
-  const path = new URL(request.url).pathname;
+  const path = routePath(request);
   if (path === "/sair") return reply({ error: "Use o botão Sair." }, 405, headers);
   if (process.env.CIRCUITONE_RUNTIME === "preview" || !process.env.CIRCUITONE_RUNTIME)
     return reply({ preview: true }, 200, headers);
@@ -53,52 +120,11 @@ export async function identityLoader(request: Request): Promise<Response> {
   if (path === "/cadastro") return reply({ unavailable: true }, 200, headers);
   try {
     const client = createSupabaseServerClient(request, headers);
-    const { data, error } = await client.auth.getUser();
-    if (
-      error &&
-      error.name !== "AuthSessionMissingError" &&
-      error.status !== 401 &&
-      !["bad_jwt", "session_not_found", "refresh_token_not_found"].includes(error.code ?? "")
-    )
-      return reply(
-        { error: "Não foi possível verificar sua sessão. Tente novamente." },
-        503,
-        headers,
-      );
-    if (!data.user)
+    const session = await readAccountSession(client, request, headers);
+    if (session.kind === "error") return reply({ error: session.message }, 503, headers);
+    if (session.kind === "anonymous")
       return path === "/entrar" ? reply({}, 200, headers) : redirect("/entrar", headers);
-    const result = await client.rpc("get_account_session");
-    if (result.error)
-      return reply(
-        { error: "Não foi possível verificar sua conta. Tente novamente." },
-        503,
-        headers,
-      );
-    if (!result.data) {
-      // Invalidated identity: remove only this project's cookies, preserving Access.
-      const authCookie =
-        "sb-" + new URL(process.env.SUPABASE_URL!).hostname.split(".")[0] + "-auth-token";
-      for (const { name } of parseCookieHeader(request.headers.get("cookie") ?? "")) {
-        if (name === authCookie || name.startsWith(authCookie + "."))
-          headers.append(
-            "Set-Cookie",
-            serializeCookieHeader(name, "", {
-              path: "/",
-              httpOnly: true,
-              secure: true,
-              sameSite: "lax",
-              maxAge: 0,
-            }),
-          );
-      }
-      return path === "/entrar" ? reply({}, 200, headers) : redirect("/entrar", headers);
-    }
-    const account = result.data as unknown as AccountSession;
-    if (
-      account.id !== data.user.id ||
-      !["active", "suspended", "incomplete", "deletion_pending"].includes(account.state)
-    )
-      return reply({ error: "Conta indisponível." }, 503, headers);
+    const { account } = session;
     if (path === "/entrar" && account.state === "active") return redirect("/painel", headers);
     return reply(
       { account, unavailable: path !== "/painel" },
@@ -112,7 +138,7 @@ export async function identityLoader(request: Request): Promise<Response> {
 
 export async function identityAction(request: Request): Promise<Response> {
   const headers = privateHeaders();
-  const path = new URL(request.url).pathname;
+  const path = routePath(request);
   if (request.method !== "POST" || !["/entrar", "/sair"].includes(path))
     return reply({ error: "Operação indisponível." }, 405, headers);
   // A origem externa vem da configuração; não confiar em cabeçalhos forwarded do cliente.

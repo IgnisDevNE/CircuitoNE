@@ -3,7 +3,7 @@ import assert from "node:assert/strict"
 import { promisify } from "node:util"
 import { execFileSync, execFile } from "node:child_process"
 import { createServer } from "node:net"
-import { readFileSync, readdirSync, writeFileSync, rmSync, realpathSync } from "node:fs"
+import { readFileSync, readdirSync, writeFileSync, rmSync, realpathSync, mkdirSync } from "node:fs"
 import { resolve, join, basename, dirname } from "node:path"
 import { prepareLocalDatabase } from "../../scripts/prepare-local-db.mjs"
 import { checkCollectiveConcurrency } from './collective-concurrency.mjs'
@@ -122,6 +122,7 @@ test(
       queryFile("tests/database/messages.sql")
       queryFile("tests/database/message-permissions.sql")
       queryFile("tests/database/lifecycle.sql")
+      queryFile("tests/database/my-account-lists.sql")
     }
     // Duas conexões reais: lock da identidade e UNIQUE do CPF devem decidir no banco.
     for (const sameAccount of [false, true]) {
@@ -267,6 +268,29 @@ ${demoCheck}`)
     assert.throws(() => query(hideFixtures), error => /Seed exige destino sintético/.test(String(error.stdout) + String(error.stderr)))
     query(`set circuitone.seed_target='disposable';\n${hideFixtures}\n${hideFixtures}`)
     queryFile('tests/database/dev-hide-fixtures.sql')
+
+    // Senhas sintéticas (login nos ambientes dev/e2e): exige destino declarado e senha forte, é idempotente e só toca contas @example.invalid.
+    const passwordSeed = readFileSync("supabase/seeds/passwords.sql", "utf8")
+    const passwordCheck = readFileSync("tests/database/password-seed.sql", "utf8")
+    const fixturePassword = "senha-sintetica-de-teste"
+    const withPassword = (password, target, sql) =>
+      `\\set fixture_password '${password}'
+${target ? `set circuitone.seed_target='${target}';
+` : ""}${sql}`
+    assert.throws(() => query(withPassword(fixturePassword, null, passwordSeed)), error => /Seed exige destino sintético/.test(String(error.stdout) + String(error.stderr)))
+    assert.throws(() => query(withPassword("curta", "disposable", passwordSeed)), error => /ao menos 12 caracteres/.test(String(error.stdout) + String(error.stderr)))
+    query("insert into auth.users(id,email,email_confirmed_at) values ('99000000-0000-4000-8000-000000000001','pessoa-real@example.org',now())")
+    query(withPassword(fixturePassword, "disposable", passwordSeed))
+    const firstHash = query("select encrypted_password from auth.users where email='fixture-active@example.invalid'")
+    query(withPassword(fixturePassword, "disposable", `${passwordSeed}
+${passwordSeed}`))
+    assert.equal(query("select encrypted_password from auth.users where email='fixture-active@example.invalid'"), firstHash, "mesma senha não deve regravar o hash")
+    query(withPassword(fixturePassword, "disposable", passwordCheck))
+    query("delete from auth.users where id='99000000-0000-4000-8000-000000000001'")
+    // Rotação: outra senha regrava os hashes.
+    query(withPassword("outra-senha-sintetica", "disposable", passwordSeed))
+    assert.throws(() => query(withPassword(fixturePassword, "disposable", passwordCheck)), error => /Nem toda conta sintética recebeu a senha/.test(String(error.stdout) + String(error.stderr)))
+    query(withPassword("outra-senha-sintetica", "disposable", passwordCheck))
     const taxonomy = JSON.parse(readFileSync("docs/specs/estilos-musicais.json", "utf8"))
     const expected = Object.entries(taxonomy).flatMap(([style, children]) => [[style, null], ...children.map(name => [style, name])])
     const taxonomyFile = join(workdir, "taxonomy.sql")
@@ -288,6 +312,9 @@ ${demoCheck}`)
       "--agent",
       "no",
     ).toString()
+    // Em caso de divergência, a saída exata fica disponível como artefato do CI (temp/ é ignorado).
+    mkdirSync("temp", { recursive: true })
+    writeFileSync("temp/database.generated.ts", generated)
     const normalize = text => text.replaceAll("\r\n", "\n").replace(/[ \t]+$/gm, "").trim()
     assert.equal(
       normalize(generated),

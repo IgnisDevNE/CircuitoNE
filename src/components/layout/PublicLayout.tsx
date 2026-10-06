@@ -10,8 +10,9 @@ const NAV = [
   { to: '/eventos', label: 'Eventos' },
 ]
 
-export function PublicLayout({ children }: { children: ReactNode }) {
-  const { user, now } = useStore()
+/** `signedIn` vem da sessão validada no servidor (layout público) ou do protótipo; `name` só enriquece o rótulo do link. */
+export function PublicLayout({ children, signedIn, name }: { children: ReactNode; signedIn: boolean; name?: string | null }) {
+  const { now } = useStore()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
 
@@ -43,8 +44,8 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                 {n.label}
               </NavLink>
             ))}
-            {user ? (
-              <Link to="/painel" className="ml-2 border border-[var(--accent)] px-3 py-2 font-mono text-sm uppercase tracking-widest text-[var(--foreground)] hover:bg-[var(--accent)]/15">
+            {signedIn ? (
+              <Link to="/painel" title={name ? `Conta de ${name}` : undefined} className="ml-2 border border-[var(--accent)] px-3 py-2 font-mono text-sm uppercase tracking-widest text-[var(--foreground)] hover:bg-[var(--accent)]/15">
                 Painel
               </Link>
             ) : (
@@ -81,12 +82,12 @@ export function PublicLayout({ children }: { children: ReactNode }) {
             ))}
             <button
               onClick={() => {
-                navigate(user ? '/painel' : '/entrar')
+                navigate(signedIn ? '/painel' : '/entrar')
                 setOpen(false)
               }}
               className="block w-full py-2 text-left font-mono text-sm uppercase tracking-widest text-[var(--accent-text)]"
             >
-              {user ? 'Painel' : 'Entrar'}
+              {signedIn ? 'Painel' : 'Entrar'}
             </button>
           </nav>
         )}

@@ -68,6 +68,15 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # Supabase local descartável (Docker); nenhum projeto remoto.
       - run: pnpm test:database
+      # Em divergência dos tipos gerados, o conteúdo exato fica disponível para copiar para src/types/database.generated.ts.
+      - name: Preserve generated types
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: database-generated-types
+          path: temp/database.generated.ts
+          retention-days: 7
+          if-no-files-found: ignore
 
   e2e:
     name: e2e
@@ -88,6 +97,7 @@ jobs:
         run: pnpm exec supabase start
       - name: Load synthetic seeds
         env:
+          E2E_FIXTURE_PASSWORD: e2e-fixture-password
           PGHOST: 127.0.0.1
           PGPORT: '55432'
           PGDATABASE: postgres
@@ -99,6 +109,11 @@ jobs:
             echo "set circuitone.seed_time='$(date -u +%Y-%m-%dT%H:%M:%SZ)';"
             for seed in identity collectives events messages; do echo "\\i supabase/seeds/$seed.sql"; done
           } | psql -X -w -v ON_ERROR_STOP=1
+          # Senha de teste das contas sintéticas; vale só neste Supabase local descartável.
+          {
+            echo "set circuitone.seed_target='disposable';"
+            echo "\\i supabase/seeds/passwords.sql"
+          } | psql -X -w -v ON_ERROR_STOP=1 -v fixture_password="$E2E_FIXTURE_PASSWORD"
       - name: Export local API URL and publishable key
         run: |
           status=$(pnpm --silent exec supabase status -o env)
@@ -116,6 +131,8 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium
       # Build, servidor SSR em development (Supabase local) e testes ficam no webServer de playwright.db.config.ts.
       - run: pnpm test:e2e:db
+        env:
+          E2E_FIXTURE_PASSWORD: e2e-fixture-password
       - name: Supabase diagnostics
         if: failure()
         run: |

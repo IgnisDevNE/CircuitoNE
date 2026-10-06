@@ -68,3 +68,23 @@ jobs:
             echo "set circuitone.seed_time='$(date -u +%Y-%m-%dT%H:%M:%SZ)';"
             for seed in identity collectives events messages demo dev-hide-fixtures; do echo "\\i supabase/seeds/$seed.sql"; done
           } | psql -X -w -v ON_ERROR_STOP=1
+      # A senha vem do segredo do ambiente Homologação; sem ele, as contas sintéticas continuam sem login.
+      - name: Set synthetic account passwords
+        env:
+          PGHOST: ${{ steps.pooler.outputs.host }}
+          PGPORT: '5432'
+          PGDATABASE: postgres
+          PGUSER: postgres.odphoxozclrshqjgwbqk
+          PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          PGSSLMODE: verify-full
+          PGSSLROOTCERT: ${{ runner.temp }}/supabase-ca.crt
+          FIXTURE_PASSWORD: ${{ secrets.FIXTURE_PASSWORD }}
+        run: |
+          if [[ -z "$FIXTURE_PASSWORD" ]]; then
+            echo "::notice::FIXTURE_PASSWORD is not set in the Homologação environment; skipping the password seed."
+            exit 0
+          fi
+          {
+            echo "set circuitone.seed_target='$PROJECT_REF';"
+            echo "\\i supabase/seeds/passwords.sql"
+          } | psql -X -w -v ON_ERROR_STOP=1 -v fixture_password="$FIXTURE_PASSWORD"

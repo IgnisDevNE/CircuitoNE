@@ -2,8 +2,7 @@ import type { ReactNode } from 'react'
 import { RouterProvider, Routes, Link } from './router'
 import { StoreProvider } from './context/StoreContext'
 import { ToastProvider } from './context/ToastContext'
-import { PublicLayout } from './components/layout/PublicLayout'
-import { AppShell } from './components/layout/AppShell'
+import { LegacyAppShell, LegacyDashboard, LegacyPublic } from './components/layout/LegacyShells'
 import { CollectiveLayout } from './components/layout/CollectiveLayout'
 import { Empty } from './components/ui/primitives'
 
@@ -11,7 +10,6 @@ import { Empty } from './components/ui/primitives'
 import { Login } from './pages/auth/Login'
 import { Register } from './pages/auth/Register'
 
-import { Dashboard } from './pages/app/Dashboard'
 import { EditData } from './pages/app/EditData'
 import { EditProfile } from './pages/app/EditProfile'
 import { Security } from './pages/app/Security'
@@ -27,12 +25,12 @@ import { EditCollective } from './pages/collective/EditCollective'
 import { EditCollectiveProfile } from './pages/collective/EditCollectiveProfile'
 import { CreateEvent } from './pages/collective/CreateEvent'
 
-const pub = (el: ReactNode) => <PublicLayout>{el}</PublicLayout>
-const app = (el: ReactNode) => <AppShell>{el}</AppShell>
+const pub = (el: ReactNode) => <LegacyPublic>{el}</LegacyPublic>
+const app = (el: ReactNode) => <LegacyAppShell>{el}</LegacyAppShell>
 const col = (el: ReactNode) => (
-  <AppShell>
+  <LegacyAppShell>
     <CollectiveLayout>{el}</CollectiveLayout>
-  </AppShell>
+  </LegacyAppShell>
 )
 
 export default function App({ initialNow }: { initialNow?: number } = {}) {
@@ -47,7 +45,7 @@ export default function App({ initialNow }: { initialNow?: number } = {}) {
               { path: '/entrar', element: pub(<Login />) },
               { path: '/cadastro', element: pub(<Register mode="cadastro" />) },
               // logado
-              { path: '/painel', element: app(<Dashboard />) },
+              { path: '/painel', element: app(<LegacyDashboard />) },
               { path: '/painel/perfil/:atuacaoId', element: app(<EditProfile />) },
               { path: '/painel/dados', element: app(<EditData />) },
               { path: '/painel/dados/nova-atuacao', element: app(<Register mode="nova-atuacao" />) },

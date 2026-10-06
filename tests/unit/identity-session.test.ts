@@ -218,3 +218,26 @@ test("restricted identity sees reason at login and deleted identity clears its s
 test('public fixture routes remain available without an Auth session in development',async()=>{
  const response=await load('','/artistas/art-anerie');expect(response.status).toBe(200);expect((await response.json()).preview).toBe(true);expect(calls).toEqual([])
 })
+
+test("single-fetch URLs (.data) reach the same action and loader as the page", async () => {
+  // O formulário hidratado posta em /entrar.data e as revalidações carregam /<rota>.data.
+  const post = (path: string, password = "synthetic-password") =>
+    identityAction(
+      new Request(origin + path, {
+        method: "POST",
+        headers: { Origin: origin, "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ email: "a@example.invalid", password }),
+      }),
+    );
+  const wrong = await post("/entrar.data", "wrong");
+  expect(wrong.status).toBe(400);
+  expect((await wrong.json()).error).toBe("E-mail ou senha inválidos.");
+  const ok = await post("/entrar.data");
+  expect(ok.status).toBe(303);
+  expect(ok.headers.get("location")).toBe("/painel");
+  expect((await post("/sair.data")).status).toBe(303);
+  expect((await load("", "/entrar.data")).status).toBe(200);
+  const redirected = await load("", "/painel.data");
+  expect(redirected.status).toBe(303);
+  expect(redirected.headers.get("location")).toBe("/entrar");
+});

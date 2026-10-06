@@ -287,6 +287,16 @@ isOneToOne: false
 "list_message_reports":
 { Args: { "after_id"?: string,"after_time"?: string }; Returns: Json
                            },
+"list_my_collectives":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "city": string,"id": string,"is_owner": boolean,"kind": string,"name": string,"role_name": string,"state": string,"state_code": string
+            }[]
+                           },
+"list_my_profiles":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "city": string,"id": string,"is_default": boolean,"kind": string,"name": string,"published": boolean,"state_code": string
+            }[]
+                           },
 "mark_conversation_read":
 { Args: { "last_message": string,"target": string }; Returns: undefined
                            },

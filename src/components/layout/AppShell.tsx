@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Link, NavLink, useLocation, useNavigate } from '../../router'
-import { useStore } from '../../context/StoreContext'
+import { useMemo, useState, type ReactNode } from 'react'
+import { Link, NavLink } from '../../router'
 import { TIPO_LABEL } from '../../data/types'
 import { cx } from '../../lib/utils'
+import type { MeuColetivo, MeuPerfil } from '../../server/mappers/account'
 import { Avatar } from '../ui/primitives'
 
 interface NavItem {
@@ -11,27 +11,29 @@ interface NavItem {
   hint?: string
 }
 
-export function AppShell({ children }: { children: ReactNode }) {
-  const { user, logout, threads, coletivos } = useStore()
-  const navigate = useNavigate()
-  const { pathname } = useLocation()
-  const loggingOut = useRef(false)
+const logoutClass =
+  'w-full px-3 py-2 text-left font-mono text-sm text-[var(--color-muted)] hover:text-[var(--accent-text)]'
+
+export interface AppShellProps {
+  nome: string
+  perfis: MeuPerfil[]
+  coletivos: MeuColetivo[]
+  naoLidas: number
+  /** Sem ele, "Sair" é o formulário real `POST /sair` (sessão do servidor); o protótipo passa um callback. */
+  onLogout?: () => void
+  children: ReactNode
+}
+
+export function AppShell({ nome, perfis, coletivos, naoLidas, onLogout, children }: AppShellProps) {
   const [open, setOpen] = useState(false)
 
-  useEffect(() => {
-    if (!user && !loggingOut.current && pathname !== '/') navigate('/entrar', { replace: true })
-  }, [user, pathname, navigate])
-
-  const naoLidas = threads.reduce((n, t) => n + t.naoLidas, 0)
-
-  // Menus SOMAM conforme atuações do usuário
+  // Menus SOMAM conforme as atuações e coletivos da conta
   const sections = useMemo(() => {
-    if (!user) return []
     const geral: NavItem[] = [
       { to: '/', label: 'Início (site)', hint: 'voltar à vitrine pública' },
       { to: '/painel', label: 'Dashboard', hint: 'próximos eventos + mensagens' },
     ]
-    const perfis: NavItem[] = user.atuacoes
+    const itensPerfil: NavItem[] = perfis
       .filter((a) => a.tipo === 'artista') // apenas artista tem perfil público editável
       .map((a) => ({ to: `/painel/perfil/${a.id}`, label: `Perfil · ${a.nome}` }))
     const conta: NavItem[] = [
@@ -39,15 +41,14 @@ export function AppShell({ children }: { children: ReactNode }) {
       { to: '/painel/seguranca', label: 'Segurança' },
       { to: '/painel/mensagens', label: `Mensagens${naoLidas ? ` (${naoLidas})` : ''}` },
     ]
-    const coletivo: NavItem[] = user.atuacoes.some((a) => a.tipo === 'integrante')
-      ? [{ to: '/painel/coletivos', label: 'Coletivos/Produtoras' }]
-      : []
+    const itensColetivo: NavItem[] =
+      coletivos.length > 0 || perfis.some((a) => a.tipo === 'integrante')
+        ? [{ to: '/painel/coletivos', label: 'Coletivos/Produtoras' }]
+        : []
 
-    // Admin de algum coletivo (nível 2) libera as buscas com dados não-públicos.
-    const isAdmin = coletivos.some((c) =>
-      c.membros.some((m) => m.userId === user.id && (c.cargos.find((cg) => cg.id === m.cargoId)?.nivel ?? 0) >= 2),
-    )
-    const explorar: NavItem[] = isAdmin
+    // Quem responde por um coletivo aprovado libera as buscas com dados não-públicos.
+    const explorarLiberado = coletivos.some((c) => c.dono && c.situacao === 'approved')
+    const explorar: NavItem[] = explorarLiberado
       ? [
           { to: '/painel/explorar/artistas', label: 'Explorar Artistas', hint: 'cachê, presskit, booking' },
           { to: '/painel/explorar/servicos', label: 'Explorar Serviços' },
@@ -58,28 +59,22 @@ export function AppShell({ children }: { children: ReactNode }) {
 
     return [
       { title: 'geral', items: geral },
-      ...(perfis.length ? [{ title: 'perfis', items: perfis }] : []),
+      ...(itensPerfil.length ? [{ title: 'perfis', items: itensPerfil }] : []),
       { title: 'conta', items: conta },
-      ...(coletivo.length ? [{ title: 'coletivos', items: coletivo }] : []),
+      ...(itensColetivo.length ? [{ title: 'coletivos', items: itensColetivo }] : []),
       ...(explorar.length ? [{ title: 'explorar (admin)', items: explorar }] : []),
     ]
-  }, [user, naoLidas, coletivos])
+  }, [perfis, coletivos, naoLidas])
 
-  if (!user) return null
+  const tipos = [...new Set(perfis.map((a) => TIPO_LABEL[a.tipo]))].join(' + ')
 
   const sidebar = (
     <nav aria-label="Painel" className="flex h-full flex-col gap-6 p-4">
       <div className="flex items-center gap-3 border-b border-[var(--color-line)] pb-4">
-        <Avatar
-          src={user.atuacoes.find((a): a is Extract<typeof a, { tipo: 'artista' }> => a.tipo === 'artista')?.fotoApresentacao}
-          alt={user.nome}
-          size={44}
-        />
+        <Avatar alt={nome} size={44} />
         <div className="min-w-0">
-          <p className="truncate font-display text-sm font-bold">{user.nome}</p>
-          <p className="truncate font-mono text-xs text-[var(--color-muted)]">
-            {user.atuacoes.map((a) => TIPO_LABEL[a.tipo]).join(' + ')}
-          </p>
+          <p className="truncate font-display text-sm font-bold">{nome}</p>
+          <p className="truncate font-mono text-xs text-[var(--color-muted)]">{tipos}</p>
         </div>
       </div>
 
@@ -105,16 +100,17 @@ export function AppShell({ children }: { children: ReactNode }) {
       ))}
 
       <div className="mt-auto border-t border-[var(--color-line)] pt-4">
-        <button
-          onClick={() => {
-            loggingOut.current = true
-            logout()
-            navigate('/')
-          }}
-          className="w-full px-3 py-2 text-left font-mono text-sm text-[var(--color-muted)] hover:text-[var(--accent-text)]"
-        >
-          [→] Sair da sessão
-        </button>
+        {onLogout ? (
+          <button type="button" onClick={onLogout} className={logoutClass}>
+            [→] Sair da sessão
+          </button>
+        ) : (
+          <form method="post" action="/sair">
+            <button type="submit" className={logoutClass}>
+              [→] Sair da sessão
+            </button>
+          </form>
+        )}
       </div>
     </nav>
   )

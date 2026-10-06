@@ -52,7 +52,7 @@ jobs:
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
           pnpm exec supabase link --project-ref "$PROJECT_REF" --yes
-          pnpm exec supabase db push --linked --skip-vault --yes
+          pnpm exec supabase db push --linked --skip-vault --include-all --yes
       - name: Load synthetic seeds
         env:
           PGHOST: ${{ steps.pooler.outputs.host }}

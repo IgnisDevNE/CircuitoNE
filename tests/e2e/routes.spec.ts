@@ -5,26 +5,7 @@ const publicRoutes = [
   ['/cadastro', 'Cadastro'],
 ] as const
 
-const privateRoutes = [
-  ['/painel', 'Dashboard'],
-  ['/painel/perfil/art-anerie', 'Editar ANERIE'],
-  ['/painel/dados', 'Editar Dados'],
-  ['/painel/dados/nova-atuacao', 'Nova atuação'],
-  ['/painel/seguranca', 'Segurança'],
-  ['/painel/mensagens', 'Central de Mensagens'],
-  ['/painel/coletivos', 'Meus Coletivos'],
-  ['/painel/explorar/artistas', 'explorar/artistas'],
-  ['/painel/explorar/servicos', 'explorar/serviços'],
-  ['/painel/explorar/audiovisual', 'explorar/audiovisual'],
-  ['/painel/explorar/coletivos', 'explorar/coletivos'],
-  ['/coletivo/col-litoral/painel', 'LITORAL SUL · Dashboard'],
-  ['/coletivo/col-litoral/mensagens', 'LITORAL SUL · Mensagens'],
-  ['/coletivo/col-litoral/solicitacoes', 'LITORAL SUL · Solicitações'],
-  ['/coletivo/col-litoral/eventos/novo', 'LITORAL SUL · Criar Evento'],
-  ['/coletivo/col-litoral/membros', 'LITORAL SUL · Membros'],
-  ['/coletivo/col-litoral/editar', 'LITORAL SUL · Editar'],
-  ['/coletivo/col-litoral/perfil', 'LITORAL SUL · Perfil'],
-] as const
+// /painel e /coletivo/* são reais: layout autenticado + dashboard no banco (tests/e2e/db/auth.spec.ts e dashboard.spec.ts).
 
 test.beforeEach(async ({ page, baseURL }) => {
   await page.clock.setFixedTime(new Date('2026-09-22T15:00:00.000Z'))
@@ -35,7 +16,7 @@ test.beforeEach(async ({ page, baseURL }) => {
 })
 
 test.afterEach(async ({ page }, info) => {
-  const visualPaths = ['/cadastro','/coletivo/col-litoral/painel']
+  const visualPaths = ['/cadastro']
   if (info.status === 'passed' && visualPaths.includes(new URL(page.url()).pathname)) {
     await info.attach('viewport', { body: await page.screenshot({ animations: 'disabled' }), contentType: 'image/png' })
   }
@@ -52,24 +33,11 @@ for (const [path, title] of publicRoutes) {
   })
 }
 
-for (const [path, title] of privateRoutes) {
-  test(`rota com sessão mock ${path}`, async ({ page }) => {
-    const errors: string[] = []
-    page.on('pageerror', (error) => errors.push(error.message))
-    await page.goto('/entrar')
-    await page.getByRole('button', { name: '[demo] entrar como Ana', exact: true }).click()
-    await expect(page).toHaveURL(/\/painel$/)
-    // Caracteriza a renderização a partir do histórico. O mock perde a sessão
-    // em recargas; navegação por links tem jornada própria abaixo.
-    await page.evaluate((pathname) => {
-      window.history.pushState({}, '', pathname)
-      window.dispatchEvent(new PopStateEvent('popstate'))
-    }, path)
-    await expect(page).toHaveTitle(`${title} · CIRCUITO NE`)
-    await expect(page.getByRole('heading').first()).toBeVisible()
-    expect(errors).toEqual([])
-  })
-}
+test('o painel não existe sem Supabase: o preview não simula sessão nem dados', async ({ page }) => {
+  const response = await page.goto('/painel')
+  expect(response?.status()).toBe(503)
+  await expect(page.getByRole('alert')).toContainText('Não foi possível carregar')
+})
 
 test('rota desconhecida permite voltar ao início', async ({ page }) => {
   await page.goto('/rota-inexistente')
@@ -83,19 +51,11 @@ test('parâmetro com escape inválido é rejeitado sem quebrar a página', async
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   // O runtime SSR rejeita a URL malformada com 400.
-  // Um histórico manipulado também deve oferecer caminho de recuperação.
-  const response = await page.goto('/artistas/%E0%A4%A')
-  expect(response?.status()).toBe(400)
-  await page.goto('/entrar')
-  // O clique só funciona com a página hidratada; manipular o histórico antes disso causaria divergência de hidratação.
-  await page.getByRole('button', { name: '[demo] entrar como Ana', exact: true }).click()
-  await expect(page).toHaveURL(/\/painel$/)
-  await page.evaluate(() => {
-    window.history.pushState({}, '', '/painel/perfil/%E0%A4%A')
-    window.dispatchEvent(new PopStateEvent('popstate'))
-  })
+  for (const path of ['/artistas/%E0%A4%A', '/painel/perfil/%E0%A4%A']) {
+    const response = await page.goto(path)
+    expect(response?.status()).toBe(400)
+  }
+  await page.goto('/rota-inexistente')
   await expect(page.getByRole('link', { name: 'voltar ao início', exact: true })).toBeVisible()
-  await page.getByRole('link', { name: 'voltar ao início', exact: true }).click()
-  await expect(page).toHaveURL(/\/$/)
   expect(errors).toEqual([])
 })

@@ -1,9 +1,10 @@
 import { type RouteConfig, index, layout, route } from '@react-router/dev/routes'
 
-const paths = [
-  '/entrar',
-  '/cadastro',
-  '/painel',
+// Ainda pelo protótipo (identity -> legacy): entrar (login real no runtime development) e cadastro.
+const paths = ['/entrar', '/cadastro']
+
+// Páginas do painel ainda sem dados reais: mostram "Em breve" dentro do layout autenticado, uma por tarefa do plano.
+const comingSoon = [
   '/painel/perfil/:atuacaoId',
   '/painel/dados',
   '/painel/dados/nova-atuacao',
@@ -25,6 +26,11 @@ const paths = [
 
 export default [
   ...paths.map((path, position) => route(path.slice(1), './routes/identity.tsx', { id: `page-${position}` })),
+  // Layout autenticado: valida a sessão no servidor e redireciona visitantes para /entrar.
+  layout('./routes/layouts/app.tsx', [
+    route('painel', './routes/dashboard.tsx'),
+    ...comingSoon.map((path, position) => route(path.slice(1), './routes/soon.tsx', { id: `soon-${position}` })),
+  ]),
   // Páginas ligadas ao banco: um módulo por página, dentro de layouts. O restante ainda é o protótipo (identity -> legacy).
   layout('./routes/layouts/public.tsx', [
     index('./routes/home.tsx'),

@@ -51,10 +51,6 @@ describe("troca de identidade da rota sem desmontar a sessão demo", () => {
     go("/coletivo/col-litoral/mensagens")
     expect(screen.getByText(/sem vínculo com este coletivo/i)).toBeTruthy()
     expect(screen.queryByRole("navigation", { name: "Seções do coletivo" })).toBeNull()
-
-    go("/coletivo/col-litoral/editar")
-    expect(screen.getByText(/sem vínculo com este coletivo/i)).toBeTruthy()
-    expect(screen.queryByRole("textbox", { name: /Nome/ })).toBeNull()
   })
 
   it("mantém acesso ao painel para membro real de nível zero", async () => {
@@ -91,27 +87,6 @@ describe("troca de identidade da rota sem desmontar a sessão demo", () => {
         name: /Nome artístico/,
       }) as HTMLInputElement).value,
     ).toBe("ANERIE")
-  })
-
-  it("carrega dados e cargos do coletivo atual", async () => {
-    coletivos[1].membros = originalMembers.map((m) =>
-      m.userId === "u-demo" ? { ...m, cargoId: "u-admin" } : m,
-    )
-    const user = await login()
-    go("/coletivo/col-litoral/editar")
-    const nome = screen.getAllByRole("textbox", {
-      name: /Nome/,
-    })[0] as HTMLInputElement
-    await user.clear(nome)
-    await user.type(nome, "Rascunho Litoral")
-
-    go("/coletivo/col-usina/editar")
-    expect(
-      (screen.getAllByRole("textbox", { name: /Nome/ })[0] as HTMLInputElement)
-        .value,
-    ).toBe("USINA PRODUÇÕES")
-    expect(screen.getByText("Diretoria")).toBeTruthy()
-    expect(screen.queryByText("Administração")).toBeNull()
   })
 
   it("não exibe conversa do coletivo anterior", async () => {

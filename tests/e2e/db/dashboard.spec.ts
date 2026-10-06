@@ -80,7 +80,7 @@ test('dashboard e menu mostram as mensagens não lidas', async ({ page }) => {
   await expect(panelNav(page).getByRole('link', { name: 'Mensagens (1)' })).toHaveAttribute('href', '/painel/mensagens')
 })
 
-test('menu leva às páginas ainda em preparação, sem dados de mentira', async ({ page }) => {
+test('menu leva às páginas reais e às ainda em preparação, sem dados de mentira', async ({ page }) => {
   await login(page, accounts.active.email)
   await openPanelMenu(page)
   const nav = panelNav(page)
@@ -93,16 +93,22 @@ test('menu leva às páginas ainda em preparação, sem dados de mentira', async
 
   await nav.getByRole('link', { name: 'Explorar Artistas' }).click()
   await expect(page).toHaveURL(/\/painel\/explorar\/artistas$/)
+  // O catálogo interno é real (explore.spec.ts).
+  await expect(page).toHaveTitle('explorar/artistas · CIRCUITO NE')
+  await expect(page.getByRole('heading', { level: 1, name: /explorar\/artistas/ })).toBeVisible()
+
+  // A nova atuação (cadastro) ainda é "Em breve".
+  await page.goto('/painel/dados/nova-atuacao')
   await expect(page).toHaveTitle('Em breve · CIRCUITO NE')
   await expect(page.getByRole('heading', { level: 1, name: 'Em breve' })).toBeVisible()
   await expect(page.getByText('Esta função ainda está em preparação')).toBeVisible()
   await page.getByRole('link', { name: 'voltar ao dashboard' }).click()
   await expect(page).toHaveURL(/\/painel$/)
 
-  // O painel do coletivo é real (collective.spec.ts); as seções de W9–W10 seguem "Em breve" dentro do layout do coletivo.
+  // O painel e as seções do coletivo são reais (collective.spec.ts e collective-manage.spec.ts).
   const response = await page.goto(`/coletivo/${collectiveId(1)}/membros`)
   expect(response?.status()).toBe(200)
-  await expect(page.getByRole('heading', { level: 1, name: 'Em breve' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 2, name: 'membros do coletivo' })).toBeVisible()
   await expect(panelNav(page).or(page.getByRole('button', { name: 'Menu do painel' }))).toBeVisible()
 })
 
@@ -120,9 +126,9 @@ test('cada conta vê somente os próprios dados', async ({ page }) => {
   await expect(mine).not.toContainText('responsável')
   await expect(page.getByText('Artista sintético público')).toHaveCount(0)
   await expect(page.getByText('Projeto sintético interno')).toHaveCount(0)
-  // Sem coletivo próprio aprovado, a conta não ganha os menus de exploração.
+  // O catálogo interno é de toda conta ativa (RN-06); os dados restritos dependem do banco (explore.spec.ts).
   await openPanelMenu(page)
-  await expect(panelNav(page).getByRole('link', { name: /Explorar/ })).toHaveCount(0)
+  await expect(panelNav(page).getByRole('link', { name: /Explorar/ })).toHaveCount(4)
   await expect(page.getByText(accounts.active.name)).toHaveCount(0)
 })
 

@@ -3,21 +3,6 @@ import { type RouteConfig, index, layout, route } from '@react-router/dev/routes
 // Ainda pelo protótipo (identity -> legacy): entrar (login real no runtime development).
 const paths = ['/entrar']
 
-// Páginas do painel ainda sem dados reais: mostram "Em breve" dentro do layout autenticado, uma por tarefa do plano.
-const comingSoon = [
-  '/painel/explorar/artistas',
-  '/painel/explorar/servicos',
-  '/painel/explorar/audiovisual',
-  '/painel/explorar/coletivos',
-]
-
-// Seções do coletivo ainda sem dados reais (W9–W10): "Em breve" dentro do layout do coletivo, com o menu por permissões.
-const collectiveSoon = [
-  'membros',
-  'editar',
-  'perfil',
-]
-
 export default [
   ...paths.map((path, position) => route(path.slice(1), './routes/identity.tsx', { id: `page-${position}` })),
   // Cadastro real (e confirmação do link do e-mail): fora do layout autenticado, mas com SSR e a sessão validada no servidor.
@@ -34,7 +19,8 @@ export default [
     // "nova" (estática) vem antes de ":conversationId" e tem prioridade na correspondência.
     route('painel/mensagens/nova', './routes/message-new.tsx'),
     route('painel/mensagens/:conversationId?', './routes/messages.tsx'),
-    ...comingSoon.map((path, position) => route(path.slice(1), './routes/soon.tsx', { id: `soon-${position}` })),
+    // Catálogo interno (RN-06/RN-07): artistas, servicos, audiovisual e coletivos; outro valor responde 404 no loader.
+    route('painel/explorar/:kind', './routes/explore.tsx'),
     // Área do coletivo: 404 para quem não é membro; menu e páginas conforme as permissões (get_collective_access).
     route('coletivo/:id', './routes/layouts/collective.tsx', [
       route('painel', './routes/collective-dashboard.tsx'),
@@ -42,7 +28,9 @@ export default [
       route('eventos/novo', './routes/event-create.tsx'),
       route('eventos/:eventId', './routes/event-manage.tsx'),
       route('mensagens/:conversationId?', './routes/collective-messages.tsx'),
-      ...collectiveSoon.map((path, position) => route(path, './routes/soon.tsx', { id: `collective-soon-${position}` })),
+      route('membros', './routes/collective-members.tsx'),
+      route('editar', './routes/collective-edit.tsx'),
+      route('perfil', './routes/collective-profile-edit.tsx'),
     ]),
   ]),
   // Páginas ligadas ao banco: um módulo por página, dentro de layouts. O restante ainda é o protótipo (identity -> legacy).

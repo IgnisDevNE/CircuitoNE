@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Link } from '../../router'
 import { Badge, Panel } from '../../components/ui/primitives'
 import type { ColetivoArea, SituacaoBloqueada } from '../../server/mappers/collective-area'
@@ -19,15 +20,23 @@ const TEXTOS: Record<SituacaoBloqueada, { rotulo: string; explicacao: string }> 
   },
 }
 
-/** Estado de um coletivo ainda não aprovado (RN-30): explica a situação e não oferece nenhuma função interna. */
+/**
+ * Estado de um coletivo ainda não aprovado (RN-30): explica a situação e não oferece nenhuma função interna.
+ * Quem criou o pedido (pendente ou recusado) pode abrir a correção dos dados: `editarHref` leva até ela e, dentro dela,
+ * `children` traz o formulário no lugar do atalho. Nada mais do coletivo abre antes da aprovação.
+ */
 export function CollectiveUnavailable({
   coletivo,
   situacao,
   motivo,
+  editarHref,
+  children,
 }: {
   coletivo: Pick<ColetivoArea, 'nome' | 'cargo' | 'dono'>
   situacao: SituacaoBloqueada
   motivo: string | null
+  editarHref?: string
+  children?: ReactNode
 }) {
   const texto = TEXTOS[situacao]
   return (
@@ -47,10 +56,18 @@ export function CollectiveUnavailable({
             Motivo informado: {motivo}
           </p>
         )}
+        {editarHref && !children && (
+          <p className="mt-4">
+            <Link to={editarHref} className="font-mono text-sm text-[var(--accent-text)] underline">
+              {situacao === 'rejected' ? 'corrigir os dados e reenviar' : 'corrigir os dados do pedido'}
+            </Link>
+          </p>
+        )}
         <Link to="/painel/coletivos" className="mt-4 inline-block font-mono text-sm text-[var(--accent-text)] underline">
           voltar para meus coletivos
         </Link>
       </Panel>
+      {children}
     </div>
   )
 }

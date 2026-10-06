@@ -18,6 +18,18 @@ export type Permissao = (typeof PERMISSIONS)[number]
 /** Permissões que dão acesso ao painel de gestão de eventos (rascunhos e cancelados incluídos). */
 export const EVENT_PERMISSIONS: readonly Permissao[] = ['create_events', 'edit_events', 'publish_events', 'cancel_events']
 
+/** Rótulos pt-BR do catálogo (ADR 0008), na ordem em que as permissões aparecem nos formulários. */
+export const PERMISSION_LABELS: Record<Permissao, string> = {
+  manage_requests: 'Gerir pedidos de entrada',
+  remove_members: 'Remover membros comuns',
+  create_events: 'Criar eventos',
+  edit_events: 'Editar eventos',
+  publish_events: 'Publicar eventos',
+  cancel_events: 'Cancelar eventos',
+  read_messages: 'Ler mensagens do coletivo',
+  send_messages: 'Enviar mensagens pelo coletivo',
+}
+
 export type CollectiveAccess = { dono: boolean; permissoes: Permissao[] }
 
 export const isPermission = (value: unknown): value is Permissao =>

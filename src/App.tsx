@@ -13,12 +13,8 @@ import { LegacyEditData } from './pages/legacy/LegacyEditData'
 import { LegacyEditProfile } from './pages/legacy/LegacyEditProfile'
 import { LegacySecurity } from './pages/legacy/LegacySecurity'
 import { LegacyMessages } from './pages/legacy/LegacyMessages'
-import { Explore } from './pages/app/Explore'
 
 import { LegacyCollectiveMessages } from './pages/legacy/LegacyCollectiveMessages'
-import { EditMembers } from './pages/collective/EditMembers'
-import { EditCollective } from './pages/collective/EditCollective'
-import { EditCollectiveProfile } from './pages/collective/EditCollectiveProfile'
 import { LegacyCreateEvent } from './pages/collective/LegacyCreateEvent'
 
 const pub = (el: ReactNode) => <LegacyPublic>{el}</LegacyPublic>
@@ -47,16 +43,9 @@ export default function App({ initialNow }: { initialNow?: number } = {}) {
               { path: '/painel/dados/nova-atuacao', element: app(<Register mode="nova-atuacao" />) },
               { path: '/painel/seguranca', element: app(<LegacySecurity />) },
               { path: '/painel/mensagens', element: app(<LegacyMessages />) },
-              { path: '/painel/explorar/artistas', element: app(<Explore kind="artistas" />) },
-              { path: '/painel/explorar/servicos', element: app(<Explore kind="servicos" />) },
-              { path: '/painel/explorar/audiovisual', element: app(<Explore kind="audiovisual" />) },
-              { path: '/painel/explorar/coletivos', element: app(<Explore kind="coletivos" />) },
               // coletivo / produtora
               { path: '/coletivo/:id/mensagens', element: col(<LegacyCollectiveMessages />) },
               { path: '/coletivo/:id/eventos/novo', element: col(<LegacyCreateEvent />) },
-              { path: '/coletivo/:id/membros', element: col(<EditMembers />) },
-              { path: '/coletivo/:id/editar', element: col(<EditCollective />) },
-              { path: '/coletivo/:id/perfil', element: col(<EditCollectiveProfile />) },
             ]}
             notFound={pub(
               <Empty>

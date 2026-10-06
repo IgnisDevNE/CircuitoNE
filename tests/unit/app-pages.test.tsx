@@ -70,13 +70,18 @@ describe('AppShell com dados reais por props (sem StoreProvider)', () => {
 
   it('sem coletivos nem perfis de artista o menu fica enxuto, e sem não lidas o rótulo não tem contador', () => {
     shell({ perfis: [perfil({ tipo: 'servicos', nome: 'Serviços sintéticos' })], coletivos: [] })
-    expect(navLinks().map(([label]) => label)).toEqual(['Início (site)', 'Dashboard', 'Editar Dados', 'Segurança', 'Mensagens'])
+    expect(navLinks().map(([label]) => label)).toEqual([
+      'Início (site)', 'Dashboard', 'Editar Dados', 'Segurança', 'Mensagens',
+      'Explorar Artistas', 'Explorar Serviços', 'Explorar Audiovisual', 'Explorar Coletivos',
+    ])
   })
 
-  it('só quem responde por um coletivo aprovado vê "Explorar"; membro comum ou coletivo em análise, não', () => {
+  it('toda conta ativa vê "Explorar" (RN-06): membro comum ou coletivo em análise também; os dados restritos dependem do banco', () => {
     shell({ coletivos: [coletivo({ dono: false }), coletivo({ id: 'p', situacao: 'pending' })] })
     expect(navLinks().map(([label]) => label)).toContain('Coletivos/Produtoras')
-    expect(navLinks().some(([label]) => label?.startsWith('Explorar'))).toBe(false)
+    expect(navLinks().filter(([label]) => label?.startsWith('Explorar')).map(([, href]) => href)).toEqual([
+      '/painel/explorar/artistas', '/painel/explorar/servicos', '/painel/explorar/audiovisual', '/painel/explorar/coletivos',
+    ])
   })
 
   it('"Sair" é o formulário real POST /sair, sem callback do protótipo', () => {

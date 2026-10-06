@@ -82,19 +82,19 @@ test.describe('acesso por permissões', () => {
     await expect(page.getByText('Nenhuma solicitação de acesso pendente.')).toBeVisible()
   })
 
-  test('seções ainda em preparação aparecem dentro do layout do coletivo, com o menu por permissões', async ({ page }) => {
+  test('seções de gestão abrem dentro do layout do coletivo, com o menu por permissões', async ({ page }) => {
     await login(page, accounts.active.email)
-    for (const path of ['membros', 'editar', 'perfil']) {
+    for (const [path, panelTitle] of [['membros', 'membros do coletivo'], ['editar', 'informações'], ['perfil', 'perfil público do coletivo']]) {
       const response = await page.goto(`/coletivo/${collectiveId(1)}/${path}`)
       expect(response?.status()).toBe(200)
-      await expect(page.getByRole('heading', { level: 1, name: 'Em breve' })).toBeVisible()
+      await expect(page.getByRole('heading', { level: 2, name: panelTitle, exact: true })).toBeVisible()
       await expect(page.getByRole('heading', { level: 1, name: collectiveName(1) })).toBeVisible()
       await expect(sectionNav(page)).toBeVisible()
     }
     await page.goto(`/coletivo/${collectiveId(1)}/painel`)
     await sectionNav(page).getByRole('link', { name: 'Membros' }).click()
     await expect(page).toHaveURL(new RegExp(`/coletivo/${collectiveId(1)}/membros$`))
-    await expect(page).toHaveTitle('Em breve · CIRCUITO NE')
+    await expect(page).toHaveTitle(`${collectiveName(1)} · Membros · CIRCUITO NE`)
   })
 
   test('quem não é membro recebe o mesmo 404 de um coletivo que não existe', async ({ page }) => {
@@ -299,7 +299,7 @@ test.describe('pedir, cancelar, aprovar e recusar entrada', () => {
     await expect(page.getByRole('heading', { level: 2, name: 'solicitações de entrada' })).toHaveCount(0)
     await expect(page.getByRole('heading', { level: 2, name: 'mensagens do coletivo' })).toHaveCount(0)
     await openPanelMenu(page)
-    await expect(panelNav(page).getByRole('link', { name: /Explorar/ })).toHaveCount(0)
+    await expect(panelNav(page).getByRole('link', { name: /Explorar/ })).toHaveCount(4)
 
     // Sem "gerir pedidos de entrada", a página de solicitações não mostra a fila.
     const response = await page.goto(`/coletivo/${collectiveId(6)}/solicitacoes`)

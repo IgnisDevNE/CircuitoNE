@@ -52,8 +52,27 @@ const KNOWN_FAILURES: Record<string, ActionFailure> = {
   'Mensagem indisponível': new ActionFailure(409, 'Esta mensagem não está mais disponível.'),
   'Bloqueio não autorizado': new ActionFailure(403, 'Você não pode alterar o bloqueio desta conversa por esta atuação ou coletivo.'),
   'Denúncia não autorizada': new ActionFailure(403, 'Você não pode denunciar esta mensagem.'),
-  'Motivo necessário': new ActionFailure(422, 'Explique o motivo da denúncia em até 2.000 caracteres.'),
+  'Motivo necessário': new ActionFailure(422, 'Explique o motivo em até 2.000 caracteres.'),
   'Operação não autorizada': new ActionFailure(403, 'Você não tem permissão para esta operação.'),
+  // Gestão do coletivo (W9); o conflito de versão chega com o código 40001.
+  'Coletivo alterado; recarregue': new ActionFailure(
+    409,
+    'Este coletivo foi alterado por outra pessoa enquanto você editava. A página foi recarregada com a versão mais recente: revise e repita a operação.',
+  ),
+  'Edição inválida': new ActionFailure(422, 'O banco recusou os dados informados. Revise os campos e tente de novo.'),
+  'Dados de coletivo inválidos': new ActionFailure(422, 'O banco recusou os dados do coletivo. Revise os campos e tente de novo.'),
+  'Produtora exige CNPJ': new ActionFailure(422, 'Produtora exige CNPJ.'),
+  'Permissões inválidas': new ActionFailure(422, 'As permissões escolhidas são inválidas.'),
+  'Perfil/permissões inválidos': new ActionFailure(422, 'Já existe um perfil com esse nome, ou o nome e as permissões são inválidos.'),
+  'Perfil indisponível': new ActionFailure(409, 'Este perfil de acesso não existe mais neste coletivo. A página foi recarregada.'),
+  'Reatribua os membros antes de excluir o perfil': new ActionFailure(409, 'Há membros com este perfil. Atribua outro perfil a eles antes de excluí-lo.'),
+  'Membro indisponível': new ActionFailure(409, 'Esta pessoa não é mais membro do coletivo. A página foi recarregada.'),
+  'Proprietário não recebe outro perfil': new ActionFailure(403, 'O proprietário não recebe perfis de acesso. Transfira a propriedade antes de mudar o papel dele.'),
+  'Transfira a propriedade antes de sair': new ActionFailure(403, 'O proprietário não pode ser removido do coletivo. Transfira a propriedade antes.'),
+  'Transferência exige proprietário com MFA e sucessor elegível': new ActionFailure(
+    403,
+    'A transferência exige a sua sessão confirmada com o segundo fator e um membro com a verificação em duas etapas ativa, e-mail e celular confirmados.',
+  ),
   // Eventos (RN-23..RN-27); o conflito de versão chega com o código 40001.
   'Evento alterado; recarregue': new ActionFailure(
     409,

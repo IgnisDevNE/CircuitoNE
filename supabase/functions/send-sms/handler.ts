@@ -57,7 +57,7 @@ export function createHandler(deps: HandlerDeps) {
     const otp = payload.sms?.otp
     if (!phone || !validOtp(otp)) {
       // Só indica o que faltou; nunca registra número ou código.
-      log('send-sms: invalid payload', { phone: Boolean(phone), otp: validOtp(otp) })
+      log('send-sms: invalid payload', { phone: phone ? 'present' : 'missing', otp: validOtp(otp) ? 'present' : 'missing' })
       return hookError(400, 'Requisição inválida.')
     }
     if (!isAllowedDestination(phone, deps.allowedPrefixes)) return hookError(400, 'Este número não pode receber SMS.')

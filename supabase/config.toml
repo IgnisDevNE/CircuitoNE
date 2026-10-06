@@ -2,7 +2,8 @@
 project_id = "circuitone-local"
 
 [api]
-enabled = false
+# PostgREST local para o e2e com banco (job e2e do CI). db start, usado por tests/database, ignora esta seção.
+enabled = true
 auto_expose_new_tables = false
 
 [db]

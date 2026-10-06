@@ -12,8 +12,6 @@ import { ArtistsHub } from './pages/public/ArtistsHub'
 import { ArtistProfile } from './pages/public/ArtistProfile'
 import { CollectivesHub } from './pages/public/CollectivesHub'
 import { CollectiveProfile } from './pages/public/CollectiveProfile'
-import { EventsList } from './pages/public/EventsList'
-import { EventPage } from './pages/public/EventPage'
 
 import { Login } from './pages/auth/Login'
 import { Register } from './pages/auth/Register'
@@ -55,8 +53,6 @@ export default function App({ initialNow }: { initialNow?: number } = {}) {
               { path: '/artistas/:id', element: pub(<ArtistProfile />) },
               { path: '/coletivos', element: pub(<CollectivesHub />) },
               { path: '/coletivos/:id', element: pub(<CollectiveProfile />) },
-              { path: '/eventos', element: pub(<EventsList />) },
-              { path: '/eventos/:id', element: pub(<EventPage />) },
               // auth
               { path: '/entrar', element: pub(<Login />) },
               { path: '/cadastro', element: pub(<Register mode="cadastro" />) },

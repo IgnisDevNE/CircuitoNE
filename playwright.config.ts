@@ -2,6 +2,7 @@ import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
   testDir: './tests/e2e',
+  testIgnore: '**/db/**', // suíte com Supabase local: playwright.db.config.ts
   forbidOnly: !!process.env.CI,
   retries: 0,
   workers: 2,

@@ -6,8 +6,6 @@ const publicRoutes = [
   ['/artistas/art-anerie', 'ANERIE'],
   ['/coletivos', 'Coletivos e Produtoras'],
   ['/coletivos/col-litoral', 'LITORAL SUL'],
-  ['/eventos', 'Eventos Programados'],
-  ['/eventos/ev-porto', 'PORTO NOTURNO — TECHNO NA ORLA'],
   ['/entrar', 'Entrar'],
   ['/cadastro', 'Cadastro'],
 ] as const
@@ -72,19 +70,19 @@ test('link direto do artista mantém o perfil público após recarga', async ({ 
   expect(errors).toEqual([])
 })
 
-test('hidrata a agenda com o relógio do servidor mesmo se o navegador estiver em outra data', async ({ page }) => {
+test('hidrata a home com o relógio do servidor mesmo se o navegador estiver em outra data', async ({ page }) => {
   await page.clock.setFixedTime(new Date('2030-01-01T12:00:00.000Z'))
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
-  const response = await page.goto('/eventos')
+  const response = await page.goto('/')
   expect(response?.status()).toBe(200)
   const serverEvents = await page.evaluate(
-    (html) => [...new DOMParser().parseFromString(html, 'text/html').querySelectorAll('main li h3')]
+    (html) => [...new DOMParser().parseFromString(html, 'text/html').querySelectorAll('main a[href^="/eventos/"] h3')]
       .map((heading) => heading.textContent?.trim()),
     await response!.text(),
   )
   expect(serverEvents).toContain('PORTO NOTURNO — TECHNO NA ORLA')
-  await expect(page.locator('main li h3')).toHaveText(serverEvents)
+  await expect(page.locator('main a[href^="/eventos/"] h3')).toHaveText(serverEvents)
   expect(errors).toEqual([])
 })
 

@@ -34,14 +34,6 @@ describe('jornadas com fixtures — sem prova de Auth, autorização ou persist�
     expect(screen.getByRole('heading', { level: 2, name: 'artistas/' })).toBeTruthy()
   })
 
-  it('apresenta compra de ingresso como um único link acessível', () => {
-    open('/eventos/ev-porto')
-    const ingresso = screen.getByRole('link', { name: 'Comprar ingresso ↗' })
-    expect(ingresso.getAttribute('href')).toBe('https://ingressos.exemplo/porto-noturno')
-    expect(ingresso.querySelector('button')).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Comprar ingresso ↗' })).toBeNull()
-  })
-
   it('busca artistas por nome e bio, combina estilo e recupera o estado vazio', async () => {
     open('/artistas')
     const user = userEvent.setup()
@@ -64,29 +56,6 @@ describe('jornadas com fixtures — sem prova de Auth, autorização ou persist�
     expect(document.title).toBe('ANERIE · CIRCUITO NE')
   })
 
-  it('ordena eventos futuros, filtra por estado e mostra a programação do evento', async () => {
-    open('/eventos')
-    const user = userEvent.setup()
-    const eventNames = () => screen.getAllByRole('heading', { level: 3 }).map(item => item.textContent)
-    expect(eventNames()).toEqual(['PORTO NOTURNO — TECHNO NA ORLA', 'ENCONTRO DE SOUND SYSTEMS', 'USINA FESTIVAL 2026'])
-    await user.click(screen.getByRole('button', { name: 'CE' }))
-    expect(eventNames()).toEqual(['ENCONTRO DE SOUND SYSTEMS', 'USINA FESTIVAL 2026'])
-    await user.click(screen.getByRole('button', { name: 'CE' }))
-    expect(eventNames()).toHaveLength(3)
-    await user.click(screen.getByRole('button', { name: 'PE' }))
-    expect(eventNames()).toEqual(['PORTO NOTURNO — TECHNO NA ORLA'])
-    await user.click(screen.getByRole('link', { name: /Capa do evento PORTO NOTURNO/ }))
-    expect(document.title).toBe('PORTO NOTURNO — TECHNO NA ORLA · CIRCUITO NE')
-    expect(screen.getByRole('link', { name: 'ANERIE' }).getAttribute('href')).toBe('/artistas/art-anerie')
-  })
-
-  it('mostra ausência de eventos quando todas as datas das fixtures passaram', () => {
-    vi.setSystemTime(new Date('2027-01-01T15:00:00Z'))
-    open('/eventos')
-    expect(screen.getByText('Nenhum evento futuro cadastrado.')).toBeTruthy()
-    expect(screen.queryAllByRole('heading', { level: 3 })).toHaveLength(0)
-  })
-
   it('mantém o evento em andamento no cartão da artista', () => {
     vi.setSystemTime(new Date(fixedTime.getTime() + 6.5 * 86400000))
     open('/artistas')
@@ -98,7 +67,6 @@ describe('jornadas com fixtures — sem prova de Auth, autorização ou persist�
   it.each([
     ['/artistas/ausente', 'Artista não encontrado.'],
     ['/coletivos/ausente', 'Coletivo não encontrado.'],
-    ['/eventos/ausente', 'Evento não encontrado.'],
     ['/ausente', '404 — página não encontrada.'],
   ])('apresenta estado não encontrado em %s', (path, message) => {
     open(path)
@@ -238,8 +206,7 @@ describe('jornadas com fixtures — sem prova de Auth, autorização ou persist�
 
     fireEvent.change(screen.getByLabelText(/Fim/), { target: { value: '' } })
     await user.click(screen.getByRole('button', { name: 'publicar evento' }))
-    await user.click(screen.getByRole('link', { name: /Evento horário teste/ }))
-    expect(screen.getByText('24 set 2026 · 19:30 (Fortaleza)')).toBeTruthy()
-    expect(screen.getByText('Não informado')).toBeTruthy()
+    // A página pública do evento agora é servida pelo banco (ver events-pages.test.tsx).
+    expect(screen.getByRole('link', { name: /Evento horário teste/ }).getAttribute('href')).toBe('/eventos/ev-100')
   })
 })

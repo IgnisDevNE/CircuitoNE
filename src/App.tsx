@@ -19,7 +19,7 @@ import { CollectiveMessages } from './pages/collective/CollectiveMessages'
 import { EditMembers } from './pages/collective/EditMembers'
 import { EditCollective } from './pages/collective/EditCollective'
 import { EditCollectiveProfile } from './pages/collective/EditCollectiveProfile'
-import { CreateEvent } from './pages/collective/CreateEvent'
+import { LegacyCreateEvent } from './pages/collective/LegacyCreateEvent'
 
 const pub = (el: ReactNode) => <LegacyPublic>{el}</LegacyPublic>
 const app = (el: ReactNode) => <LegacyAppShell>{el}</LegacyAppShell>
@@ -53,7 +53,7 @@ export default function App({ initialNow }: { initialNow?: number } = {}) {
               { path: '/painel/explorar/coletivos', element: app(<Explore kind="coletivos" />) },
               // coletivo / produtora
               { path: '/coletivo/:id/mensagens', element: col(<CollectiveMessages />) },
-              { path: '/coletivo/:id/eventos/novo', element: col(<CreateEvent />) },
+              { path: '/coletivo/:id/eventos/novo', element: col(<LegacyCreateEvent />) },
               { path: '/coletivo/:id/membros', element: col(<EditMembers />) },
               { path: '/coletivo/:id/editar', element: col(<EditCollective />) },
               { path: '/coletivo/:id/perfil', element: col(<EditCollectiveProfile />) },

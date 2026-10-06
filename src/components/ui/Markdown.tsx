@@ -25,7 +25,7 @@ export function Markdown({ source, className }: { source: string; className?: st
 }
 
 /** Markdown editor with style buttons (WCAG: labelled toolbar buttons). */
-export function MarkdownEditor({ value, onChange, id }: { value: string; onChange: (v: string) => void; id?: string }) {
+export function MarkdownEditor({ value, onChange, id, name }: { value: string; onChange: (v: string) => void; id?: string; name?: string }) {
   const ref = useRef<HTMLTextAreaElement>(null)
 
   const wrap = (before: string, after = before) => {
@@ -78,6 +78,7 @@ export function MarkdownEditor({ value, onChange, id }: { value: string; onChang
       <textarea
         ref={ref}
         id={id}
+        name={name}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="min-h-40 w-full resize-y bg-[var(--color-bg-elev)] p-3 font-mono text-sm outline-none focus:ring-1 focus:ring-[var(--accent)]"

@@ -47,7 +47,7 @@ test.describe('acesso por permissões', () => {
     // Rascunho e cancelado só aparecem na gestão; evento de outro coletivo (7) nunca.
     const events = panel(page, 'eventos')
     const hrefs = await events.locator('a').evaluateAll((items) => items.map((a) => a.getAttribute('href')))
-    const position = (n: number) => hrefs.indexOf(`/eventos/${eventId(n)}`)
+    const position = (n: number) => hrefs.indexOf(`/coletivo/${collectiveId(1)}/eventos/${eventId(n)}`)
     for (const n of [1, 2, 3, 4, 5, 6]) expect(position(n), eventName(n)).toBeGreaterThanOrEqual(0)
     expect(position(7)).toBe(-1)
     // Em andamento, depois futuros por proximidade, depois encerrados.
@@ -84,7 +84,7 @@ test.describe('acesso por permissões', () => {
 
   test('seções ainda em preparação aparecem dentro do layout do coletivo, com o menu por permissões', async ({ page }) => {
     await login(page, accounts.active.email)
-    for (const path of ['mensagens', 'eventos/novo', 'membros', 'editar', 'perfil']) {
+    for (const path of ['mensagens', 'membros', 'editar', 'perfil']) {
       const response = await page.goto(`/coletivo/${collectiveId(1)}/${path}`)
       expect(response?.status()).toBe(200)
       await expect(page.getByRole('heading', { level: 1, name: 'Em breve' })).toBeVisible()
@@ -308,6 +308,16 @@ test.describe('pedir, cancelar, aprovar e recusar entrada', () => {
     await expect(page.getByRole('heading', { level: 1, name: collectiveName(6) })).toBeVisible()
     expect(await sectionLabels(page)).toEqual(['Dashboard'])
     await expect(page.getByText(accounts.member.name)).toHaveCount(0)
+
+    // Sem permissões de eventos: criar e gerir evento também respondem 403 dentro do layout (W8).
+    const create = await page.goto(`/coletivo/${collectiveId(6)}/eventos/novo`)
+    expect(create?.status()).toBe(403)
+    await expect(page.getByText('Você não tem permissão para criar eventos neste coletivo.')).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: collectiveName(6) })).toBeVisible()
+    const manage = await page.goto(`/coletivo/${collectiveId(6)}/eventos/${eventId(1)}`)
+    expect(manage?.status()).toBe(403)
+    await expect(page.getByText('Você não tem permissão para gerir eventos neste coletivo.')).toBeVisible()
+    expect(await sectionLabels(page)).toEqual(['Dashboard'])
   })
 
   test('um pedido recusado fica no histórico e a conta pode pedir de novo', async ({ page, context }) => {

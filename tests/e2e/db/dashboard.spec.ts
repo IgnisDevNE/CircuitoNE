@@ -99,7 +99,7 @@ test('menu leva às páginas ainda em preparação, sem dados de mentira', async
   await page.getByRole('link', { name: 'voltar ao dashboard' }).click()
   await expect(page).toHaveURL(/\/painel$/)
 
-  // O painel do coletivo é real (collective.spec.ts); as seções de W8–W10 seguem "Em breve" dentro do layout do coletivo.
+  // O painel do coletivo é real (collective.spec.ts); as seções de W9–W10 seguem "Em breve" dentro do layout do coletivo.
   const response = await page.goto(`/coletivo/${collectiveId(1)}/membros`)
   expect(response?.status()).toBe(200)
   await expect(page.getByRole('heading', { level: 1, name: 'Em breve' })).toBeVisible()

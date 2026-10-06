@@ -31,6 +31,14 @@ export function parseFortalezaDateTime(value: string): string | null {
   return date.toISOString()
 }
 
+/** Inverso de `parseFortalezaDateTime`: o valor de um `datetime-local` com a hora de Fortaleza de um instante. */
+export function toFortalezaInput(iso: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+  const p = fortalezaParts(date)
+  return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`
+}
+
 export function fmtData(iso: string) {
   const p = fortalezaParts(new Date(iso))
   return `${p.day} ${MESES[Number(p.month) - 1]} ${p.year}`

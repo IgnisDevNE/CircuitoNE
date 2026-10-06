@@ -13,10 +13,9 @@ const comingSoon = [
   '/painel/explorar/coletivos',
 ]
 
-// Seções do coletivo ainda sem dados reais (W8–W10): "Em breve" dentro do layout do coletivo, com o menu por permissões.
+// Seções do coletivo ainda sem dados reais (W9–W10): "Em breve" dentro do layout do coletivo, com o menu por permissões.
 const collectiveSoon = [
   'mensagens',
-  'eventos/novo',
   'membros',
   'editar',
   'perfil',
@@ -36,6 +35,8 @@ export default [
     route('coletivo/:id', './routes/layouts/collective.tsx', [
       route('painel', './routes/collective-dashboard.tsx'),
       route('solicitacoes', './routes/collective-requests.tsx'),
+      route('eventos/novo', './routes/event-create.tsx'),
+      route('eventos/:eventId', './routes/event-manage.tsx'),
       ...collectiveSoon.map((path, position) => route(path, './routes/soon.tsx', { id: `collective-soon-${position}` })),
     ]),
   ]),

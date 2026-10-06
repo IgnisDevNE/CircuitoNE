@@ -28,7 +28,7 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const notFound = () => new HttpError(404, 'Coletivo não encontrado.')
 const unavailableFunction = () =>
   new HttpError(403, 'As funções internas deste coletivo não estão disponíveis agora para a sua conta.')
-const noPermission = (what: string) => new HttpError(403, `Você não tem permissão para ${what} neste coletivo.`)
+export const noPermission = (what: string) => new HttpError(403, `Você não tem permissão para ${what} neste coletivo.`)
 
 /** Quantos eventos encerrados o dashboard mostra. */
 export const PAST_EVENTS_SHOWN = 10
@@ -41,7 +41,7 @@ async function currentAccess(client: SupabaseServerClient, id: string): Promise<
   return mapCollectiveAccess(unwrap(await client.rpc('get_collective_access', { target: id })))
 }
 
-async function requireAccess(client: SupabaseServerClient, id: string): Promise<CollectiveAccess> {
+export async function requireAccess(client: SupabaseServerClient, id: string): Promise<CollectiveAccess> {
   if (!uuid.test(id)) throw notFound()
   const access = await currentAccess(client, id)
   if (!access) throw unavailableFunction()

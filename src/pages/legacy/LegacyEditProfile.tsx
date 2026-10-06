@@ -7,7 +7,7 @@ import { Button, Empty, Panel } from '../../components/ui/primitives'
 import { Input, Textarea } from '../../components/ui/form'
 import { AccentScope } from '../../components/ui/AccentScope'
 
-export function EditProfile() {
+export function LegacyEditProfile() {
   const { atuacaoId } = useParams()
   return <EditProfileForm key={atuacaoId} atuacaoId={atuacaoId} />
 }

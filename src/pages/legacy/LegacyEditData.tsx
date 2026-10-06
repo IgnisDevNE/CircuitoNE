@@ -7,7 +7,7 @@ import { ESTADOS, TIPO_LABEL, type Estado } from '../../data/types'
 import { Badge, Button, LinkButton, Panel } from '../../components/ui/primitives'
 import { Input, Select } from '../../components/ui/form'
 
-export function EditData() {
+export function LegacyEditData() {
   usePageTitle('Editar Dados')
   const { user, updateUser } = useStore()
   const toast = useToast()

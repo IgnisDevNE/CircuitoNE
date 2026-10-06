@@ -195,7 +195,7 @@ describe('módulos de rota autenticados', () => {
               id: 'routes/layouts/app', Component: withData(AppRoute), loader: () => layout,
               children: [
                 { path: 'painel', loader: () => ({ proximos: [proximo(1)] }), Component: withData(DashboardRoute) },
-                { path: 'painel/dados', Component: SoonRoute },
+                { path: 'painel/mensagens', Component: SoonRoute },
               ],
             },
           ],
@@ -214,7 +214,7 @@ describe('módulos de rota autenticados', () => {
   })
 
   it('páginas ainda não ligadas mostram "Em breve" dentro do shell, com o menu', async () => {
-    app(active, '/painel/dados')
+    app(active, '/painel/mensagens')
     expect(await screen.findByRole('heading', { level: 1, name: 'Em breve' })).toBeTruthy()
     expect(screen.getByRole('navigation', { name: 'Painel' })).toBeTruthy()
   })

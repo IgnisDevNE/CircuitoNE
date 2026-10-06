@@ -5,7 +5,7 @@ import { usePageTitle } from '../../lib/usePageTitle'
 import { Button, Panel } from '../../components/ui/primitives'
 import { Input } from '../../components/ui/form'
 
-export function Security() {
+export function LegacySecurity() {
   usePageTitle('Segurança')
   const { user, updateUser } = useStore()
   const toast = useToast()

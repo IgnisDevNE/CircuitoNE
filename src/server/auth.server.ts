@@ -25,7 +25,8 @@ const redirect = (location: string, headers: Headers) => {
   return new Response(null, { status: 303, headers });
 };
 
-export async function boundedForm(request: Request) {
+/** Form body parsed with a size cap (4 KiB by default); other types or larger bodies are rejected with 415/413. */
+export async function boundedForm(request: Request, limit = 4096) {
   if (!request.headers.get("content-type")?.startsWith("application/x-www-form-urlencoded"))
     throw new Response(null, { status: 415 });
   const reader = request.body?.getReader();
@@ -37,7 +38,7 @@ export async function boundedForm(request: Request) {
       const { done, value } = await reader.read();
       if (done) break;
       size += value.byteLength;
-      if (size > 4096) {
+      if (size > limit) {
         await reader.cancel();
         throw new Response(null, { status: 413 });
       }

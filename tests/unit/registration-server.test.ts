@@ -347,7 +347,7 @@ describe('celular: envio e confirmação do código', () => {
     const attempt = async (error: unknown) => failed(await sendPhone(fakeClient({ user: ready, updateUser: { error } }).client, form({ telefone: '81999990001' })))
     expect(await attempt({ code: 'over_sms_send_rate_limit', status: 429, message: 'For security purposes, you can only request this after 52 seconds.' })).toMatchObject({ status: 429, cooldown: 52, message: 'Aguarde 52 segundos para pedir de novo.' })
     expect(await attempt({ code: 'over_request_rate_limit', status: 429, message: 'Request rate limit reached' })).toMatchObject({ status: 429, message: expect.stringContaining('Muitas tentativas') })
-    expect(await attempt({ code: 'sms_send_failed', status: 500, message: 'Error sending sms' })).toMatchObject({ status: 502, message: expect.stringContaining('SMS') })
+    expect(await attempt({ code: 'sms_send_failed', status: 500, message: 'Error sending sms' })).toMatchObject({ status: 503, message: expect.stringContaining('SMS') })
     expect(await attempt({ code: 'validation_failed', status: 422, message: 'Invalid phone' })).toMatchObject({ errors: { telefone: expect.any(String) } })
     expect(await attempt({ status: 503, message: 'x' })).toMatchObject({ status: 503 })
   })

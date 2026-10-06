@@ -267,10 +267,16 @@ isOneToOne: false
 "get_messages":
 { Args: { "after_id"?: string,"after_time"?: string,"target": string }; Returns: Json
                            },
+"get_my_account_details":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
 "get_my_collective_requests":
 { Args: { "after_id"?: string }; Returns: {
               "collective_id": string,"created_at": string,"id": string,"state": string
             }[]
+                           },
+"get_my_profile":
+{ Args: { "target": string }; Returns: Json
                            },
 "get_profile":
 { Args: { "target": string }; Returns: Json
@@ -343,6 +349,15 @@ isOneToOne: false
                            },
 "update_event":
 { Args: { "expected_version": number,"payload": Json,"target": string }; Returns: undefined
+                           },
+"update_my_account_details":
+{ Args: { "payload": Json }; Returns: undefined
+                           },
+"update_my_professional_details":
+{ Args: { "payload": Json,"target": string }; Returns: undefined
+                           },
+"update_my_profile":
+{ Args: { "payload": Json,"target": string }; Returns: undefined
                            }
           }
           Enums: {

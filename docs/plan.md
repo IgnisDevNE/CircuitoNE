@@ -6,18 +6,20 @@ Execução: um orquestrador especifica, revisa e integra cada tarefa; um impleme
 
 ## Padrão de wiring (fixado na W1)
 
-- `src/server/supabase.server.ts`: cliente Supabase por requisição (anônimo ou com cookies do usuário), sempre com a chave publicável e RLS.
+- `src/server/supabase.server.ts`: cliente Supabase por requisição (anônimo ou com cookies do usuário), sempre com a chave publicável e RLS. Loaders usam `supabaseLoader(request, client => loadX(client, ...))`, `unwrap()` (erro do PostgREST vira 503) e `HttpError(404|503)`; rotas exportam `headers = supabaseRouteHeaders` e um `ErrorBoundary` com `LoadError`.
+- Funções `src/server/<domínio>.server.ts` recebem o cliente (testáveis com cliente fake); módulos de rota em `src/routes/` são finos.
 - Uma rota por página em `src/routes.ts`, com `loader`/`action` próprios, dentro de rotas de layout (`PublicLayout`, `AppShell`, `CollectiveLayout`). Rotas ainda não ligadas continuam em `identity.tsx` → `LegacyRoute`.
 - `src/server/mappers/*`: linhas do banco → tipos de UI existentes (`src/data/types.ts`). Atenção: na UI `estado` é a UF (`state_code`); no banco `state` é o ciclo de vida.
 - Páginas ligadas usam `useLoaderData` e o `react-router` real em vez do shim `src/router.tsx`.
-- Testes: unidade para mappers/loaders (cliente fake); Playwright contra Supabase local com seeds no CI; teste SQL para cada RPC nova.
+- Testes: unidade para mappers/loaders (cliente fake); Playwright em `tests/e2e/db/` contra Supabase local com seeds (job `e2e` do CI, `pnpm test:e2e:db`); teste SQL para cada RPC nova.
 
 ## Tarefas
 
 | # | Tarefa | Escopo | Fonte de dados | Issues | Status |
 |---|---|---|---|---|---|
-| 0 | Limpeza | Repo, GitHub, pod único, docs | — | — | em andamento |
-| W1 | Base + eventos públicos | Padrão acima; `/eventos`, `/eventos/:id`; e2e com Supabase local no CI | `list_events`, `get_event` | #18 #26 #28 | — |
+| 0 | Limpeza | Repo, GitHub, pod único, docs | — | — | ✅ #154 |
+| D1 | Dataset de demonstração | `supabase/seeds/demo.sql`: 10 contas, 12 artistas, 5 coletivos, 16 eventos com datas reancoradas a cada `db-dev` | — | — | ✅ #155 |
+| W1 | Base + eventos públicos | Padrão acima; `/eventos`, `/eventos/:id`; e2e com Supabase local no CI | `list_events`, `get_event` | #18 #26 #28 | ✅ #156 |
 | W2 | Coletivos públicos | `/coletivos`, `/coletivos/:id` | `collectives`, `get_collective_members`, `events` | #12 | — |
 | W3 | Artistas públicos + Home | `/artistas`, `/artistas/:id`, `/` | `profiles`, `artist_styles`, `profile_images`, `get_profile`, `list_events(artist)` | #26 | — |
 | W4 | Login das contas seed + painel | Senha das fixtures via seed (`FIXTURE_PASSWORD`); remover login demo; `AppShell` real; `/painel` | `get_account_session`, `list_conversations`; novas `list_my_profiles`, `list_my_collectives` | #14 #23 | — |

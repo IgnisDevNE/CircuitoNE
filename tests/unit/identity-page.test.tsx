@@ -18,13 +18,13 @@ const page = (path: string, data: object) =>
       )}
     />,
   );
-test("real login presents empty credentials and no demo or unfinished registration link", async () => {
+test("real login presents empty credentials, no demo login and a link to the real registration", async () => {
   page("/entrar", {});
   expect(await screen.findByRole("button", { name: "Entrar" })).toBeTruthy();
   expect((screen.getByLabelText(/E-mail/) as HTMLInputElement).value).toBe("");
   expect((screen.getByLabelText(/Senha/) as HTMLInputElement).value).toBe("");
   expect(screen.queryByRole("button", { name: /demo/i })).toBeNull();
-  expect(screen.queryByRole("link", { name: /cadastre/i })).toBeNull();
+  expect(screen.getByRole("link", { name: "Criar conta" }).getAttribute("href")).toBe("/cadastro");
 });
 test("account page shows only its verified identity and a POST logout", async () => {
   page("/painel", {

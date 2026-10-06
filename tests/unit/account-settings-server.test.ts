@@ -293,7 +293,8 @@ describe('segurança: senha e e-mail', () => {
     const outcome = succeeded(await changeEmail(client, form({ email: 'novo@example.invalid' })))
     expect(outcome.message).toContain('novo@example.invalid')
     expect(outcome.message).toContain('só muda depois da confirmação')
-    expect(auth.updateUser).toHaveBeenCalledWith({ email: 'novo@example.invalid' })
+    // O link do e-mail volta pelo callback do app (/auth/confirmar), que cria a sessão e redireciona.
+    expect(auth.updateUser).toHaveBeenCalledWith({ email: 'novo@example.invalid' }, { emailRedirectTo: 'https://circuitone-dev.magalz.space/auth/confirmar' })
   })
 
   it('e-mail: inválido, igual ao atual, já usado (sem confirmar existência) e limite de envio', async () => {

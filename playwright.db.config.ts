@@ -9,6 +9,7 @@ if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_'))
 
 const ACCOUNT_SPEC = /account\.spec\.ts$/
 const MESSAGES_SPEC = /messages\.spec\.ts/
+const REGISTER_SPEC = /register\.spec\.ts/
 const port = '5183'
 const origin = `http://127.0.0.1:${port}`
 
@@ -29,10 +30,11 @@ export default defineConfig({
   },
   projects: [
     // Leituras: rodam em paralelo nos dois tamanhos de tela.
-    { name: 'desktop', testIgnore: [ACCOUNT_SPEC, MESSAGES_SPEC], use: { browserName: 'chromium', viewport: { width: 1366, height: 900 } } },
-    { name: 'mobile', testIgnore: [ACCOUNT_SPEC, MESSAGES_SPEC], use: { browserName: 'chromium', viewport: { width: 390, height: 844 } } },
+    { name: 'desktop', testIgnore: [ACCOUNT_SPEC, MESSAGES_SPEC, REGISTER_SPEC], use: { browserName: 'chromium', viewport: { width: 1366, height: 900 } } },
+    { name: 'mobile', testIgnore: [ACCOUNT_SPEC, MESSAGES_SPEC, REGISTER_SPEC], use: { browserName: 'chromium', viewport: { width: 390, height: 844 } } },
     // Escritas: depois de todas as leituras e uma suíte por vez, para não competir com testes que contam dados das fixtures.
     // account.spec.ts altera perfis e dados da conta; messages.spec.ts envia, bloqueia e cria conversas. Cada teste desfaz o que altera.
+    // register.spec.ts não altera as fixtures: só cria contas novas.
     {
       name: 'account-desktop',
       testMatch: ACCOUNT_SPEC,
@@ -49,6 +51,14 @@ export default defineConfig({
       name: 'messages',
       testMatch: MESSAGES_SPEC,
       dependencies: ['account-mobile'],
+      use: { browserName: 'chromium', viewport: { width: 1366, height: 900 } },
+    },
+    // register.spec.ts cria contas novas (e-mail e CPF únicos por execução) e consome os celulares de teste de
+    // supabase/config.toml [auth.sms.test_otp]; roda por último e uma tela só.
+    {
+      name: 'register',
+      testMatch: REGISTER_SPEC,
+      dependencies: ['messages'],
       use: { browserName: 'chromium', viewport: { width: 1366, height: 900 } },
     },
   ],

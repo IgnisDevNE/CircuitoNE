@@ -1,4 +1,5 @@
 import { parseCookieHeader, serializeCookieHeader } from "@supabase/ssr";
+import type { User } from "@supabase/supabase-js";
 import {
   createSupabaseServerClient,
   privateHeaders,
@@ -60,7 +61,7 @@ export const hasAuthCookie = (request: Request) =>
 
 export type SessionResult =
   | { kind: "anonymous" }
-  | { kind: "account"; account: AccountSession }
+  | { kind: "account"; account: AccountSession; user: User }
   | { kind: "error"; message: string };
 
 /**
@@ -107,7 +108,7 @@ export async function readAccountSession(
   const account = result.data as unknown as AccountSession;
   if (account.id !== data.user.id || !states.includes(account.state))
     return { kind: "error", message: "Conta indisponível." };
-  return { kind: "account", account };
+  return { kind: "account", account, user: data.user };
 }
 
 export async function identityLoader(request: Request): Promise<Response> {
@@ -117,8 +118,7 @@ export async function identityLoader(request: Request): Promise<Response> {
   if (process.env.CIRCUITONE_RUNTIME === "preview" || !process.env.CIRCUITONE_RUNTIME)
     return reply({ preview: true }, 200, headers);
   if (process.env.CIRCUITONE_RUNTIME !== 'development') return reply({error:'Serviço indisponível.'},503,headers)
-  if (path !== '/entrar' && path !== '/cadastro' && !path.startsWith('/painel') && !path.startsWith('/coletivo/')) return reply({preview:true},200,headers)
-  if (path === "/cadastro") return reply({ unavailable: true }, 200, headers);
+  if (path !== '/entrar' && !path.startsWith('/painel') && !path.startsWith('/coletivo/')) return reply({preview:true},200,headers)
   try {
     const client = createSupabaseServerClient(request, headers);
     const session = await readAccountSession(client, request, headers);

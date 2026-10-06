@@ -1,11 +1,10 @@
 import { type RouteConfig, index, layout, route } from '@react-router/dev/routes'
 
-// Ainda pelo protótipo (identity -> legacy): entrar (login real no runtime development) e cadastro.
-const paths = ['/entrar', '/cadastro']
+// Ainda pelo protótipo (identity -> legacy): entrar (login real no runtime development).
+const paths = ['/entrar']
 
 // Páginas do painel ainda sem dados reais: mostram "Em breve" dentro do layout autenticado, uma por tarefa do plano.
 const comingSoon = [
-  '/painel/dados/nova-atuacao',
   '/painel/explorar/artistas',
   '/painel/explorar/servicos',
   '/painel/explorar/audiovisual',
@@ -21,11 +20,15 @@ const collectiveSoon = [
 
 export default [
   ...paths.map((path, position) => route(path.slice(1), './routes/identity.tsx', { id: `page-${position}` })),
+  // Cadastro real (e confirmação do link do e-mail): fora do layout autenticado, mas com SSR e a sessão validada no servidor.
+  route('cadastro', './routes/registration.tsx'),
+  route('auth/confirmar', './routes/auth-confirm.tsx'),
   // Layout autenticado: valida a sessão no servidor e redireciona visitantes para /entrar.
   layout('./routes/layouts/app.tsx', [
     route('painel', './routes/dashboard.tsx'),
     route('painel/coletivos', './routes/my-collectives.tsx'),
     route('painel/dados', './routes/account-data.tsx'),
+    route('painel/dados/nova-atuacao', './routes/new-profile.tsx'),
     route('painel/perfil/:atuacaoId', './routes/profile-edit.tsx'),
     route('painel/seguranca', './routes/security.tsx'),
     // "nova" (estática) vem antes de ":conversationId" e tem prioridade na correspondência.

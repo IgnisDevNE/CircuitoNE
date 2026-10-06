@@ -17,6 +17,7 @@ import {
   type MfaEnrollment,
 } from '../lib/account-forms'
 import { boundedForm, readAccountSession } from './auth.server'
+import { confirmationUrl } from './registration.server'
 import {
   mapAccountDetails,
   mapMyProfile,
@@ -289,7 +290,7 @@ export async function changeEmail(client: SupabaseServerClient, form: URLSearchP
   if (!user.user) return fail('change-email', {}, { message: UNAVAILABLE, status: 503 })
   const parsed = parseEmailForm(form, user.user.email ?? null)
   if (!parsed.ok) return fail('change-email', parsed.errors, { values: parsed.values })
-  const { error } = await client.auth.updateUser({ email: parsed.payload.email })
+  const { error } = await client.auth.updateUser({ email: parsed.payload.email }, { emailRedirectTo: confirmationUrl() })
   if (error) {
     // Não confirma se o endereço já pertence a outra conta.
     if (error.code === 'email_exists' || error.code === 'email_address_invalid')

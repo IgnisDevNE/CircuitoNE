@@ -78,12 +78,6 @@ export default function IdentityPage() {
                 </Button>
               </Form>
             </div>
-          ) : data.unavailable ? (
-            <>
-              <h1 className="text-xl">Cadastro em preparação</h1>
-              <p className="my-4">O cadastro ainda não está disponível.</p>
-              <Link to="/entrar">Entrar</Link>
-            </>
           ) : (
             <>
               <h1 className="mb-4 font-display text-2xl">Entrar</h1>
@@ -109,6 +103,12 @@ export default function IdentityPage() {
                   {busy ? "Aguarde…" : "Entrar"}
                 </Button>
               </Form>
+              <p className="mt-4 font-mono text-xs text-[var(--color-muted)]">
+                Ainda não tem conta?{" "}
+                <Link to="/cadastro" className="text-[var(--accent-text)] underline">
+                  Criar conta
+                </Link>
+              </p>
             </>
           )}
         </Panel>

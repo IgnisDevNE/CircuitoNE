@@ -1,0 +1,73 @@
+import {
+  buildMessage,
+  hookError,
+  hookSuccess,
+  isAllowedDestination,
+  normalizeDestination,
+  validOtp,
+  verifyWebhook,
+} from './sms.ts'
+
+/** Resultado da publicação no SNS; `code` é o código de erro do SNS (nunca o número nem o texto da mensagem). */
+export type PublishResult = { ok: true } | { ok: false; code: string; status: number }
+export type Publisher = (input: { phone: string; message: string }) => Promise<PublishResult>
+
+export type HandlerDeps = {
+  /** Chaves HMAC já decodificadas de `SEND_SMS_HOOK_SECRETS`. */
+  keys: Uint8Array[]
+  allowedPrefixes: string[]
+  publish: Publisher
+  now?: () => number
+  log?: (message: string, details: Record<string, string | number>) => void
+}
+
+/** O corpo do hook tem poucos centenas de bytes; acima disso, não é o Auth. */
+const MAX_BODY = 16 * 1024
+
+async function readBody(request: Request): Promise<string | null> {
+  const declared = Number(request.headers.get('content-length') ?? '0')
+  if (declared > MAX_BODY) return null
+  const text = await request.text()
+  return text.length > MAX_BODY ? null : text
+}
+
+type HookPayload = { user?: { phone?: unknown; phone_change?: unknown }; sms?: { otp?: unknown } }
+
+/**
+ * Handler do Send SMS Auth Hook: confere a assinatura, lê o destinatário e o código e publica um SMS transacional.
+ * Sucesso: 200 `{}`. Falha: status 4xx/5xx com `{ error: { http_code, message } }`.
+ */
+export function createHandler(deps: HandlerDeps) {
+  const log = deps.log ?? (() => undefined)
+  return async (request: Request): Promise<Response> => {
+    if (request.method !== 'POST') return hookError(405, 'Método não permitido.')
+    const body = await readBody(request)
+    if (body === null) return hookError(413, 'Corpo grande demais.')
+    if (!(await verifyWebhook(body, request.headers, deps.keys, deps.now?.()))) return hookError(401, 'Assinatura inválida.')
+
+    let payload: HookPayload
+    try {
+      payload = JSON.parse(body) as HookPayload
+    } catch {
+      return hookError(400, 'Requisição inválida.')
+    }
+    // Troca de celular (`phone_change`): o número novo fica em `phone_change`; `phone` é o antigo ou vazio.
+    const phone = normalizeDestination(payload.user?.phone_change || payload.user?.phone)
+    const otp = payload.sms?.otp
+    if (!phone || !validOtp(otp)) return hookError(400, 'Requisição inválida.')
+    if (!isAllowedDestination(phone, deps.allowedPrefixes)) return hookError(400, 'Este número não pode receber SMS.')
+
+    let result: PublishResult
+    try {
+      result = await deps.publish({ phone, message: buildMessage(otp) })
+    } catch {
+      log('send-sms: publish failed', { reason: 'exception' })
+      return hookError(502, 'Não foi possível enviar o SMS agora.')
+    }
+    if (!result.ok) {
+      log('send-sms: publish rejected', { code: result.code, status: result.status })
+      return hookError(502, 'Não foi possível enviar o SMS agora.')
+    }
+    return hookSuccess()
+  }
+}

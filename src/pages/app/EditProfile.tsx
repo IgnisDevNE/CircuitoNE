@@ -34,7 +34,7 @@ const SOCIAL_LABEL: Record<(typeof SOCIAL_FIELDS)[number], string> = {
   youtube: 'YouTube',
 }
 
-function StylePicker({ taxonomia, selected, error }: { taxonomia: Taxonomia; selected: string[]; error?: string }) {
+export function StylePicker({ taxonomia, selected, error }: { taxonomia: Taxonomia; selected: string[]; error?: string }) {
   const chosen = new Set(selected)
   return (
     <fieldset className="sm:col-span-2" aria-describedby={error ? 'estilo-erro' : undefined}>

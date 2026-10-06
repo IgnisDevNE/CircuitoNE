@@ -259,7 +259,8 @@ function smsFailure(intent: FlowIntent, error: AuthFailure, values?: FormValues)
   if (error.code === 'validation_failed')
     return fail(intent, { telefone: 'Informe um celular brasileiro com DDD, ex.: 81 99999-0001.' }, { values })
   if (isRateLimited(error)) return rateLimited(intent, error)
-  if (error.code === 'sms_send_failed' || error.status === 500 || error.status === 502) return fail(intent, {}, { message: SMS_FAILED, status: 502, values })
+  // 503, nunca 502/504: o Cloudflare troca essas respostas da origem pela página dele e o formulário perde a mensagem.
+  if (error.code === 'sms_send_failed' || error.status === 500 || error.status === 502) return fail(intent, {}, { message: SMS_FAILED, status: 503, values })
   return fail(intent, {}, { message: UNAVAILABLE, status: 503, values })
 }
 

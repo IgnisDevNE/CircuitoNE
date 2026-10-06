@@ -1,2 +1,6 @@
 # Runtime local do projeto; não altera o Node instalado no Windows.
 useNodeVersion: 24.21.0
+
+# GHSA-68fv-2mgg-jv7q (transitiva de @tailwindcss/node); remover quando o upstream atualizar.
+overrides:
+  source-map-js: ^1.2.2

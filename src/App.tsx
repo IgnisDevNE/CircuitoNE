@@ -10,8 +10,6 @@ import { Empty } from './components/ui/primitives'
 import { Home } from './pages/public/Home'
 import { ArtistsHub } from './pages/public/ArtistsHub'
 import { ArtistProfile } from './pages/public/ArtistProfile'
-import { CollectivesHub } from './pages/public/CollectivesHub'
-import { CollectiveProfile } from './pages/public/CollectiveProfile'
 
 import { Login } from './pages/auth/Login'
 import { Register } from './pages/auth/Register'
@@ -51,8 +49,6 @@ export default function App({ initialNow }: { initialNow?: number } = {}) {
               { path: '/', element: pub(<Home />) },
               { path: '/artistas', element: pub(<ArtistsHub />) },
               { path: '/artistas/:id', element: pub(<ArtistProfile />) },
-              { path: '/coletivos', element: pub(<CollectivesHub />) },
-              { path: '/coletivos/:id', element: pub(<CollectiveProfile />) },
               // auth
               { path: '/entrar', element: pub(<Login />) },
               { path: '/cadastro', element: pub(<Register mode="cadastro" />) },

@@ -4,8 +4,6 @@ const paths = [
   '/',
   '/artistas',
   '/artistas/:id',
-  '/coletivos',
-  '/coletivos/:id',
   '/entrar',
   '/cadastro',
   '/painel',
@@ -34,6 +32,8 @@ export default [
   layout('./routes/layouts/public.tsx', [
     route('eventos', './routes/events.tsx'),
     route('eventos/:id', './routes/event.tsx'),
+    route('coletivos', './routes/collectives.tsx'),
+    route('coletivos/:id', './routes/collective.tsx'),
   ]),
   route('sair', './routes/identity.tsx', { id: 'logout' }),
   route('*', './routes/not-found.tsx'),

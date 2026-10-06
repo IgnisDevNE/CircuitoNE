@@ -38,10 +38,11 @@ insert into private.collective_memberships(collective_id,user_id,role_id)
 select id,'a2000000-0000-4000-8000-000000000005',member_role_id from public.collectives where id=current_setting('test.c')::uuid;
 insert into private.collective_memberships(collective_id,user_id,role_id)
 values(current_setting('test.c')::uuid,'a2000000-0000-4000-8000-000000000006','a3000000-0000-4000-8000-000000000001');
+-- `profiles` só tem leitura por coluna para `authenticated`: o id da atuação é lido aqui, como dono do banco.
+select set_config('test.p2',(select id::text from public.profiles where owner_id='a2000000-0000-4000-8000-000000000002' and kind='artist'),true);
 set local role authenticated;
 select pg_temp.actor(2);
-select set_config('test.r2',public.request_collective_membership(current_setting('test.c')::uuid,
-  (select id from public.profiles where owner_id='a2000000-0000-4000-8000-000000000002' and kind='artist'),'Quero tocar com vocês')::text,true);
+select set_config('test.r2',public.request_collective_membership(current_setting('test.c')::uuid,current_setting('test.p2')::uuid,'Quero tocar com vocês')::text,true);
 select pg_temp.actor(3);
 select set_config('test.r3',public.request_collective_membership(current_setting('test.c')::uuid,null,'')::text,true);
 select pg_temp.actor(4);

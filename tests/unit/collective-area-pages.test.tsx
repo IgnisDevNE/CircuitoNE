@@ -11,7 +11,10 @@ import { PendingRequests } from '../../src/pages/collective/PendingRequests'
 import CollectiveDashboardRoute, { ErrorBoundary as DashboardError } from '../../src/routes/collective-dashboard'
 import CollectiveRequestsRoute from '../../src/routes/collective-requests'
 import CollectiveAreaRoute, { ErrorBoundary as AreaError, meta as areaMeta } from '../../src/routes/layouts/collective'
-import MyCollectivesRoute from '../../src/routes/my-collectives'
+import MyCollectivesRoute, * as myCollectivesModule from '../../src/routes/my-collectives'
+import * as collectiveRequestsModule from '../../src/routes/collective-requests'
+import * as areaModule from '../../src/routes/layouts/collective'
+import { revalidateAfterSubmit } from '../../src/lib/revalidate'
 import type { ActionResult } from '../../src/lib/action-result'
 import type { CollectiveAreaData, EventoGestao, PedidoEntrada } from '../../src/server/mappers/collective-area'
 
@@ -448,5 +451,63 @@ describe('módulos de rota', () => {
     expect(seen).toEqual({ intent: 'request', collective: C, profile: '', message: 'Olá, quero entrar' })
     expect((screen.getByLabelText(/Mensagem/) as HTMLTextAreaElement).value).toBe('Olá, quero entrar')
     expect(screen.queryByRole('status')).toBeNull()
+  })
+
+  describe('lista desatualizada: recusa do banco (409) também recarrega os dados', () => {
+    const stale = async (shouldRevalidate: unknown) => {
+      let loads = 0
+      let queue = [] as ComponentProps<typeof MyCollectives>['pedidos']
+      render(
+        <RouterProvider
+          router={createMemoryRouter(
+            [
+              {
+                id: 'root',
+                path: '/painel/coletivos',
+                loader: () => {
+                  loads += 1
+                  return { coletivos: [], perfis: [], pedidos: queue, disponiveis: [{ id: C, nome: 'Organização sintética 1', tipo: 'coletivo', cidade: 'Recife', estado: 'PE', pendente: queue.length > 0 }] }
+                },
+                action: () => {
+                  // Outro dispositivo já tinha criado o pedido: o banco recusa e a lista da tela estava velha.
+                  queue = [{ id: 'r1', coletivoId: C, coletivoNome: 'Organização sintética 1', situacao: 'pending', criadoEm: '2026-10-07T12:00:00.000Z' }]
+                  return data<ActionResult>({ ok: false, error: 'Você já tem um pedido pendente.' }, { status: 409 })
+                },
+                shouldRevalidate: shouldRevalidate as never,
+                Component: withLoader<ComponentProps<typeof MyCollectivesRoute>>(MyCollectivesRoute),
+              },
+            ],
+            { initialEntries: ['/painel/coletivos'] },
+          )}
+        />,
+      )
+      const user = userEvent.setup()
+      await user.selectOptions(await screen.findByLabelText(/Coletivo\/Produtora/), C)
+      await user.click(screen.getByRole('button', { name: 'enviar solicitação' }))
+      await screen.findByRole('alert')
+      return () => loads
+    }
+
+    it('com o shouldRevalidate da rota, a lista mostra o pedido pendente que já existia', async () => {
+      const loads = await stale(myCollectivesModule.shouldRevalidate)
+      expect(await screen.findByRole('button', { name: /Cancelar pedido para Organização sintética 1/ })).toBeTruthy()
+      expect(loads()).toBe(2)
+    })
+
+    it('sem ele (padrão do React Router) a lista ficaria velha: é o motivo da exportação', async () => {
+      const loads = await stale(undefined)
+      expect(loads()).toBe(1)
+      expect(screen.queryByRole('button', { name: /Cancelar pedido para/ })).toBeNull()
+    })
+
+    it('leitura por navegação segue o padrão; só envios forçam a revalidação', () => {
+      const run = (formMethod: string | undefined, defaultShouldRevalidate: boolean) =>
+        revalidateAfterSubmit({ formMethod, defaultShouldRevalidate } as never)
+      expect(run('POST', false)).toBe(true)
+      expect(run(undefined, false)).toBe(false)
+      expect(run(undefined, true)).toBe(true)
+      expect(collectiveRequestsModule.shouldRevalidate).toBe(revalidateAfterSubmit)
+      expect(areaModule.shouldRevalidate).toBe(revalidateAfterSubmit)
+    })
   })
 })

@@ -3,6 +3,7 @@ import { CollectiveLayout } from '../../components/layout/CollectiveLayout'
 import { LoadError } from '../../components/ui/LoadError'
 import { CollectiveUnavailable } from '../../pages/collective/CollectiveUnavailable'
 import { loadCollectiveArea } from '../../server/collective-area.server'
+import { revalidateAfterSubmit } from '../../lib/revalidate'
 import { supabaseLoader, supabaseRouteHeaders } from '../../server/supabase.server'
 import type { Route } from './+types/collective'
 
@@ -17,6 +18,7 @@ import type { Route } from './+types/collective'
 export const loader = ({ request, params }: Route.LoaderArgs) =>
   supabaseLoader(request, (client) => loadCollectiveArea(client, params.id))
 export const headers = supabaseRouteHeaders
+export const shouldRevalidate = revalidateAfterSubmit
 
 const SECTIONS: Record<string, string> = { painel: 'Dashboard', solicitacoes: 'Solicitações' }
 

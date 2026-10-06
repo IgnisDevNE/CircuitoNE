@@ -2,6 +2,7 @@ import { useNavigation } from 'react-router'
 import { LoadError } from '../components/ui/LoadError'
 import { MyCollectives } from '../pages/app/MyCollectives'
 import { loadMyCollectivesPage, myCollectivesAction } from '../server/collective-area.server'
+import { revalidateAfterSubmit } from '../lib/revalidate'
 import { supabaseLoader, supabaseRouteHeaders } from '../server/supabase.server'
 import type { Route } from './+types/my-collectives'
 
@@ -9,6 +10,7 @@ import type { Route } from './+types/my-collectives'
 export const loader = ({ request }: Route.LoaderArgs) => supabaseLoader(request, loadMyCollectivesPage)
 export const action = ({ request }: Route.ActionArgs) => myCollectivesAction(request)
 export const headers = supabaseRouteHeaders
+export const shouldRevalidate = revalidateAfterSubmit
 
 export const meta = () => [{ title: 'Meus Coletivos · CIRCUITO NE' }]
 

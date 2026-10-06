@@ -58,10 +58,10 @@ export const privateHeaders = () =>
     Expires: "0",
   });
 
-/** Failure with an HTTP meaning (404 not found, 503 data source unavailable) and a pt-BR message. */
+/** Failure with an HTTP meaning (403 forbidden, 404 not found, 503 data source unavailable) and a pt-BR message. */
 export class HttpError extends Error {
   constructor(
-    readonly status: 404 | 503,
+    readonly status: 403 | 404 | 503,
     message: string,
   ) {
     super(message);
@@ -102,12 +102,17 @@ export async function supabaseLoader<T>(
 }
 
 /** `headers` export for routes using `supabaseLoader`: forwards cache headers and Set-Cookie from loader or error. */
-export const supabaseRouteHeaders: HeadersFunction = ({ loaderHeaders, errorHeaders }) => {
+export const supabaseRouteHeaders: HeadersFunction = ({
+  loaderHeaders,
+  actionHeaders,
+  errorHeaders,
+}) => {
   const result = new Headers(loaderHeaders);
-  if (errorHeaders) {
-    for (const [name, value] of errorHeaders)
+  for (const extra of [actionHeaders, errorHeaders]) {
+    if (!extra) continue;
+    for (const [name, value] of extra)
       if (name.toLowerCase() !== "set-cookie") result.set(name, value);
-    for (const value of errorHeaders.getSetCookie()) result.append("Set-Cookie", value);
+    for (const value of extra.getSetCookie()) result.append("Set-Cookie", value);
   }
   return result;
 };

@@ -167,7 +167,8 @@ describe('jornadas com fixtures — sem prova de Auth, autorização ou persist�
 
     fireEvent.change(screen.getByLabelText(/Fim/), { target: { value: '' } })
     await user.click(screen.getByRole('button', { name: 'publicar evento' }))
-    // A página pública do evento agora é servida pelo banco (ver events-pages.test.tsx).
-    expect(screen.getByRole('link', { name: /Evento horário teste/ }).getAttribute('href')).toBe('/eventos/ev-100')
+    // O dashboard do coletivo e a página pública do evento agora são servidos pelo banco (collective-area-pages.test.tsx, events-pages.test.tsx).
+    expect(screen.getByText('Evento criado')).toBeTruthy()
+    expect(window.location.pathname).toBe('/coletivo/col-litoral/painel')
   })
 })

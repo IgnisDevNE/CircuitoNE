@@ -1,71 +1,97 @@
-import { Link, useParams } from '../../router'
-import { useStore } from '../../context/StoreContext'
-import { usePageTitle } from '../../lib/usePageTitle'
-import { useColetivo } from '../../components/layout/CollectiveLayout'
+import { Link } from '../../router'
+import { collectiveSections, type Permissao } from '../../lib/collective-access'
+import { fmtDataHora } from '../../lib/utils'
+import type { ColetivoArea, EventoGestao, ResumoMensagens } from '../../server/mappers/collective-area'
 import { Badge, Empty, Panel } from '../../components/ui/primitives'
-import { Avatar } from '../../components/ui/primitives'
-import { eventoNaoEncerrado, fmtDataHora, porProximidade } from '../../lib/utils'
 
-export function CollectiveDashboard() {
-  const { id } = useParams()
-  const { col, nivel } = useColetivo(id)
-  const { eventos, threads, now } = useStore()
-  usePageTitle(col ? `${col.nome} · Dashboard` : 'Coletivo')
+export interface CollectiveDashboardProps {
+  coletivo: Pick<ColetivoArea, 'id' | 'nome' | 'dono'>
+  permissoes: Permissao[]
+  /** Pedidos de entrada pendentes; nulo quando o titular não gere pedidos. */
+  pendentes: number | null
+  eventos: EventoGestao[]
+  /** Lista da gestão (rascunhos e cancelados incluídos) em vez dos eventos publicados. */
+  gestao: boolean
+  /** Conversas do coletivo; nulo quando o titular não pode ler mensagens. */
+  mensagens: ResumoMensagens | null
+}
 
-  if (!col) return null
-  const eventosCol = eventos.filter((e) => e.coletivoId === col.id).sort((a, b) => porProximidade(a, b, now))
-  const naoLidas = threads.filter((t) => t.coletivoId === col.id).reduce((n, t) => n + t.naoLidas, 0)
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
+function EventBadges({ evento }: { evento: EventoGestao }) {
+  return (
+    <>
+      {evento.situacao === 'draft' && <Badge tone="warn">rascunho</Badge>}
+      {evento.situacao === 'cancelled' && <Badge tone="warn">cancelado</Badge>}
+      {evento.situacao !== 'cancelled' && evento.periodo === 'ongoing' && <Badge tone="ok">em andamento</Badge>}
+      {evento.periodo === 'past' && <Badge>encerrado</Badge>}
+    </>
+  )
+}
+
+export function CollectiveDashboard({ coletivo, permissoes, pendentes, eventos, gestao, mensagens }: CollectiveDashboardProps) {
+  const links = collectiveSections(coletivo.id, { dono: coletivo.dono, permissoes }, pendentes).filter((s) => s.key !== 'painel')
   return (
     <div className="grid gap-6 lg:grid-cols-3">
       <Panel title="eventos" className="lg:col-span-2">
-        {eventosCol.length === 0 ? (
-          <Empty>Nenhum evento cadastrado.</Empty>
+        {eventos.length === 0 ? (
+          <Empty>{gestao ? 'Nenhum evento cadastrado.' : 'Nenhum evento publicado.'}</Empty>
         ) : (
           <ul className="space-y-2">
-            {eventosCol.map((e) => {
-              const naoEncerrado = eventoNaoEncerrado(e, now)
-              return (
-                <li key={e.id}>
-                  <Link to={`/eventos/${e.id}`} className="flex items-center justify-between gap-4 border border-[var(--color-line)] p-3 hover:border-[var(--accent)]">
-                    <span>
-                      <span className="flex items-center gap-2">
-                        <span className="font-display font-bold">{e.nome}</span>
-                        {!naoEncerrado && <Badge tone="warn">passado</Badge>}
-                      </span>
-                      <span className="font-mono text-xs text-[var(--color-muted)]">{fmtDataHora(e.inicio)} · {e.local}</span>
+            {eventos.map((evento) => (
+              <li key={evento.id}>
+                <Link to={`/eventos/${evento.id}`} className="flex items-center justify-between gap-4 border border-[var(--color-line)] p-3 hover:border-[var(--accent)]">
+                  <span>
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="font-display font-bold">{evento.nome}</span>
+                      <EventBadges evento={evento} />
                     </span>
-                    <span aria-hidden className="text-[var(--accent-text)]">→</span>
-                  </Link>
-                </li>
-              )
-            })}
+                    <span className="font-mono text-xs text-[var(--color-muted)]">{fmtDataHora(evento.inicio)}</span>
+                  </span>
+                  <span aria-hidden className="text-[var(--accent-text)]">→</span>
+                </Link>
+              </li>
+            ))}
           </ul>
+        )}
+        {!gestao && (
+          <p className="mt-3 font-mono text-xs text-[var(--color-muted)]">
+            Seu perfil não gere eventos: aparecem só os eventos publicados.
+          </p>
         )}
       </Panel>
 
       <div className="space-y-6">
-        {nivel >= 1 && (
-          <Panel title="mensagens não lidas">
-            <p className="font-display text-4xl font-bold text-[var(--accent-text)]">{naoLidas}</p>
-            <Link to={`/coletivo/${col.id}/mensagens`} className="mt-2 inline-block font-mono text-xs text-[var(--accent-text)] hover:underline">abrir chat →</Link>
+        {pendentes !== null && (
+          <Panel title="solicitações de entrada">
+            <p className="font-display text-4xl font-bold text-[var(--accent-text)]" aria-hidden>{pendentes}</p>
+            <p className="mt-1 font-mono text-sm" role="status">
+              {pendentes === 0 ? 'Nenhum pedido pendente.' : `${plural(pendentes, 'pedido pendente', 'pedidos pendentes')}.`}
+            </p>
+            <Link to={`/coletivo/${coletivo.id}/solicitacoes`} className="mt-2 inline-block font-mono text-xs text-[var(--accent-text)] hover:underline">ver solicitações →</Link>
           </Panel>
         )}
 
-        <Panel title={`membros (${col.membros.length})`}>
-          <ul className="space-y-2">
-            {col.membros.map((m) => {
-              const cargo = col.cargos.find((c) => c.id === m.cargoId)
-              return (
-                <li key={m.userId} className="flex items-center gap-3">
-                  <Avatar alt={m.nome} size={30} />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-mono text-sm">{m.nome}</span>
-                    <span className="block font-mono text-xs text-[var(--color-muted)]">{cargo?.nome} · visto {m.lastSeen}</span>
-                  </span>
-                </li>
-              )
-            })}
+        {mensagens !== null && (
+          <Panel title="mensagens do coletivo">
+            <p className="font-display text-4xl font-bold text-[var(--accent-text)]" aria-hidden>{mensagens.naoLidas}</p>
+            <p className="mt-1 font-mono text-sm">
+              {plural(mensagens.naoLidas, 'mensagem não lida', 'mensagens não lidas')} em {plural(mensagens.conversas, 'conversa', 'conversas')}.
+            </p>
+            <Link to={`/coletivo/${coletivo.id}/mensagens`} className="mt-2 inline-block font-mono text-xs text-[var(--accent-text)] hover:underline">abrir chat →</Link>
+          </Panel>
+        )}
+
+        <Panel title="atalhos">
+          <ul className="space-y-1 font-mono text-sm">
+            {links.map((link) => (
+              <li key={link.key}>
+                <Link to={link.to} className="text-[var(--accent-text)] hover:underline">{link.label}</Link>
+              </li>
+            ))}
+            <li>
+              <Link to={`/coletivos/${coletivo.id}`} className="text-[var(--accent-text)] hover:underline">Ver perfil público ↗</Link>
+            </li>
           </ul>
         </Panel>
       </div>

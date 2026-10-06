@@ -2,7 +2,7 @@ import { useParams } from '../../router'
 import { useStore } from '../../context/StoreContext'
 import { useToast } from '../../context/ToastContext'
 import { usePageTitle } from '../../lib/usePageTitle'
-import { useColetivo } from '../../components/layout/CollectiveLayout'
+import { useColetivo } from '../../components/layout/LegacyShells'
 import { Avatar, Button, Empty, Panel } from '../../components/ui/primitives'
 
 export function EditMembers() {

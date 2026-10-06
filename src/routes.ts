@@ -10,18 +10,19 @@ const comingSoon = [
   '/painel/dados/nova-atuacao',
   '/painel/seguranca',
   '/painel/mensagens',
-  '/painel/coletivos',
   '/painel/explorar/artistas',
   '/painel/explorar/servicos',
   '/painel/explorar/audiovisual',
   '/painel/explorar/coletivos',
-  '/coletivo/:id/painel',
-  '/coletivo/:id/mensagens',
-  '/coletivo/:id/solicitacoes',
-  '/coletivo/:id/eventos/novo',
-  '/coletivo/:id/membros',
-  '/coletivo/:id/editar',
-  '/coletivo/:id/perfil',
+]
+
+// Seções do coletivo ainda sem dados reais (W8–W10): "Em breve" dentro do layout do coletivo, com o menu por permissões.
+const collectiveSoon = [
+  'mensagens',
+  'eventos/novo',
+  'membros',
+  'editar',
+  'perfil',
 ]
 
 export default [
@@ -29,7 +30,14 @@ export default [
   // Layout autenticado: valida a sessão no servidor e redireciona visitantes para /entrar.
   layout('./routes/layouts/app.tsx', [
     route('painel', './routes/dashboard.tsx'),
+    route('painel/coletivos', './routes/my-collectives.tsx'),
     ...comingSoon.map((path, position) => route(path.slice(1), './routes/soon.tsx', { id: `soon-${position}` })),
+    // Área do coletivo: 404 para quem não é membro; menu e páginas conforme as permissões (get_collective_access).
+    route('coletivo/:id', './routes/layouts/collective.tsx', [
+      route('painel', './routes/collective-dashboard.tsx'),
+      route('solicitacoes', './routes/collective-requests.tsx'),
+      ...collectiveSoon.map((path, position) => route(path, './routes/soon.tsx', { id: `collective-soon-${position}` })),
+    ]),
   ]),
   // Páginas ligadas ao banco: um módulo por página, dentro de layouts. O restante ainda é o protótipo (identity -> legacy).
   layout('./routes/layouts/public.tsx', [

@@ -48,7 +48,7 @@ describe("troca de identidade da rota sem desmontar a sessão demo", () => {
     coletivos[0].membros = originalLitoralMembers.filter((m) => m.userId !== "u-demo")
     await login()
 
-    go("/coletivo/col-litoral/painel")
+    go("/coletivo/col-litoral/mensagens")
     expect(screen.getByText(/sem vínculo com este coletivo/i)).toBeTruthy()
     expect(screen.queryByRole("navigation", { name: "Seções do coletivo" })).toBeNull()
 
@@ -62,7 +62,7 @@ describe("troca de identidade da rota sem desmontar a sessão demo", () => {
       m.userId === "u-demo" ? { ...m, cargoId: "c-membro" } : m,
     )
     await login()
-    go("/coletivo/col-litoral/painel")
+    go("/coletivo/col-litoral/mensagens")
 
     expect(screen.getByRole("navigation", { name: "Seções do coletivo" })).toBeTruthy()
     expect(screen.getByText("Membro · nível 0")).toBeTruthy()

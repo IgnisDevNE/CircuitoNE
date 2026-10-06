@@ -123,6 +123,7 @@ test(
       queryFile("tests/database/message-permissions.sql")
       queryFile("tests/database/lifecycle.sql")
       queryFile("tests/database/my-account-lists.sql")
+      queryFile("tests/database/collective-area.sql")
     }
     // Duas conexões reais: lock da identidade e UNIQUE do CPF devem decidir no banco.
     for (const sameAccount of [false, true]) {
@@ -217,6 +218,10 @@ test(
     assert.throws(() => query(collectiveSeed), error => /Seed exige destino sintético/.test(String(error.stdout) + String(error.stderr)))
     query(`set circuitone.seed_target='disposable';\n${collectiveSeed}\n${collectiveSeed}`)
     queryFile('tests/database/collective-seed.sql')
+    const areaSeed = readFileSync('supabase/seeds/collective-area.sql', 'utf8')
+    assert.throws(() => query(areaSeed), error => /Seed exige destino sintético/.test(String(error.stdout) + String(error.stderr)))
+    query(`set circuitone.seed_target='disposable';\n${areaSeed}\n${areaSeed}`)
+    queryFile('tests/database/collective-area-seed.sql')
     const eventSeed = readFileSync('supabase/seeds/events.sql', 'utf8')
     assert.throws(() => query(eventSeed), error => /Seed exige destino sintético/.test(String(error.stdout) + String(error.stderr)))
     assert.throws(() => query(`set circuitone.seed_target='disposable';\n${eventSeed}`), error => /Seed exige referência temporal/.test(String(error.stdout) + String(error.stderr)))

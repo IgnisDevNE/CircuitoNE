@@ -25,7 +25,7 @@ const redirect = (location: string, headers: Headers) => {
   return new Response(null, { status: 303, headers });
 };
 
-async function boundedForm(request: Request) {
+export async function boundedForm(request: Request) {
   if (!request.headers.get("content-type")?.startsWith("application/x-www-form-urlencoded"))
     throw new Response(null, { status: 415 });
   const reader = request.body?.getReader();
@@ -47,7 +47,7 @@ async function boundedForm(request: Request) {
 }
 
 /** Pathname of the page, without the `.data` suffix that single-fetch (client-side form posts and loads) appends. */
-const routePath = (request: Request) => new URL(request.url).pathname.replace(/\.data$/, "");
+export const routePath = (request: Request) => new URL(request.url).pathname.replace(/\.data$/, "");
 
 const states = ["active", "suspended", "incomplete", "deletion_pending"];
 

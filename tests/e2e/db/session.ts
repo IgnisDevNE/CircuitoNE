@@ -9,6 +9,7 @@ export const accounts = {
   deletion: { email: 'fixture-deletion@example.invalid', name: 'Pessoa sintética em exclusão' },
   unconfirmed: { email: 'fixture-unconfirmed@example.invalid', name: '' },
   member: { email: 'fixture-member@example.invalid', name: 'Membro sintético ativo' },
+  applicant: { email: 'fixture-applicant@example.invalid', name: 'Candidato sintético ativo' },
 } as const
 
 export async function submitLogin(page: Page, email: string, password = fixturePassword) {

@@ -278,6 +278,11 @@ isOneToOne: false
 "list_collective_events":
 { Args: { "after_id"?: string,"after_start"?: string,"period"?: string,"target": string }; Returns: Json
                            },
+"list_collective_requests":
+{ Args: { "target": string }; Returns: {
+              "created_at": string,"id": string,"message": string,"profile_id": string,"profile_kind": string,"profile_name": string,"profile_published": boolean,"requester_name": string
+            }[]
+                           },
 "list_conversations":
 { Args: { "after_id"?: string,"after_time"?: string }; Returns: Json
                            },

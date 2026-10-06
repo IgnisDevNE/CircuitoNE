@@ -107,7 +107,7 @@ jobs:
           {
             echo "set circuitone.seed_target='disposable';"
             echo "set circuitone.seed_time='$(date -u +%Y-%m-%dT%H:%M:%SZ)';"
-            for seed in identity collectives events messages; do echo "\\i supabase/seeds/$seed.sql"; done
+            for seed in identity collectives collective-area events messages; do echo "\\i supabase/seeds/$seed.sql"; done
           } | psql -X -w -v ON_ERROR_STOP=1
           # Senha de teste das contas sintéticas; vale só neste Supabase local descartável.
           {

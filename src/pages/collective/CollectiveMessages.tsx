@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useParams } from '../../router'
 import { useStore } from '../../context/StoreContext'
 import { usePageTitle } from '../../lib/usePageTitle'
-import { useColetivo } from '../../components/layout/CollectiveLayout'
+import { useColetivo } from '../../components/layout/LegacyShells'
 import { Empty, Panel } from '../../components/ui/primitives'
 import { Chat } from '../../components/ui/Chat'
 

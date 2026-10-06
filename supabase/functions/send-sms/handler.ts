@@ -31,7 +31,7 @@ async function readBody(request: Request): Promise<string | null> {
   return text.length > MAX_BODY ? null : text
 }
 
-type HookPayload = { user?: { phone?: unknown; phone_change?: unknown }; sms?: { otp?: unknown } }
+type HookPayload = { user?: { phone?: unknown; new_phone?: unknown; phone_change?: unknown }; sms?: { otp?: unknown } }
 
 /**
  * Handler do Send SMS Auth Hook: confere a assinatura, lê o destinatário e o código e publica um SMS transacional.
@@ -51,10 +51,15 @@ export function createHandler(deps: HandlerDeps) {
     } catch {
       return hookError(400, 'Requisição inválida.')
     }
-    // Troca de celular (`phone_change`): o número novo fica em `phone_change`; `phone` é o antigo ou vazio.
-    const phone = normalizeDestination(payload.user?.phone_change || payload.user?.phone)
+    // Troca de celular: o GoTrue serializa o número novo como `new_phone` (`phone` é o antigo ou vazio).
+    const user = payload.user
+    const phone = normalizeDestination(user?.new_phone || user?.phone_change || user?.phone)
     const otp = payload.sms?.otp
-    if (!phone || !validOtp(otp)) return hookError(400, 'Requisição inválida.')
+    if (!phone || !validOtp(otp)) {
+      // Só indica o que faltou; nunca registra número ou código.
+      log('send-sms: invalid payload', { phone: Boolean(phone), otp: validOtp(otp) })
+      return hookError(400, 'Requisição inválida.')
+    }
     if (!isAllowedDestination(phone, deps.allowedPrefixes)) return hookError(400, 'Este número não pode receber SMS.')
 
     let result: PublishResult

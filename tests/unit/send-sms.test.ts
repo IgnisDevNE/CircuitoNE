@@ -144,6 +144,13 @@ describe('handler', () => {
     expect(spy).toHaveBeenCalledWith({ phone: '+5581999900001', message: 'CircuitoNE: seu código é 123456. Não compartilhe.' })
   })
 
+  it('sends to new_phone, the field GoTrue uses for a pending phone change', async () => {
+    const { spy, call } = setup()
+    const response = await call(payload({ phone: '', new_phone: '5585981063091' }))
+    expect(response.status).toBe(200)
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ phone: '+5585981063091' }))
+  })
+
   it('sends to phone_change when the number is being changed', async () => {
     const { spy, call } = setup()
     await call(payload({ phone: '', phone_change: '5581999900002' }))

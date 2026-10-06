@@ -96,7 +96,11 @@ begin
   end if;
   if (payload->'styles') is not null then
     if old_row.kind<>'artist' then raise exception using errcode='22023',message='Estilos são exclusivos de artistas'; end if;
-    if case when jsonb_typeof(payload->'styles')='array' then jsonb_array_length(payload->'styles') else 0 end not between 1 and 50 then
+    -- Sem CASE dentro do IF: o plpgsql corta a condição no primeiro THEN, inclusive o do CASE.
+    if jsonb_typeof(payload->'styles') is distinct from 'array' then
+      raise exception using errcode='22023',message='Informe de 1 a 50 estilos';
+    end if;
+    if jsonb_array_length(payload->'styles') not between 1 and 50 then
       raise exception using errcode='22023',message='Informe de 1 a 50 estilos';
     end if;
   end if;

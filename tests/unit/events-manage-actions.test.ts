@@ -140,7 +140,7 @@ describe('eventCreateAction', () => {
     ['Operação não autorizada', 42501, 403, 'Você não tem permissão para esta operação.'],
     ['Artista público indisponível', 22023, 422, 'Um artista do lineup não está mais público. Remova-o ou informe só o nome.'],
     ['Dados de evento/lineup inválidos', 22023, 422, 'O banco recusou os dados do evento. Revise os campos e tente de novo.'],
-    ['Solicitação reutilizada com outros dados', 22023, 409, 'Este formulário já criou um evento com outros dados. Recarregue a página para criar outro.'],
+    ['Solicitação reutilizada com outros dados', 22023, 409, 'Este formulário já foi enviado com outros dados. Recarregue a página e tente de novo.'],
   ])('erro do banco "%s" chega traduzido e nunca como sucesso', async (message, code, status, expected) => {
     reply = dbError(400, String(code), message)
     expect(await createOutcome({ ...eventFields(), request: REQUEST })).toMatchObject({ ok: false, status, error: expected })

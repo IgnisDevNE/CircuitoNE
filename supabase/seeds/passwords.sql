@@ -10,7 +10,7 @@ do $$ begin
     raise exception 'Seed exige destino sintético declarado pelo executor'; end if;
 end $$;
 
-create function pg_temp.require(ok boolean, message text) returns void language plpgsql as $$
+create or replace function pg_temp.require(ok boolean, message text) returns void language plpgsql as $$
 begin if ok is distinct from true then raise exception '%', message; end if; end $$;
 select pg_temp.require(length(:'fixture_password') >= 12, 'Senha das fixtures exige ao menos 12 caracteres');
 

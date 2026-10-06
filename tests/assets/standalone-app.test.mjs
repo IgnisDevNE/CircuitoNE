@@ -66,6 +66,17 @@ test("real SSR document and data routes preserve session cookies, privacy and ac
     );
     assert.equal(login.status, 303);
     assert.equal(login.headers.get("location"), "/painel");
+    // Envio do formulário já hidratado: o React Router posta em /entrar.data (single fetch) e o login deve funcionar igual.
+    const clientLogin = await handler(
+      new Request(origin + "/entrar.data", {
+        method: "POST",
+        headers: { Origin: origin, "Content-Type": "application/x-www-form-urlencoded" },
+        body: "email=ssr%40example.invalid&password=synthetic-only-password",
+      }),
+    );
+    assert.notEqual(clientLogin.status, 405);
+    assert.match(await clientLogin.text(), /\/painel/);
+    assert.ok(clientLogin.headers.getSetCookie().length);
     const values = login.headers.getSetCookie();
     assert.ok(values.length);
     for (const value of values) {

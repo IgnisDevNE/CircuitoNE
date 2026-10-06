@@ -46,6 +46,9 @@ async function boundedForm(request: Request) {
   return new URLSearchParams(text + decoder.decode());
 }
 
+/** Pathname of the page, without the `.data` suffix that single-fetch (client-side form posts and loads) appends. */
+const routePath = (request: Request) => new URL(request.url).pathname.replace(/\.data$/, "");
+
 const states = ["active", "suspended", "incomplete", "deletion_pending"];
 
 /** True when the request carries Supabase auth cookies for any project (sb-<ref>-auth-token[.n]). */
@@ -108,7 +111,7 @@ export async function readAccountSession(
 
 export async function identityLoader(request: Request): Promise<Response> {
   const headers = privateHeaders();
-  const path = new URL(request.url).pathname;
+  const path = routePath(request);
   if (path === "/sair") return reply({ error: "Use o botão Sair." }, 405, headers);
   if (process.env.CIRCUITONE_RUNTIME === "preview" || !process.env.CIRCUITONE_RUNTIME)
     return reply({ preview: true }, 200, headers);
@@ -135,7 +138,7 @@ export async function identityLoader(request: Request): Promise<Response> {
 
 export async function identityAction(request: Request): Promise<Response> {
   const headers = privateHeaders();
-  const path = new URL(request.url).pathname;
+  const path = routePath(request);
   if (request.method !== "POST" || !["/entrar", "/sair"].includes(path))
     return reply({ error: "Operação indisponível." }, 405, headers);
   // A origem externa vem da configuração; não confiar em cabeçalhos forwarded do cliente.

@@ -7,7 +7,7 @@ select count(*) as email_identities from auth.identities i join auth.users u on 
     and i.identity_data->>'email'=u.email and (i.identity_data->>'email_verified')::boolean=(u.email_confirmed_at is not null) \gset
 select count(*) as other_identities from auth.identities i join auth.users u on u.id=i.user_id where u.email like '%@example.invalid' \gset
 select count(*) as foreign_passwords from auth.users where email not like '%@example.invalid' and coalesce(encrypted_password,'')<>'' \gset
-create function pg_temp.require(ok boolean, message text) returns void language plpgsql as $$
+create or replace function pg_temp.require(ok boolean, message text) returns void language plpgsql as $$
 begin if ok is distinct from true then raise exception '%', message; end if; end $$;
 select pg_temp.require(:synthetic_accounts >= 15, 'Seeds sintéticos ausentes');
 select pg_temp.require(:accounts_with_password = :synthetic_accounts, 'Nem toda conta sintética recebeu a senha');

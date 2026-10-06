@@ -220,7 +220,8 @@ test('ações do cadastro recusam origem externa e corpo inválido', async ({ pa
     headers: { origin: 'https://atacante.invalid', 'content-type': 'application/x-www-form-urlencoded' },
     data: 'intent=signup&email=a%40example.invalid',
   })
-  expect(external.status()).toBe(403)
+  // O próprio React Router recusa origem externa (400) antes da verificação de APP_ORIGIN da ação (403).
+  expect([400, 403]).toContain(external.status())
   const json = await page.request.post(`${baseURL}/cadastro`, {
     headers: { origin: baseURL!, 'content-type': 'application/json' },
     data: '{}',

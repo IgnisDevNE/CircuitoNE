@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, data, RouterProvider, useActionData, useLoaderData } from 'react-router'
@@ -264,7 +265,9 @@ describe('Security', () => {
     expect(screen.getByRole('img', { name: /QR code/ }).getAttribute('src')).toBe(enrollment.qr)
     const form = screen.getByRole('button', { name: 'ativar' }).closest('form')!
     const hidden = (name: string) => (form.querySelector(`input[name="${name}"]`) as HTMLInputElement).value
-    expect([hidden('factorId'), hidden('segredo'), hidden('uri'), hidden('qr')]).toEqual([FACTOR, enrollment.secret, enrollment.uri, enrollment.qr])
+    expect([hidden('factorId'), hidden('segredo'), hidden('uri')]).toEqual([FACTOR, enrollment.secret, enrollment.uri])
+    // O QR (SVG grande) não volta pelo formulário.
+    expect(form.querySelector('input[name="qr"]')).toBeNull()
     expect(screen.getByRole('button', { name: 'cancelar' }).getAttribute('value')).toBe('mfa-cancel')
     expect(screen.getByRole('button', { name: 'ativar' }).getAttribute('value')).toBe('mfa-verify')
   })
@@ -273,6 +276,30 @@ describe('Security', () => {
     inRouter(<Security seguranca={seguranca()} result={fail('mfa-verify', { codigo: 'Código inválido ou expirado.' }, { enrollment })} />)
     expect(screen.getByText('[erro] Código inválido ou expirado.')).toBeTruthy()
     expect(screen.getByTestId('mfa-secret')).toBeTruthy()
+  })
+
+  it('código errado: a resposta não traz o QR, mas a página mantém o que já recebeu', async () => {
+    const user = userEvent.setup()
+    const Harness = () => {
+      const [result, setResult] = useState<ActionResult>({ ok: true, intent: 'mfa-enroll', message: 'Cadastre o código…', enrollment })
+      return (
+        <>
+          <button onClick={() => setResult(fail('mfa-verify', { codigo: 'Código inválido ou expirado.' }, { enrollment: { ...enrollment, qr: '' } }))}>falhar</button>
+          <Security seguranca={seguranca()} result={result} />
+        </>
+      )
+    }
+    inRouter(<Harness />)
+    expect(screen.getByRole('img', { name: /QR code/ }).getAttribute('src')).toBe(enrollment.qr)
+    await user.click(screen.getByRole('button', { name: 'falhar' }))
+    expect(screen.getByText('[erro] Código inválido ou expirado.')).toBeTruthy()
+    expect(screen.getByRole('img', { name: /QR code/ }).getAttribute('src')).toBe(enrollment.qr)
+  })
+
+  it('sem JavaScript (QR perdido) a chave continua disponível', () => {
+    inRouter(<Security seguranca={seguranca()} result={fail('mfa-verify', { codigo: 'Código inválido ou expirado.' }, { enrollment: { ...enrollment, qr: '' } })} />)
+    expect(screen.queryByRole('img')).toBeNull()
+    expect(screen.getByTestId('mfa-secret').textContent).toBe('JBSWY3DPEHPK3PXP')
   })
 
   it('MFA ativa: mostra os fatores, pede o código para remover e, se preciso, para confirmar a sessão', () => {

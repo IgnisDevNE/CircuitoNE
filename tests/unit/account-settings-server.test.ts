@@ -336,20 +336,19 @@ describe('segurança: MFA TOTP', () => {
     expect(succeeded(await verifyMfa(good.client, form(code)))).toMatchObject({ intent: 'mfa-verify', message: 'Autenticação em dois fatores ativada.' })
     expect(good.auth.mfa.challengeAndVerify).toHaveBeenCalledWith({ factorId: FACTOR, code: '123456' })
     const bad = fakeClient({ verify: { error: { code: 'mfa_verification_failed', status: 400 } } })
-    const carried = { ...code, segredo: 'JBSWY3DPEHPK3PXP', uri: 'otpauth://totp/CircuitoNE:a?secret=JBSWY3DPEHPK3PXP', qr: 'data:image/svg+xml;utf-8,<svg/>' }
+    const carried = { ...code, segredo: 'JBSWY3DPEHPK3PXP', uri: 'otpauth://totp/CircuitoNE:a?secret=JBSWY3DPEHPK3PXP' }
     expect(failed(await verifyMfa(bad.client, form(carried)))).toMatchObject({
       intent: 'mfa-verify', errors: { codigo: expect.stringContaining('inválido') },
-      enrollment: { factorId: FACTOR, secret: 'JBSWY3DPEHPK3PXP', qr: 'data:image/svg+xml;utf-8,<svg/>' },
+      enrollment: { factorId: FACTOR, secret: 'JBSWY3DPEHPK3PXP', qr: '' },
     })
     const malformed = failed(await verifyMfa(fakeClient().client, form({ factorId: FACTOR, codigo: 'abc' })))
     expect(malformed.errors.codigo).toBeTruthy()
   })
 
-  it('só aceita de volta o cadastro com o formato esperado (segredo base32, URI otpauth, QR em svg)', () => {
-    const good = { factorId: FACTOR, segredo: 'JBSWY3DPEHPK3PXP', uri: 'otpauth://totp/x', qr: 'data:image/svg+xml;utf-8,<svg/>' }
-    expect(enrollmentFromForm(form(good))).toEqual({ factorId: FACTOR, secret: 'JBSWY3DPEHPK3PXP', uri: 'otpauth://totp/x', qr: 'data:image/svg+xml;utf-8,<svg/>' })
-    expect(enrollmentFromForm(form({ ...good, qr: 'javascript:alert(1)' }))?.qr).toBe('')
-    expect(enrollmentFromForm(form({ ...good, qr: 'data:text/html,<script>' }))?.qr).toBe('')
+  it('só aceita de volta o cadastro com o formato esperado (segredo base32, URI otpauth); o QR nunca volta por aqui', () => {
+    const good = { factorId: FACTOR, segredo: 'JBSWY3DPEHPK3PXP', uri: 'otpauth://totp/x' }
+    expect(enrollmentFromForm(form(good))).toEqual({ factorId: FACTOR, secret: 'JBSWY3DPEHPK3PXP', uri: 'otpauth://totp/x', qr: '' })
+    expect(enrollmentFromForm(form({ ...good, qr: 'data:image/svg+xml;utf-8,<svg/>' }))?.qr).toBe('')
     for (const bad of [{ segredo: 'minúsculo!' }, { uri: 'https://x.invalid' }, { factorId: 'x' }, { uri: 'otpauth://totp/' + 'x'.repeat(1100) }])
       expect(enrollmentFromForm(form({ ...good, ...bad }))).toBeUndefined()
   })

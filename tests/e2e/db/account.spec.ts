@@ -351,6 +351,7 @@ test('MFA TOTP: mostra QR e chave, recusa código errado, ativa com o código do
     await page.getByRole('button', { name: 'ativar' }).click()
     await expect(page.getByText(/\[erro\] Código inválido ou expirado/)).toBeVisible()
     await expect(secretElement).toHaveText(secret)
+    await expect(page.getByRole('img', { name: /QR code/ })).toBeVisible()
 
     await page.getByLabel(/Código do aplicativo/).fill(totp(secret))
     await page.getByRole('button', { name: 'ativar' }).click()

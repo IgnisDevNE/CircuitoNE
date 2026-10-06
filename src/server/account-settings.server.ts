@@ -333,14 +333,17 @@ export async function enrollMfa(client: SupabaseServerClient): Promise<Outcome> 
   })
 }
 
-/** Reconstrói o cadastro em andamento a partir do que o formulário devolveu, só se tiver o formato esperado. */
+/**
+ * Reconstrói o cadastro em andamento (sem o QR) a partir do que o formulário devolveu, só se tiver o formato esperado.
+ * O QR do Auth é um SVG grande (dezenas de KB): não volta pelo formulário, senão estoura o limite do corpo e a
+ * conexão cai. A página mantém o QR que já recebeu; sem JavaScript, o titular usa a chave.
+ */
 export function enrollmentFromForm(form: URLSearchParams): MfaEnrollment | undefined {
   const secret = form.get('segredo') ?? ''
   const uri = form.get('uri') ?? ''
-  const qr = form.get('qr') ?? ''
   const factorId = form.get('factorId') ?? ''
   if (!/^[A-Z2-7]{16,128}$/.test(secret) || !uri.startsWith('otpauth://totp/') || uri.length > 1024 || !UUID.test(factorId)) return undefined
-  return { factorId, secret, uri, qr: qr.startsWith('data:image/svg+xml') && qr.length <= 40000 ? qr : '' }
+  return { factorId, secret, uri, qr: '' }
 }
 
 export async function verifyMfa(client: SupabaseServerClient, form: URLSearchParams): Promise<Outcome> {

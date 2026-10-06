@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Form } from 'react-router'
 import { CONFIRM_DELETE_ACCOUNT, PASSWORD_MIN, type ActionResult, type MfaEnrollment } from '../../lib/account-forms'
 import type { SegurancaDados } from '../../server/mappers/account-settings'
@@ -38,6 +39,11 @@ export function Security({ seguranca, result, busy }: SecurityProps) {
   const emailErrors = errorsFor(result, 'change-email')
   const passwordErrors = errorsFor(result, 'change-password')
   const enrollment = enrollmentOf(result)
+  // O QR só vem na resposta que cria o fator e é grande demais para voltar pelo formulário: a página o guarda
+  // para o titular tentar de novo depois de um código errado.
+  const [remembered, setRemembered] = useState<{ factorId: string; qr: string } | null>(null)
+  if (enrollment?.qr && remembered?.qr !== enrollment.qr) setRemembered({ factorId: enrollment.factorId, qr: enrollment.qr })
+  const qr = enrollment ? enrollment.qr || (remembered?.factorId === enrollment.factorId ? remembered.qr : '') : ''
   const mfaActive = seguranca.fatores.length > 0
 
   return (
@@ -94,10 +100,9 @@ export function Security({ seguranca, result, busy }: SecurityProps) {
               <input type="hidden" name="factorId" value={enrollment.factorId} />
               <input type="hidden" name="segredo" value={enrollment.secret} />
               <input type="hidden" name="uri" value={enrollment.uri} />
-              <input type="hidden" name="qr" value={enrollment.qr} />
               <p className="font-mono text-sm">1. Escaneie o QR code no aplicativo ou digite a chave abaixo.</p>
-              {enrollment.qr && (
-                <img src={enrollment.qr} alt="QR code para cadastrar o aplicativo autenticador" width={192} height={192} className="border border-[var(--color-line)] bg-white p-2" />
+              {qr && (
+                <img src={qr} alt="QR code para cadastrar o aplicativo autenticador" width={192} height={192} className="border border-[var(--color-line)] bg-white p-2" />
               )}
               <p className="font-mono text-sm">
                 Chave: <code data-testid="mfa-secret" className="break-all select-all">{enrollment.secret}</code>

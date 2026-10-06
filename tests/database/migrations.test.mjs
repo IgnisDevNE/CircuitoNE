@@ -262,6 +262,11 @@ ${demoSeed}`), error => /Seed exige referência temporal/.test(String(error.stdo
     query(`set circuitone.seed_target='disposable'; set circuitone.seed_time='${demoSecondTime.toISOString()}';
 ${demoSeed}
 ${demoCheck}`)
+    // Dev: oculta as fixtures sem afetar a demo; reexecutar não muda nada.
+    const hideFixtures = readFileSync('supabase/seeds/dev-hide-fixtures.sql', 'utf8')
+    assert.throws(() => query(hideFixtures), error => /Seed exige destino sintético/.test(String(error.stdout) + String(error.stderr)))
+    query(`set circuitone.seed_target='disposable';\n${hideFixtures}\n${hideFixtures}`)
+    queryFile('tests/database/dev-hide-fixtures.sql')
     const taxonomy = JSON.parse(readFileSync("docs/specs/estilos-musicais.json", "utf8"))
     const expected = Object.entries(taxonomy).flatMap(([style, children]) => [[style, null], ...children.map(name => [style, name])])
     const taxonomyFile = join(workdir, "taxonomy.sql")

@@ -13,6 +13,9 @@ Execução: um orquestrador especifica, revisa e integra cada tarefa; um impleme
 - Páginas ligadas usam `useLoaderData` e o `react-router` real em vez do shim `src/router.tsx`.
 - Páginas públicas consultam como anônimo (`supabaseLoader(..., { anonymous: true })`). Páginas do painel ficam sob `src/routes/layouts/app.tsx` (sessão validada no servidor; `AppShell` real); páginas ainda não ligadas mostram "Em breve".
 - Formulários pós-hidratação chegam como `<rota>.data` (single fetch); handlers devem normalizar o caminho.
+- Ações de escrita usam `runMutation` (`src/server/mutation.server.ts`): só POST no caminho esperado, origem confiável (`APP_ORIGIN`), corpo limitado, cookies do titular, respostas privadas. O sucesso só existe depois do RPC; erros do banco passam pela tabela de mensagens conhecidas (nunca texto desconhecido). A rota exporta `headers = supabaseRouteHeaders` (repassa Set-Cookie da ação) e a página recebe `feedback` por props.
+- Layouts aninhados: rota filha com loader dentro de layout que pode bloquear a página (ex.: coletivo não aprovado) exporta o próprio `ErrorBoundary`; sem `meta` na filha vale o do layout (que recebe `location`).
+- Mudanças de estado nos testes e2e (`tests/e2e/db/`): usar a conta e os registros próprios da suíte (ex.: `fixture-applicant`, seed `collective-area.sql`) e restaurar via RPC (`tests/e2e/db/rpc.ts`); os projetos desktop e mobile rodam em paralelo, então testes que mudam dados ficam só no desktop.
 - Testes: unidade para mappers/loaders (cliente fake); Playwright em `tests/e2e/db/` contra Supabase local com seeds (job `e2e` do CI, `pnpm test:e2e:db`); teste SQL para cada RPC nova.
 
 ## Tarefas

@@ -11,6 +11,8 @@ Execução: um orquestrador especifica, revisa e integra cada tarefa; um impleme
 - Uma rota por página em `src/routes.ts`, com `loader`/`action` próprios, dentro de rotas de layout (`PublicLayout`, `AppShell`, `CollectiveLayout`). Rotas ainda não ligadas continuam em `identity.tsx` → `LegacyRoute`.
 - `src/server/mappers/*`: linhas do banco → tipos de UI existentes (`src/data/types.ts`). Atenção: na UI `estado` é a UF (`state_code`); no banco `state` é o ciclo de vida.
 - Páginas ligadas usam `useLoaderData` e o `react-router` real em vez do shim `src/router.tsx`.
+- Páginas públicas consultam como anônimo (`supabaseLoader(..., { anonymous: true })`). Páginas do painel ficam sob `src/routes/layouts/app.tsx` (sessão validada no servidor; `AppShell` real); páginas ainda não ligadas mostram "Em breve".
+- Formulários pós-hidratação chegam como `<rota>.data` (single fetch); handlers devem normalizar o caminho.
 - Testes: unidade para mappers/loaders (cliente fake); Playwright em `tests/e2e/db/` contra Supabase local com seeds (job `e2e` do CI, `pnpm test:e2e:db`); teste SQL para cada RPC nova.
 
 ## Tarefas
@@ -19,10 +21,11 @@ Execução: um orquestrador especifica, revisa e integra cada tarefa; um impleme
 |---|---|---|---|---|---|
 | 0 | Limpeza | Repo, GitHub, pod único, docs | — | — | ✅ #154 |
 | D1 | Dataset de demonstração | `supabase/seeds/demo.sql`: 10 contas, 12 artistas, 5 coletivos, 16 eventos com datas reancoradas a cada `db-dev` | — | — | ✅ #155 |
+| D2 | Ocultar fixtures no dev | `dev-hide-fixtures.sql`: fixtures despublicadas/suspensas/canceladas só no dev | — | — | ✅ #160 |
 | W1 | Base + eventos públicos | Padrão acima; `/eventos`, `/eventos/:id`; e2e com Supabase local no CI | `list_events`, `get_event` | #18 #26 #28 | ✅ #156 |
-| W2 | Coletivos públicos | `/coletivos`, `/coletivos/:id` | `collectives`, `get_collective_members`, `events` | #12 | — |
-| W3 | Artistas públicos + Home | `/artistas`, `/artistas/:id`, `/` | `profiles`, `artist_styles`, `profile_images`, `get_profile`, `list_events(artist)` | #26 | — |
-| W4 | Login das contas seed + painel | Senha das fixtures via seed (`FIXTURE_PASSWORD`); remover login demo; `AppShell` real; `/painel` | `get_account_session`, `list_conversations`; novas `list_my_profiles`, `list_my_collectives` | #14 #23 | — |
+| W2 | Coletivos públicos | `/coletivos`, `/coletivos/:id` | `collectives`, `get_collective_members`, `events` | #12 | ✅ #158 |
+| W3 | Artistas públicos + Home | `/artistas`, `/artistas/:id`, `/` | `profiles`, `artist_styles`, `profile_images`, `get_profile`, `list_events(artist)` | #26 | ✅ #159 |
+| W4 | Login das contas seed + painel | Senha das fixtures via seed (`FIXTURE_PASSWORD`); remover login demo; `AppShell` real; `/painel` | `get_account_session`, `list_conversations`; novas `list_my_profiles`, `list_my_collectives` | #14 #23 | ✅ #161 |
 | W5 | Cadastro real (e-mail + SMS) | Spike: Send SMS Hook → Edge Function → AWS SNS; confirmação de e-mail; `/cadastro`, nova atuação | `complete_registration`, `create_profile` | #147 #15 #19 | — |
 | W6 | Conta | `/painel/dados`, `/painel/perfil/:id`, `/painel/seguranca` (e-mail/senha, MFA TOTP, exclusão) | novas `get/update_account_details`, `update_profile`, `update_professional_details`; `request_account_deletion`, `delete_profile` | #15 #17 #20 #23 | — |
 | W7 | Acesso a coletivo + solicitações | `CollectiveLayout` por permissões; `/coletivo/:id/painel`, `/solicitacoes`; `/painel/coletivos` | `get_collective_access`, `list_collective_events`, `get_collective_requests`, `decide_collective_request`, `get_my_collective_requests`, `request_collective_membership`, `cancel_collective_request` | #12 #22 | — |

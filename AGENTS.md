@@ -27,7 +27,8 @@ pnpm install --frozen-lockfile
 pnpm dev               # servidor de desenvolvimento (já costuma estar rodando em $PORT)
 pnpm check             # testes de infra + unidade, typecheck, build
 pnpm test:unit         # Vitest
-pnpm test:e2e          # Playwright
+pnpm test:e2e          # Playwright (preview, protótipo)
+pnpm test:e2e:db       # Playwright contra Supabase local com seeds (roda no CI, job e2e)
 pnpm test:database     # Supabase local via Docker (roda no CI)
 ./deploy/dev.ps1       # rebuild e recria o pod dev no PC (Podman)
 ```
@@ -37,11 +38,12 @@ pnpm test:database     # Supabase local via Docker (roda no CI)
 - `src/root.tsx` — documento, loader raiz, error boundary, CSS global
 - `src/routes.ts` — rotas do framework; `src/routes/*` — módulos de rota
 - `src/routes/identity.tsx` + `src/routes/legacy.tsx` — adaptador temporário que ainda renderiza o protótipo (`src/App.tsx`, `src/router.tsx`, `src/data/mock.ts`, `src/context/StoreContext.tsx`) para rotas não ligadas ao banco
-- `src/server/auth.server.ts` — cliente Supabase SSR por requisição, login/logout
+- `src/server/supabase.server.ts` — cliente Supabase SSR por requisição, `supabaseLoader`/`supabaseRouteHeaders` (padrão de loader); `auth.server.ts` — login/logout; `*.server.ts` — leitura por domínio; `mappers/` — linhas do banco para tipos de UI
+- `src/routes/layouts/` — rotas de layout; um módulo de rota por página ligada ao banco (`events.tsx`, `event.tsx`)
 - `src/pages/**`, `src/components/**` — telas e componentes
 - `src/types/database.generated.ts` — tipos gerados do schema
 - `supabase/migrations/`, `supabase/seeds/`, `supabase/config.toml` — banco
-- `tests/unit`, `tests/e2e`, `tests/database`, `tests/assets`, `tests/*.test.mjs`
+- `tests/unit`, `tests/e2e` (preview) e `tests/e2e/db` (Supabase local), `tests/database`, `tests/assets`, `tests/*.test.mjs`
 - `scripts/start-runtime.mjs` — validação de ambiente e start do servidor
 - `deploy/` — Caddy, página de espera, script do pod
 - `docs/` — regras de negócio (`business-rules/mvp.md`), arquitetura, ADRs, ambiente, plano

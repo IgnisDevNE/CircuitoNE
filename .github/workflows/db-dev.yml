@@ -66,5 +66,5 @@ jobs:
           {
             echo "set circuitone.seed_target='$PROJECT_REF';"
             echo "set circuitone.seed_time='$(date -u +%Y-%m-%dT%H:%M:%SZ)';"
-            for seed in identity collectives events messages; do echo "\\i supabase/seeds/$seed.sql"; done
+            for seed in identity collectives events messages demo; do echo "\\i supabase/seeds/$seed.sql"; done
           } | psql -X -w -v ON_ERROR_STOP=1

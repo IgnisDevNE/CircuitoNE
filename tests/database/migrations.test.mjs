@@ -243,6 +243,25 @@ ${messageSeed}`)
 ${messageSeed}
       do $$ begin if exists(select from private.conversation_blocks where conversation_id='0d000000-0000-4000-8000-000000000002') or
         (select body from private.messages where id='0e000000-0000-4000-8000-000000000001')<>'Edição preservada' then raise exception 'Seed recriou estado de mensagens editado'; end if; end $$;`)
+    // Demo: duas cargas com referências diferentes provam idempotência e reancoragem das datas dos eventos.
+    const demoSeed = readFileSync('supabase/seeds/demo.sql', 'utf8')
+    assert.throws(() => query(demoSeed), error => /Seed exige destino sintético/.test(String(error.stdout) + String(error.stderr)))
+    assert.throws(() => query(`set circuitone.seed_target='disposable';
+${demoSeed}`), error => /Seed exige referência temporal/.test(String(error.stdout) + String(error.stderr)))
+    // A agenda pública usa now() do banco; as referências partem do relógio real para manter eventos futuros.
+    const demoFirstTime = new Date()
+    const demoSecondTime = new Date(demoFirstTime.getTime() + 7 * 86_400_000)
+    const demoCheck = readFileSync('tests/database/demo-seed.sql', 'utf8')
+    for (const time of [demoFirstTime, demoSecondTime]) {
+      const reference = `set circuitone.seed_target='disposable'; set circuitone.seed_time='${time.toISOString()}';
+`
+      query(`${reference}${demoSeed}`)
+      query(`${reference}${demoCheck}`)
+    }
+    // Terceira carga com a mesma referência não pode duplicar nem alterar contagens.
+    query(`set circuitone.seed_target='disposable'; set circuitone.seed_time='${demoSecondTime.toISOString()}';
+${demoSeed}
+${demoCheck}`)
     const taxonomy = JSON.parse(readFileSync("docs/specs/estilos-musicais.json", "utf8"))
     const expected = Object.entries(taxonomy).flatMap(([style, children]) => [[style, null], ...children.map(name => [style, name])])
     const taxonomyFile = join(workdir, "taxonomy.sql")

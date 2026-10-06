@@ -36,3 +36,8 @@ enabled = false
 
 [edge_runtime]
 enabled = false
+
+[auth.mfa.totp]
+# Cadastro e verificação de MFA por aplicativo autenticador (TOTP), usados em /painel/seguranca e no e2e.
+enroll_enabled = true
+verify_enabled = true

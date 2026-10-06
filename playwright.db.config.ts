@@ -7,6 +7,7 @@ const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } = process.env
 if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_'))
   throw new Error('Defina SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY (chave publicável) do Supabase local.')
 
+const ACCOUNT_SPEC = /account\.spec\.ts$/
 const port = '5183'
 const origin = `http://127.0.0.1:${port}`
 
@@ -26,8 +27,23 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
-    { name: 'desktop', use: { browserName: 'chromium', viewport: { width: 1366, height: 900 } } },
-    { name: 'mobile', use: { browserName: 'chromium', viewport: { width: 390, height: 844 } } },
+    // Leituras: rodam em paralelo nos dois tamanhos de tela.
+    { name: 'desktop', testIgnore: ACCOUNT_SPEC, use: { browserName: 'chromium', viewport: { width: 1366, height: 900 } } },
+    { name: 'mobile', testIgnore: ACCOUNT_SPEC, use: { browserName: 'chromium', viewport: { width: 390, height: 844 } } },
+    // Escritas na conta (account.spec.ts): só depois de todos os demais specs e uma tela por vez, para não competir
+    // com testes que contam perfis publicados ou conferem nomes das fixtures. Cada teste desfaz o que altera.
+    {
+      name: 'account-desktop',
+      testMatch: ACCOUNT_SPEC,
+      dependencies: ['desktop', 'mobile'],
+      use: { browserName: 'chromium', viewport: { width: 1366, height: 900 } },
+    },
+    {
+      name: 'account-mobile',
+      testMatch: ACCOUNT_SPEC,
+      dependencies: ['account-desktop'],
+      use: { browserName: 'chromium', viewport: { width: 390, height: 844 } },
+    },
   ],
   webServer: {
     command: 'pnpm build && pnpm preview',

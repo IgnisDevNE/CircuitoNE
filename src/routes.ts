@@ -5,10 +5,7 @@ const paths = ['/entrar', '/cadastro']
 
 // Páginas do painel ainda sem dados reais: mostram "Em breve" dentro do layout autenticado, uma por tarefa do plano.
 const comingSoon = [
-  '/painel/perfil/:atuacaoId',
-  '/painel/dados',
   '/painel/dados/nova-atuacao',
-  '/painel/seguranca',
   '/painel/mensagens',
   '/painel/explorar/artistas',
   '/painel/explorar/servicos',
@@ -31,6 +28,9 @@ export default [
   layout('./routes/layouts/app.tsx', [
     route('painel', './routes/dashboard.tsx'),
     route('painel/coletivos', './routes/my-collectives.tsx'),
+    route('painel/dados', './routes/account-data.tsx'),
+    route('painel/perfil/:atuacaoId', './routes/profile-edit.tsx'),
+    route('painel/seguranca', './routes/security.tsx'),
     ...comingSoon.map((path, position) => route(path.slice(1), './routes/soon.tsx', { id: `soon-${position}` })),
     // Área do coletivo: 404 para quem não é membro; menu e páginas conforme as permissões (get_collective_access).
     route('coletivo/:id', './routes/layouts/collective.tsx', [

@@ -9,9 +9,9 @@ import { Empty } from './components/ui/primitives'
 import { Login } from './pages/auth/Login'
 import { Register } from './pages/auth/Register'
 
-import { EditData } from './pages/app/EditData'
-import { EditProfile } from './pages/app/EditProfile'
-import { Security } from './pages/app/Security'
+import { LegacyEditData } from './pages/legacy/LegacyEditData'
+import { LegacyEditProfile } from './pages/legacy/LegacyEditProfile'
+import { LegacySecurity } from './pages/legacy/LegacySecurity'
 import { Messages } from './pages/app/Messages'
 import { Explore } from './pages/app/Explore'
 
@@ -42,10 +42,10 @@ export default function App({ initialNow }: { initialNow?: number } = {}) {
               { path: '/cadastro', element: pub(<Register mode="cadastro" />) },
               // logado
               { path: '/painel', element: app(<LegacyDashboard />) },
-              { path: '/painel/perfil/:atuacaoId', element: app(<EditProfile />) },
-              { path: '/painel/dados', element: app(<EditData />) },
+              { path: '/painel/perfil/:atuacaoId', element: app(<LegacyEditProfile />) },
+              { path: '/painel/dados', element: app(<LegacyEditData />) },
               { path: '/painel/dados/nova-atuacao', element: app(<Register mode="nova-atuacao" />) },
-              { path: '/painel/seguranca', element: app(<Security />) },
+              { path: '/painel/seguranca', element: app(<LegacySecurity />) },
               { path: '/painel/mensagens', element: app(<Messages />) },
               { path: '/painel/explorar/artistas', element: app(<Explore kind="artistas" />) },
               { path: '/painel/explorar/servicos', element: app(<Explore kind="servicos" />) },

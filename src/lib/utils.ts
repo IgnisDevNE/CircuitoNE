@@ -88,13 +88,17 @@ export function parseCacheCents(v: string): number | null {
   return Number.isSafeInteger(cents) ? cents : null
 }
 
+/** Centavos inteiros em reais, no formato brasileiro (`R$ 1.500,00`). */
+export function formatCacheCents(cents: number) {
+  const intFmt = String(Math.floor(cents / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  return `R$ ${intFmt},${String(cents % 100).padStart(2, '0')}`
+}
+
 /** Vazio permanece vazio; entrada inválida permanece visível para correção. */
 export function maskCache(v: string) {
   if (!v.trim()) return ''
   const cents = parseCacheCents(v)
-  if (cents === null) return v
-  const intFmt = String(Math.floor(cents / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-  return `R$ ${intFmt},${String(cents % 100).padStart(2, '0')}`
+  return cents === null ? v : formatCacheCents(cents)
 }
 
 // ---- WCAG contrast helpers ----

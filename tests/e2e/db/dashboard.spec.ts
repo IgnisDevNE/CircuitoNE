@@ -97,13 +97,9 @@ test('menu leva às páginas reais e às ainda em preparação, sem dados de men
   await expect(page).toHaveTitle('explorar/artistas · CIRCUITO NE')
   await expect(page.getByRole('heading', { level: 1, name: /explorar\/artistas/ })).toBeVisible()
 
-  // A nova atuação (cadastro) ainda é "Em breve".
+  // A nova atuação é real (register.spec.ts): nada mais no menu é "Em breve".
   await page.goto('/painel/dados/nova-atuacao')
-  await expect(page).toHaveTitle('Em breve · CIRCUITO NE')
-  await expect(page.getByRole('heading', { level: 1, name: 'Em breve' })).toBeVisible()
-  await expect(page.getByText('Esta função ainda está em preparação')).toBeVisible()
-  await page.getByRole('link', { name: 'voltar ao dashboard' }).click()
-  await expect(page).toHaveURL(/\/painel$/)
+  await expect(page).toHaveTitle('Nova atuação · CIRCUITO NE')
 
   // O painel e as seções do coletivo são reais (collective.spec.ts e collective-manage.spec.ts).
   const response = await page.goto(`/coletivo/${collectiveId(1)}/membros`)

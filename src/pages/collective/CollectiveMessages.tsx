@@ -1,30 +1,15 @@
-import { useEffect } from 'react'
-import { useParams } from '../../router'
-import { useStore } from '../../context/StoreContext'
-import { usePageTitle } from '../../lib/usePageTitle'
-import { useColetivo } from '../../components/layout/LegacyShells'
-import { Empty, Panel } from '../../components/ui/primitives'
-import { Chat } from '../../components/ui/Chat'
+import { MessagesWorkspace, type MessagesWorkspaceProps } from '../../components/ui/MessagesWorkspace'
 
-export function CollectiveMessages() {
-  const { id } = useParams()
-  const { col, nivel } = useColetivo(id)
-  const { threads, markThreadRead } = useStore()
-  usePageTitle(col ? `${col.nome} · Mensagens` : 'Mensagens')
+export interface CollectiveMessagesProps extends Omit<MessagesWorkspaceProps, 'basePath' | 'novaHref'> {
+  coletivoId: string
+}
 
-  const colThreads = threads.filter((t) => t.coletivoId === id)
-  const active = colThreads[0]
-
-  useEffect(() => {
-    if (col && nivel >= 1 && active) markThreadRead(active.id)
-  }, [col, nivel, active?.id, markThreadRead])
-
-  if (!col) return null
-  if (nivel < 1) return <Empty>Você não tem permissão para ver as mensagens deste coletivo (requer nível 1+).</Empty>
-
+/** Conversas em que o coletivo é um dos lados; ler e enviar dependem de permissões diferentes. */
+export function CollectiveMessages({ coletivoId, ...props }: CollectiveMessagesProps) {
   return (
-    <Panel title="chat do coletivo" className="flex h-[70vh] flex-col" bodyClassName="flex min-h-0 flex-1 flex-col">
-      {active ? <Chat key={active.id} thread={active} /> : <Empty>Sem conversas neste coletivo.</Empty>}
-    </Panel>
+    <div className="space-y-4">
+      <h2 className="font-display text-xl font-bold">chat do coletivo</h2>
+      <MessagesWorkspace {...props} basePath={`/coletivo/${coletivoId}/mensagens`} />
+    </div>
   )
 }

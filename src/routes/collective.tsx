@@ -2,6 +2,8 @@ import { CollectiveProfile } from '../pages/public/CollectiveProfile'
 import { LoadError } from '../components/ui/LoadError'
 import { loadCollectivePage } from '../server/collectives.server'
 import { supabaseLoader, supabaseRouteHeaders } from '../server/supabase.server'
+import { useRouteLoaderData } from 'react-router'
+import type { loader as publicLoader } from './layouts/public'
 import type { Route } from './+types/collective'
 
 export const loader = ({ request, params }: Route.LoaderArgs) =>
@@ -14,7 +16,8 @@ export const meta = ({ loaderData }: Route.MetaArgs) => [
 ]
 
 export default function CollectiveRoute({ loaderData }: Route.ComponentProps) {
-  return <CollectiveProfile {...loaderData} />
+  const sessao = useRouteLoaderData<typeof publicLoader>('routes/layouts/public')
+  return <CollectiveProfile {...loaderData} sessao={sessao ?? null} />
 }
 
 export function ErrorBoundary() {

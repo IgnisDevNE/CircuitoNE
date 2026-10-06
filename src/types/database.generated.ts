@@ -258,6 +258,9 @@ isOneToOne: false
 "get_collective_status":
 { Args: { "target": string }; Returns: Json
                            },
+"get_conversation_details":
+{ Args: { "targets": (string)[] }; Returns: Json
+                           },
 "get_event":
 { Args: { "target": string }; Returns: Json
                            },
@@ -280,6 +283,9 @@ isOneToOne: false
                            },
 "get_profile":
 { Args: { "target": string }; Returns: Json
+                           },
+"get_recent_messages":
+{ Args: { "before_id"?: string,"before_time"?: string,"target": string }; Returns: Json
                            },
 "list_collective_events":
 { Args: { "after_id"?: string,"after_start"?: string,"period"?: string,"target": string }; Returns: Json

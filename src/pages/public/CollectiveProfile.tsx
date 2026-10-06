@@ -3,6 +3,7 @@ import { Avatar, Badge, Empty, Panel } from '../../components/ui/primitives'
 import { DuotoneImage } from '../../components/ui/DuotoneImage'
 import { AccentScope } from '../../components/ui/AccentScope'
 import { Social } from '../../components/ui/Social'
+import { MessageAction, type PublicSession } from '../../components/ui/MessageAction'
 import { fmtDataHora } from '../../lib/utils'
 import type { Evento } from '../../data/types'
 import type { CollectivePageData } from '../../server/mappers/collectives'
@@ -25,7 +26,7 @@ function EventLinks({ eventos }: { eventos: Evento[] }) {
   )
 }
 
-export function CollectiveProfile({ coletivo: col, membros, proximos, anteriores }: CollectivePageData) {
+export function CollectiveProfile({ coletivo: col, membros, proximos, anteriores, sessao }: CollectivePageData & { sessao?: PublicSession }) {
   return (
     <AccentScope color={col.corPredominante}>
       <div className="space-y-8">
@@ -41,6 +42,7 @@ export function CollectiveProfile({ coletivo: col, membros, proximos, anteriores
             <h1 className="mt-2 font-display text-4xl font-bold text-glow">{col.nome}</h1>
             <p className="mt-3 max-w-3xl leading-relaxed text-[var(--foreground)]">{col.bio}</p>
             <div className="mt-4"><Social links={col.social} /></div>
+            <div className="mt-4"><MessageAction para={`collective:${col.id}`} sessao={sessao} /></div>
           </div>
         </header>
 

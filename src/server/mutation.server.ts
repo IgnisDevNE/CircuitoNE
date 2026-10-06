@@ -8,7 +8,7 @@ export type { ActionResult }
 /** Falha esperada de uma ação, já com mensagem em pt-BR e o status HTTP correspondente. */
 export class ActionFailure extends Error {
   constructor(
-    readonly status: 400 | 401 | 403 | 404 | 409 | 422 | 503,
+    readonly status: 400 | 401 | 403 | 404 | 409 | 422 | 429 | 503,
     message: string,
     /** Mensagem por campo do formulário, quando a recusa é de validação. */
     readonly fields?: Record<string, string>,
@@ -38,6 +38,21 @@ const KNOWN_FAILURES: Record<string, ActionFailure> = {
   'Pedido indisponível': new ActionFailure(409, 'Este pedido não está mais pendente.'),
   'Pedido já decidido ou decisão inválida': new ActionFailure(409, 'Este pedido já foi decidido.'),
   'Solicitante indisponível': new ActionFailure(409, 'A conta de quem fez o pedido não está mais disponível.'),
+  // Mensagens (W10). Os limites de envio usam o errcode 54000.
+  'Mensagem inválida': new ActionFailure(422, 'Escreva uma mensagem de até 2.000 caracteres.'),
+  'Escolha outro interlocutor': new ActionFailure(422, 'Escolha outro interlocutor: não é possível enviar uma mensagem para si mesmo.'),
+  'Representação inválida': new ActionFailure(400, 'Escolha com qual atuação ou coletivo enviar.'),
+  'Envio não autorizado': new ActionFailure(403, 'Você não pode enviar mensagens por esta atuação ou coletivo, ou o interlocutor não está mais disponível.'),
+  'Interlocutor indisponível': new ActionFailure(409, 'Este interlocutor não está disponível para receber mensagens.'),
+  'Conta confirmada necessária': new ActionFailure(403, 'Confirme sua conta para enviar mensagens.'),
+  'Conversa bloqueada': new ActionFailure(409, 'Esta conversa está bloqueada: ninguém pode enviar mensagens enquanto o bloqueio durar.'),
+  'Limite de mensagens por minuto': new ActionFailure(429, 'Muitas mensagens em pouco tempo. Aguarde um minuto e tente de novo.'),
+  'Limite de conversas por dia': new ActionFailure(429, 'Você atingiu o limite de novas conversas de hoje. Tente de novo amanhã.'),
+  'Leitura não autorizada': new ActionFailure(403, 'Você não tem permissão para ler esta conversa.'),
+  'Mensagem indisponível': new ActionFailure(409, 'Esta mensagem não está mais disponível.'),
+  'Bloqueio não autorizado': new ActionFailure(403, 'Você não pode alterar o bloqueio desta conversa por esta atuação ou coletivo.'),
+  'Denúncia não autorizada': new ActionFailure(403, 'Você não pode denunciar esta mensagem.'),
+  'Motivo necessário': new ActionFailure(422, 'Explique o motivo da denúncia em até 2.000 caracteres.'),
   'Operação não autorizada': new ActionFailure(403, 'Você não tem permissão para esta operação.'),
   // Eventos (RN-23..RN-27); o conflito de versão chega com o código 40001.
   'Evento alterado; recarregue': new ActionFailure(
@@ -51,7 +66,7 @@ const KNOWN_FAILURES: Record<string, ActionFailure> = {
   'Artista público indisponível': new ActionFailure(422, 'Um artista do lineup não está mais público. Remova-o ou informe só o nome.'),
   'Solicitação reutilizada com outros dados': new ActionFailure(
     409,
-    'Este formulário já criou um evento com outros dados. Recarregue a página para criar outro.',
+    'Este formulário já foi enviado com outros dados. Recarregue a página e tente de novo.',
   ),
   'Dados de evento/lineup inválidos': new ActionFailure(422, 'O banco recusou os dados do evento. Revise os campos e tente de novo.'),
   'Dados de evento inválidos': new ActionFailure(422, 'O banco recusou os dados do evento. Revise os campos e tente de novo.'),
@@ -61,8 +76,8 @@ const KNOWN_FAILURES: Record<string, ActionFailure> = {
   'Crédito exige texto': new ActionFailure(422, 'Uma participação do lineup é inválida.'),
 }
 
-/** SQLSTATE que as funções do banco usam de propósito: recusa (42501), dado inválido (22023) e conflito de versão (40001). */
-const KNOWN_CODES = ['42501', '22023', '40001']
+/** SQLSTATE que as funções do banco usam de propósito: recusa (42501), dado inválido (22023), conflito de versão (40001) e limite de envio (54000). */
+const KNOWN_CODES = ['42501', '22023', '40001', '54000']
 
 type RpcError = { code?: string; message?: string } | null
 

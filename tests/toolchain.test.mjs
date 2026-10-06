@@ -12,7 +12,7 @@ test('Node 24 LTS is used consistently by local tools, CI and the container', ()
   assert.match(read('.mise.toml'), /node = "24\.21\.0"/)
   assert.match(read('pnpm-workspace.yaml'), /useNodeVersion: 24\.21\.0/)
 
-  for (const path of ['.github/workflows/ci.yml', '.github/workflows/db-dev.yml']) {
+  for (const path of ['.github/workflows/ci.yml', '.github/workflows/db-dev.yml', '.github/workflows/functions-dev.yml']) {
     const versions = [...read(path).matchAll(/node-version: '([^']+)'/g)].map((match) => match[1])
     assert.ok(versions.length > 0, `${path} must set a Node version`)
     assert.ok(versions.every((value) => value === version), `${path} must use ${version}`)

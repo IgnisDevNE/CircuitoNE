@@ -24,7 +24,15 @@ export function RestrictedAccount({
       ) : situacao === 'deletion_pending' ? (
         <p>A exclusão da sua conta está em análise. As operações estão bloqueadas.</p>
       ) : (
-        <p>Seu cadastro ou a confirmação dos contatos precisa ser concluído antes de usar o portal.</p>
+        <>
+          <p>Seu cadastro ou a confirmação dos contatos precisa ser concluído antes de usar o portal.</p>
+          <a
+            href="/cadastro"
+            className="inline-block border border-[var(--accent)] px-4 py-2 font-mono text-sm uppercase tracking-widest hover:bg-[var(--accent)]/15"
+          >
+            Continuar cadastro
+          </a>
+        </>
       )}
       <a className="block text-[var(--accent-text)] underline" href="mailto:ignisdev@magalz.space">
         Contatar suporte

@@ -18,6 +18,52 @@ enabled = false
 # db start/reset aplica o schema oficial Auth antes das migrações da aplicação.
 # O harness não inicia o servidor Auth nem envia mensagens.
 enabled = true
+# URLs do app no e2e com banco (playwright.db.config.ts, porta 5183); o hospedado usa a Site URL e a lista do painel.
+site_url = "http://127.0.0.1:5183"
+additional_redirect_urls = ["http://127.0.0.1:5183/auth/confirmar"]
+enable_signup = true
+
+# O e2e cria contas e confirma códigos em sequência a partir de um único IP.
+[auth.rate_limit]
+sms_sent = 100
+sign_in_sign_ups = 200
+token_verifications = 200
+
+[auth.email]
+enable_signup = true
+# Local: sem e-mail, o cadastro (e2e) segue direto para a etapa do celular. O hospedado exige confirmação.
+enable_confirmations = false
+double_confirm_changes = true
+
+[auth.sms]
+# Confirmar o celular exige o código (false aqui confirmaria o número sem verificar).
+enable_signup = true
+enable_confirmations = true
+template = "CircuitoNE: seu código é {{ .Code }}"
+max_frequency = "5s"
+
+# O CLI desliga o login por celular sem um provedor ativo. Valores fictícios: os números de teste abaixo usam código
+# fixo (sem envio). O hospedado usa o Send SMS Hook (supabase/functions/send-sms).
+[auth.sms.twilio]
+enabled = true
+account_sid = "AC00000000000000000000000000000000"
+message_service_sid = "MG00000000000000000000000000000000"
+auth_token = "local-only-not-a-secret"
+
+# Celulares de teste do e2e (tests/e2e/db/register.spec.ts): número sem "+" = código fixo.
+[auth.sms.test_otp]
+5581999900001 = "123456"
+5581999900002 = "123456"
+5581999900003 = "123456"
+5581999900004 = "123456"
+5581999900005 = "123456"
+5581999900006 = "123456"
+5581999900007 = "123456"
+5581999900008 = "123456"
+
+# O hook do Auth hospedado chama sem JWT de usuário; a assinatura do webhook é a autenticação.
+[functions.send-sms]
+verify_jwt = false
 
 [storage]
 enabled = false

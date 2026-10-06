@@ -1,0 +1,62 @@
+name: Functions dev
+
+# Publica as Edge Functions no CircuitoNE-dev e confere (só pelo nome) os secrets que elas usam.
+on:
+  push:
+    branches: [main]
+    paths: ['supabase/functions/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: circuitone-dev-functions
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: Homologação
+    env:
+      PROJECT_REF: odphoxozclrshqjgwbqk
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24.21.0'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # O Auth chama o hook sem JWT de usuário: a assinatura Standard Webhooks (SEND_SMS_HOOK_SECRETS) é a autenticação.
+      - name: Deploy send-sms
+        run: pnpm exec supabase functions deploy send-sms --project-ref "$PROJECT_REF" --no-verify-jwt
+      # Só nomes: o valor dos secrets nunca é impresso.
+      - name: Check function secrets
+        shell: bash
+        run: |
+          names=$(pnpm --silent exec supabase secrets list --project-ref "$PROJECT_REF" --output json | jq -r '.[].name' | sort -u)
+          missing=()
+          {
+            echo '### Secrets das Edge Functions (apenas nomes)'
+            echo
+            for required in AWS_REGION AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY; do
+              if grep -qx "$required" <<< "$names"; then echo "- \`$required\`: presente"; else echo "- \`$required\`: **ausente**"; missing+=("$required"); fi
+            done
+            if grep -qx SEND_SMS_HOOK_SECRETS <<< "$names"; then
+              echo '- `SEND_SMS_HOOK_SECRETS`: presente'
+            else
+              echo '- `SEND_SMS_HOOK_SECRETS`: **ausente** (gerado no painel ao ativar o Send SMS Hook; sem ele a função recusa todas as chamadas)'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          if ! grep -qx SEND_SMS_HOOK_SECRETS <<< "$names"; then
+            echo '::warning::SEND_SMS_HOOK_SECRETS is not set yet; configure the Send SMS Hook in the Supabase dashboard.'
+          fi
+          if (( ${#missing[@]} )); then
+            echo "::error::Missing Edge Function secrets: ${missing[*]}"
+            exit 1
+          fi

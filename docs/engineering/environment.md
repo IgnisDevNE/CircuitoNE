@@ -59,6 +59,16 @@ Para o dev real local, criar `.env.local` com `CIRCUITONE_RUNTIME=development`, 
 
 ## Serviços externos
 
-- **E-mail:** SMTP2GO (`no-reply@magalz.space`) configurado nos dois projetos Supabase; o usuário de dev está em sandbox com cópia para `ignisdev@magalz.space`.
-- **SMS:** AWS SNS (sa-east-1), integração planejada na W5.
+- **E-mail:** SMTP2GO (`no-reply@magalz.space`) configurado nos dois projetos Supabase. No dev a confirmação de e-mail fica **ligada** e os e-mails são entregues de verdade; o link volta pelo callback do app, `APP_ORIGIN/auth/confirmar` (ver abaixo).
+- **SMS:** AWS SNS (sa-east-1) pelo Send SMS Auth Hook → Edge Function `send-sms` (`supabase/functions/send-sms/`). O IAM do SNS só tem `sns:Publish`; a conta SNS está em sandbox, então só números de destino verificados recebem SMS. A função só envia para destinos `+55` (`SMS_ALLOWED_PREFIXES` altera) e nunca registra código, telefone nem segredos.
+
+## Cadastro (W5): configuração no painel do Supabase (dev)
+
+- **Authentication → URL Configuration:** Site URL `https://circuitone-dev.magalz.space`; Redirect URLs com `https://circuitone-dev.magalz.space/auth/confirmar`.
+- **Authentication → Emails → Templates:** o app confirma pelo `token_hash` (funciona em outro navegador, sem o verificador PKCE). Em *Confirm signup* e *Change email address* use o link
+  `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=email` (confirmação de cadastro) e `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=email_change` (troca de e-mail). O `{{ .ConfirmationURL }}` padrão também funciona (volta com `?code=`, PKCE), mas só no mesmo navegador do cadastro.
+- **Authentication → Sign In / Providers:** *Confirm email* ligado; *Phone* ligado, com *Enable phone confirmations* (sem provedor SMS próprio: o envio é do hook).
+- **Authentication → Hooks → Send SMS:** tipo HTTPS, URL `https://odphoxozclrshqjgwbqk.supabase.co/functions/v1/send-sms`; ao gerar o secret (`v1,whsec_...`) criar o secret da função `SEND_SMS_HOOK_SECRETS` com esse valor.
+- **Secrets da função:** `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` (e `SEND_SMS_HOOK_SECRETS`). `functions-dev.yml` publica a função em cada mudança em `supabase/functions/**` e confere só os nomes dos secrets.
+- **CI/local:** `supabase/config.toml` liga a confirmação de celular com códigos de teste fixos (`[auth.sms.test_otp]`) e deixa a confirmação de e-mail desligada; `tests/e2e/db/register.spec.ts` usa isso.
 - **Cobertura:** Codecov próprio em `pipeline.magalz.space`, publicado pelo `codecov-publish.yml` após o CI.

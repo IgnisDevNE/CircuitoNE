@@ -4,7 +4,7 @@ import { loadCollectiveList } from '../server/collectives.server'
 import { supabaseLoader, supabaseRouteHeaders } from '../server/supabase.server'
 import type { Route } from './+types/collectives'
 
-export const loader = ({ request }: Route.LoaderArgs) => supabaseLoader(request, loadCollectiveList)
+export const loader = ({ request }: Route.LoaderArgs) => supabaseLoader(request, loadCollectiveList, { anonymous: true })
 export const headers = supabaseRouteHeaders
 
 export const meta = () => [

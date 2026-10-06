@@ -1,5 +1,5 @@
-import { createServerClient, parseCookieHeader, serializeCookieHeader } from "@supabase/ssr";
-import type { Database } from "../types/database.generated";
+import { parseCookieHeader, serializeCookieHeader } from "@supabase/ssr";
+import { createSupabaseServerClient, privateHeaders } from "./supabase.server";
 
 export type AccountSession = {
   id: string;
@@ -14,64 +14,12 @@ export type IdentityData = {
   email?: string;
   unavailable?: boolean;
 };
-const privateHeaders = () =>
-  new Headers({
-    "Cache-Control": "private, no-store, max-age=0",
-    Vary: "Cookie",
-    Pragma: "no-cache",
-    Expires: "0",
-  });
 const reply = (data: IdentityData, status: number, headers: Headers) =>
   Response.json(data, { status, headers });
 const redirect = (location: string, headers: Headers) => {
   headers.set("Location", location);
   return new Response(null, { status: 303, headers });
 };
-
-function session(request: Request, headers: Headers) {
-  if (
-    process.env.CIRCUITONE_RUNTIME !== "development" ||
-    !process.env.SUPABASE_URL ||
-    !process.env.SUPABASE_PUBLISHABLE_KEY?.startsWith("sb_publishable_")
-  )
-    throw new Error("Auth configuration unavailable");
-  const cookies = new Map(
-    parseCookieHeader(request.headers.get("cookie") ?? "").map(({ name, value }) => [
-      name,
-      value ?? "",
-    ]),
-  );
-  return createServerClient<Database>(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_PUBLISHABLE_KEY,
-    {
-      cookieOptions: { httpOnly: true, secure: true, sameSite: "lax", path: "/" },
-      cookies: {
-        getAll: () => [...cookies].map(([name, value]) => ({ name, value })),
-        setAll: (changes, cacheHeaders) => {
-          for (const { name, value, options } of changes) {
-            cookies.set(name, value);
-            headers.append(
-              "Set-Cookie",
-              serializeCookieHeader(name, value, {
-                ...options,
-                httpOnly: true,
-                secure: true,
-                sameSite: "lax",
-                path: "/",
-              }),
-            );
-          }
-          for (const [name, value] of Object.entries(cacheHeaders)) headers.set(name, value);
-        },
-      },
-      global: {
-        fetch: (url, init) =>
-          fetch(url, { ...init, redirect: "error", signal: AbortSignal.timeout(10000) }),
-      },
-    },
-  );
-}
 
 async function boundedForm(request: Request) {
   if (!request.headers.get("content-type")?.startsWith("application/x-www-form-urlencoded"))
@@ -104,7 +52,7 @@ export async function identityLoader(request: Request): Promise<Response> {
   if (path !== '/entrar' && path !== '/cadastro' && !path.startsWith('/painel') && !path.startsWith('/coletivo/')) return reply({preview:true},200,headers)
   if (path === "/cadastro") return reply({ unavailable: true }, 200, headers);
   try {
-    const client = session(request, headers);
+    const client = createSupabaseServerClient(request, headers);
     const { data, error } = await client.auth.getUser();
     if (
       error &&
@@ -176,7 +124,7 @@ export async function identityAction(request: Request): Promise<Response> {
     return reply({ error: "Origem recusada." }, 403, headers);
   try {
     const form = await boundedForm(request);
-    const client = session(request, headers);
+    const client = createSupabaseServerClient(request, headers);
     if (path === "/sair") {
       const { error } = await client.auth.signOut({ scope: "local" });
       if (error)

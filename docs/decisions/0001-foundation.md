@@ -16,7 +16,7 @@ O protótipo usa React/Vite/Tailwind, roteador próprio e um StoreContext em mem
 - Dados públicos, profissionais restritos e pessoais privados em objetos separados. Permissão no servidor, nunca apenas por menus.
 - Manter testes rápidos locais e verificação de aceite sob autoridade diferente da implementação. A segurança depende também das credenciais e das regras do GitHub.
 - `main` protegida; branches curtas `codex/…` partem de `main` atualizada. PR por tarefa. Homologação no projeto `CircuitoNE-dev` antes de produção. Uma revisão completa e OWASP por fase.
-- Migrações canônicas em `docs/migrations/`, conforme AGENTS.md; adaptador temporário para a estrutura exigida pelo CLI descrito no README desse diretório. Nunca duas cópias editáveis.
+- Migrações em `supabase/migrations/` (layout padrão do Supabase CLI).
 - Não trocar o roteador apenas por preferência. Cobrir comportamento (parâmetros, voltar, links profundos, autorização, 404) e corrigir problemas reais; adotar biblioteca se o custo de correções justificar.
 - Hospedagem escolhida: container estático no Podman deste Windows durante a preparação; posteriormente, o mesmo formato no Debian próprio. Caddy serve a SPA. Preview e produção permanecem separados; Supabase continua gerenciado. Nenhum deploy de produção nesta preparação.
 

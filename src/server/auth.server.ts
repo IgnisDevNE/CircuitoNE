@@ -1,8 +1,6 @@
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from "@supabase/ssr";
 import type { Database } from "../types/database.generated";
 
-const devRef = "odphoxozclrshqjgwbqk";
-const devOrigin = "https://circuitone-dev.magalz.space";
 export type AccountSession = {
   id: string;
   name: string | null;
@@ -33,8 +31,7 @@ const redirect = (location: string, headers: Headers) => {
 function session(request: Request, headers: Headers) {
   if (
     process.env.CIRCUITONE_RUNTIME !== "development" ||
-    process.env.SUPABASE_PROJECT_REF !== devRef ||
-    process.env.SUPABASE_URL !== "https://" + devRef + ".supabase.co" ||
+    !process.env.SUPABASE_URL ||
     !process.env.SUPABASE_PUBLISHABLE_KEY?.startsWith("sb_publishable_")
   )
     throw new Error("Auth configuration unavailable");
@@ -131,11 +128,10 @@ export async function identityLoader(request: Request): Promise<Response> {
       );
     if (!result.data) {
       // Invalidated identity: remove only this project's cookies, preserving Access.
+      const authCookie =
+        "sb-" + new URL(process.env.SUPABASE_URL!).hostname.split(".")[0] + "-auth-token";
       for (const { name } of parseCookieHeader(request.headers.get("cookie") ?? "")) {
-        if (
-          name === "sb-" + devRef + "-auth-token" ||
-          name.startsWith("sb-" + devRef + "-auth-token.")
-        )
+        if (name === authCookie || name.startsWith(authCookie + "."))
           headers.append(
             "Set-Cookie",
             serializeCookieHeader(name, "", {
@@ -171,9 +167,10 @@ export async function identityAction(request: Request): Promise<Response> {
   const path = new URL(request.url).pathname;
   if (request.method !== "POST" || !["/entrar", "/sair"].includes(path))
     return reply({ error: "Operação indisponível." }, 405, headers);
-  // A origem externa é fixa; não confiar em cabeçalhos forwarded fornecidos pelo cliente.
+  // A origem externa vem da configuração; não confiar em cabeçalhos forwarded do cliente.
   if (
-    request.headers.get("origin") !== devOrigin ||
+    !process.env.APP_ORIGIN ||
+    request.headers.get("origin") !== process.env.APP_ORIGIN ||
     request.headers.get("sec-fetch-site") === "cross-site"
   )
     return reply({ error: "Origem recusada." }, 403, headers);

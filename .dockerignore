@@ -2,7 +2,6 @@
 !package.json
 !pnpm-lock.yaml
 !pnpm-workspace.yaml
-!index.html
 !tsconfig.json
 !vite.config.ts
 !react-router.config.ts
@@ -14,3 +13,4 @@
 !scripts/start-runtime.mjs
 !deploy/
 !deploy/Caddyfile
+!deploy/waiting.html

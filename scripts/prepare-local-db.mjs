@@ -17,30 +17,19 @@ const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex")
 
-export const homologationInputs = [
-  "supabase/seeds/identity.sql",
-  "supabase/seeds/collectives.sql",
-  "supabase/seeds/events.sql",
-
-  "supabase/seeds/messages.sql",
-  "tests/database/default-grants.sql",
-  "tests/database/homologation-smoke.sql",
-]
-
 // Prepara arquivos somente. Não inicia CLI, não lê credenciais e não conecta a banco.
 
 export function prepareLocalDatabase(root = repo) {
   for (const path of [
-    "docs",
-    "docs/migrations",
     "supabase",
+    "supabase/migrations",
     "supabase/config.toml",
   ]) {
     if (lstatSync(join(root, path)).isSymbolicLink())
       throw new Error(`Link não permitido: ${path}`)
   }
 
-  const source = join(root, "docs/migrations")
+  const source = join(root, "supabase/migrations")
 
   const versions = new Set()
 
@@ -109,66 +98,11 @@ export function prepareLocalDatabase(root = repo) {
   return workdir
 }
 
-export function prepareHomologation(
-  root = repo,
-  sourceSha = process.env.GITHUB_SHA,
-) {
-  if (!/^[a-f0-9]{40}$/.test(sourceSha ?? ""))
-    throw new Error("SHA de homologação inválido")
-
-  const inputs = homologationInputs
-
-  for (const path of ["supabase/seeds", "tests", "tests/database", ...inputs]) {
-    if (lstatSync(join(root, path)).isSymbolicLink())
-      throw new Error(`Link não permitido: ${path}`)
-  }
-
-  const bytes = inputs.map((file) => ({
-    file,
-    bytes: readFileSync(join(root, file)),
-  }))
-
-  const workdir = prepareLocalDatabase(root)
-
-  for (const input of bytes) {
-    mkdirSync(dirname(join(workdir, input.file)), { recursive: true })
-
-    writeFileSync(join(workdir, input.file), input.bytes, { flag: "wx" })
-  }
-
-  const manifestFile = join(workdir, "manifest.json")
-
-  const manifest = JSON.parse(readFileSync(manifestFile, "utf8"))
-
-  writeFileSync(
-    manifestFile,
-    JSON.stringify(
-      {
-        ...manifest,
-        sourceSha,
-        projectRef: "odphoxozclrshqjgwbqk",
-
-        seedReference: "2026-09-26T12:00:00.000Z",
-        inputs: bytes.map((input) => ({
-          file: input.file,
-          sha256: sha256(input.bytes),
-        })),
-      },
-      null,
-      2,
-    ) + "\n",
-  )
-
-  return workdir
-}
-
 if (
   process.argv[1] &&
   resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 ) {
-  if (process.argv.length === 3 && process.argv[2] === "--homologation") {
-    console.log(prepareHomologation())
-  } else if (process.argv.length !== 2) {
+  if (process.argv.length !== 2) {
     console.error("O preparo local não aceita argumentos nem destinos remotos.")
 
     process.exitCode = 1

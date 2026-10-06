@@ -25,7 +25,7 @@ beforeEach(() => {
   state = "active";
   expired = false;
   vi.stubEnv("CIRCUITONE_RUNTIME", "development");
-  vi.stubEnv("SUPABASE_PROJECT_REF", "odphoxozclrshqjgwbqk");
+  vi.stubEnv("APP_ORIGIN", origin);
   vi.stubEnv("SUPABASE_URL", "https://odphoxozclrshqjgwbqk.supabase.co");
   vi.stubEnv("SUPABASE_PUBLISHABLE_KEY", "sb_publishable_synthetic");
   vi.stubGlobal(
@@ -183,7 +183,7 @@ test("oversized forms, unknown mutations and wrong destination cannot reach Auth
     }),
   );
   expect(unknown.status).toBe(405);
-  vi.stubEnv("SUPABASE_PROJECT_REF", "ukyoyrmebwadmuzkswdw");
+  vi.stubEnv("SUPABASE_PUBLISHABLE_KEY", "");
   expect((await login()).status).toBe(503);
   expect(calls).toEqual([]);
 });

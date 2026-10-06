@@ -18,4 +18,4 @@ Preservar as URLs e os componentes úteis do protótipo. Migrar com testes de ca
 
 Há um runtime a operar além do proxy. Ele permite SSR sem duplicar um backend separado. RLS, grants, limites de requisição, sessões e CSRF continuam obrigatórios; SSR não os substitui. O preview estático e os mocks atuais não representam a arquitetura concluída nem autorização real.
 
-O contrato detalhado permanece na [spec aprovada](../specs/architecture-mvp.md); isolamento de testes, promoção e credenciais seguem o [processo de entrega](../engineering/delivery.md). Regiões, SMTP e recuperação pendentes são rastreados na [issue #43](https://github.com/IgnisDevNE/CircuitoNE/issues/43).
+O contrato detalhado permanece na [spec aprovada](../specs/architecture-mvp.md).

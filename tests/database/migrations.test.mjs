@@ -104,7 +104,7 @@ test(
       name.endsWith("_pipeline_probe.sql"),
     )
     assert.ok(file)
-    // SQL sintético existe apenas na cópia descartável, nunca em docs/migrations.
+    // SQL sintético existe apenas na cópia descartável, nunca em supabase/migrations.
     writeFileSync(
       join(dir, file),
       readFileSync("tests/database/pipeline-probe.sql"),

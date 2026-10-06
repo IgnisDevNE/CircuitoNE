@@ -1,8 +1,6 @@
 # Especificação — Arquitetura do MVP CircuitoNE
 
-**Estado:** arquitetura aprovada pelo responsável em 22/09/2026. **Revisão:** 2, com adaptação da stack incorporada à fase zero conforme o plano detalhado.
-
-Este documento registra a arquitetura acordada. A primeira fatia de SSR com React Router Framework, Node e Caddy está em validação na fase zero, ainda com dados fictícios. Isso não significa que backend de negócio, autenticação ou persistência estejam implementados.
+**Estado:** arquitetura aprovada em 22/09/2026; revisada em 06/10/2026 para o PoC. Execução em [plano](../plan.md).
 
 ## Objetivo e escopo
 
@@ -55,7 +53,7 @@ O acesso comum ao banco usa a identidade autenticada do usuário, inclusive no N
 - **Postgres/RPC:** autorização dos dados e invariantes transacionais, como aprovar uma solicitação, criar vínculos e transferir a propriedade única sem deixar coletivo ativo órfão. Preferir constraints e funções pequenas a verificações dispersas.
 - **Edge Functions:** somente quando uma operação justificar execução independente. Não criar a mesma regra no Node e em uma Edge Function por padrão.
 
-Usar o SDK Supabase com tipos gerados e migrações SQL em [docs/migrations/](../migrations/README.md). Não introduzir ORM, API separada, GraphQL, microserviços, Redis ou filas sem requisito concreto.
+Usar o SDK Supabase com tipos gerados e migrações SQL em `supabase/migrations/`. Não introduzir ORM, API separada, GraphQL, microserviços, Redis ou filas sem requisito concreto.
 
 Na criação de atuação artística do protótipo, uma quantia única de cachê usa formato brasileiro (`R$ 1.500,00`) e entrada inválida não é convertida em zero. A fronteira de dados converterá a quantia em centavos inteiros e guardará centavos no banco quando a persistência profissional for implementada em F2. Os mocks atuais com faixas de valores não são quantias únicas; a tela de edição ainda não persiste alterações e será alinhada com o contrato em [#15](https://github.com/IgnisDevNE/CircuitoNE/issues/15)/[#20](https://github.com/IgnisDevNE/CircuitoNE/issues/20). A validação no navegador não substitui a validação no servidor.
 
@@ -81,37 +79,14 @@ A migração deve preservar links profundos, parâmetros, voltar/avançar, naveg
 
 Supabase Auth cuida das credenciais. Configurar confirmação de e-mail, recuperação, reautenticação sensível e SMTP próprio antes do beta externo. Regras de idade, retenção, recuperação de CPF e demais decisões abertas seguem no documento de negócio; a aprovação da arquitetura não resolve essas pendências.
 
-## Infraestrutura e crescimento
+## Infraestrutura
 
-- **Agora:** continuar com o preview estático existente no Podman Windows até a tarefa de migração. Ele não é homologação integrada nem produção.
-- **Arquitetura de destino:** processo Node em container atrás do Caddy. Runtime sem privilégios, portas internas restritas, imagens versionadas por digest, verificação de saúde e desligamento controlado. Arquivos enviados ficam no Storage; estado de negócio fica no banco.
-- **Debian:** Podman rootless com serviço supervisionado, DNS/HTTPS, logs, alertas e atualização controlada. Domínio próprio pode ser usado; o nome final ainda será definido. Supabase permanece gerenciado, fora desse host.
-- **Ambientes:** testes destrutivos em banco descartável; `circuitone-dev.magalz.space` usa `CircuitoNE-dev` com seeds sintéticos; `circuitone.magalz.space` usa produção separada e protegida. Previews não acessam produção. Configuração pública pode chegar ao cliente; segredos são injetados apenas no servidor. [Contrato de ambientes, login temporário e dados de teste](environments-and-test-data.md).
-- **Entrega:** construir artefato revisado no CI, homologar o SHA pelo GitHub e promover após aprovação. Não executar código de PR em runner do host de produção. Rollback do container e recuperação de banco/arquivos têm procedimentos distintos.
-- **Escala inicial:** uma instância da aplicação, consultas paginadas, índices conforme consultas reais, imagens dimensionadas e observação de erros, latência e consumo de recursos. Um único host continua sendo ponto de falha; isso deve entrar no plano de recuperação.
-- **Expansão:** adicionar réplicas quando métricas justificarem. Evitar dependência de arquivos e sessões locais permite essa evolução. Workers, filas, cache distribuído ou outros serviços só entram diante de carga ou trabalho assíncrono demonstrado.
-
-Backup de Postgres não substitui backup dos objetos de Storage. Antes do beta, implementar retenção, metas de tempo/perda, responsáveis e testar restauração. Homologação e produção já estão separadas e ambas em São Paulo; isso não significa que backup ou deploy estejam prontos.
-
-## Implementação e aceite
-
-As tarefas e gates permanecem no [plano de execução](../planning/implementation-plan.md). Esta spec acrescenta direção técnica, sem marcar tarefas como concluídas:
-
-| Etapa | Resultado esperado |
-|---|---|
-| Fase 0 | Caracterização do protótipo; migração para React Router Framework e SSR público ainda com dados fictícios; runtime Node/Caddy validado no container |
-| Fase 1 | Auth real com SSR, onboarding e dados privados; testes de sessão e isolamento entre requisições |
-| Fases 2–4 | Perfis, coletivos e eventos persistentes; HTML/metadados públicos corretos e autorização testada diretamente no banco/API |
-| Fase 5 | Mensagens persistentes, Realtime autorizado, reconexão e controles de abuso |
-| Fase 6 | Operação Debian, SEO/acessibilidade/performance final, recuperação e piloto homologado |
-
-Aceite mínimo da migração: testes de rotas e navegação; inspeção do HTML inicial sem depender de JavaScript; status HTTP e metadados corretos; duas sessões sem vazamento por memória/cache; nenhum segredo no bundle; build e runtime do container saudáveis. Autorização real só é atestada após integração com Supabase, nunca pelos mocks.
-
-Cada tarefa segue TDD e review normal; cada fase exige review completo e OWASP Top 10:2025. O isolamento da suíte canônica, do emissor de credenciais e do verificador segue [delivery.md](../engineering/delivery.md) e ainda precisa ser concluído. Alterar a stack não resolve esse isolamento.
+- **Dev (PoC):** pod Podman único no PC do mantenedor (app Node + Caddy), exposto por Cloudflare Tunnel e Access em `circuitone-dev.magalz.space`, usando o projeto Supabase `CircuitoNE-dev` com seeds sintéticos. Ver [ambiente](../engineering/environment.md).
+- **Produção:** `circuitone.magalz.space` serve só a página de espera; o projeto Supabase `CircuitoNE` não tem schema de negócio. Lançamento fora do escopo do PoC.
+- **Banco:** migrações em `supabase/migrations/`, testadas em Supabase local descartável no CI e aplicadas no dev pelo workflow `db-dev.yml` após o merge.
+- **Escala:** uma instância; réplicas, filas ou cache só diante de necessidade demonstrada.
 
 ## Referências técnicas
 
 - [React Router: renderização](https://reactrouter.com/start/framework/rendering).
-- [Google: JavaScript e indexação](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics).
 - [Supabase: segurança da API](https://supabase.com/docs/guides/api/securing-your-api) e [Auth com SSR](https://supabase.com/docs/guides/auth/server-side/advanced-guide).
-- [Caddy: HTTPS automático](https://caddyserver.com/docs/automatic-https).

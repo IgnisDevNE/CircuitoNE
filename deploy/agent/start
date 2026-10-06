@@ -1,3 +1,0 @@
-#!/bin/sh
-set -eu
-exec codex --no-daemon --disable plugins --disable apps "$@"

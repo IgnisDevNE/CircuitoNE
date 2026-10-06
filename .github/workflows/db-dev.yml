@@ -1,0 +1,70 @@
+name: Database dev
+
+# Aplica migrações pendentes e seeds sintéticos no CircuitoNE-dev.
+on:
+  push:
+    branches: [main]
+    paths: ['supabase/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: circuitone-dev-database
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: Homologação
+    env:
+      PROJECT_REF: odphoxozclrshqjgwbqk
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24.21.0'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Prepare pinned Supabase CA
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl --fail --silent --show-error --output supabase-ca.crt https://supabase-downloads.s3-ap-southeast-1.amazonaws.com/prod/ssl/prod-ca-2021.crt
+          echo '700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7  supabase-ca.crt' | sha256sum --check --status
+      - name: Resolve pooler host
+        id: pooler
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          host=$(curl --fail --silent --show-error -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects/$PROJECT_REF/config/database/pooler" \
+            | jq -r '.[] | select(.database_type == "PRIMARY") | .db_host')
+          [[ "$host" =~ ^aws-[0-9]+-sa-east-1\.pooler\.supabase\.com$ ]]
+          echo "host=$host" >> "$GITHUB_OUTPUT"
+      - name: Push migrations
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          pnpm exec supabase link --project-ref "$PROJECT_REF" --yes
+          pnpm exec supabase db push --linked --skip-vault --yes
+      - name: Load synthetic seeds
+        env:
+          PGHOST: ${{ steps.pooler.outputs.host }}
+          PGPORT: '5432'
+          PGDATABASE: postgres
+          PGUSER: postgres.odphoxozclrshqjgwbqk
+          PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          PGSSLMODE: verify-full
+          PGSSLROOTCERT: ${{ runner.temp }}/supabase-ca.crt
+        run: |
+          {
+            echo "set circuitone.seed_target='$PROJECT_REF';"
+            echo "set circuitone.seed_time='$(date -u +%Y-%m-%dT%H:%M:%SZ)';"
+            for seed in identity collectives events messages; do echo "\\i supabase/seeds/$seed.sql"; done
+          } | psql -X -w -v ON_ERROR_STOP=1

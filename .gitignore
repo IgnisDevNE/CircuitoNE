@@ -43,3 +43,4 @@ logs/
 /coverage/
 /supabase/.temp/
 /supabase/.branches/
+/deploy/dev.env

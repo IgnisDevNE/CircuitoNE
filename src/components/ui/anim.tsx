@@ -75,7 +75,11 @@ export function BootLog({ lines, className }: { lines: string[]; className?: str
   const reduced = usePrefersReducedMotion()
   const [n, setN] = useState(reduced ? lines.length : 0)
   useEffect(() => {
-    if (reduced) return
+    if (reduced) {
+      // Sem animação, mostra tudo de uma vez (o estado inicial é 0 durante o SSR, antes de ler a preferência).
+      setN(lines.length)
+      return
+    }
     setN(0)
     const id = setInterval(() => setN((v) => (v >= lines.length ? v : v + 1)), 260)
     return () => clearInterval(id)

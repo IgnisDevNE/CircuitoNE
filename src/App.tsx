@@ -7,9 +7,6 @@ import { AppShell } from './components/layout/AppShell'
 import { CollectiveLayout } from './components/layout/CollectiveLayout'
 import { Empty } from './components/ui/primitives'
 
-import { Home } from './pages/public/Home'
-import { ArtistsHub } from './pages/public/ArtistsHub'
-import { ArtistProfile } from './pages/public/ArtistProfile'
 
 import { Login } from './pages/auth/Login'
 import { Register } from './pages/auth/Register'
@@ -46,9 +43,6 @@ export default function App({ initialNow }: { initialNow?: number } = {}) {
           <Routes
             routes={[
               // público
-              { path: '/', element: pub(<Home />) },
-              { path: '/artistas', element: pub(<ArtistsHub />) },
-              { path: '/artistas/:id', element: pub(<ArtistProfile />) },
               // auth
               { path: '/entrar', element: pub(<Login />) },
               { path: '/cadastro', element: pub(<Register mode="cadastro" />) },

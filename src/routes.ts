@@ -1,9 +1,6 @@
-import { type RouteConfig, layout, route } from '@react-router/dev/routes'
+import { type RouteConfig, index, layout, route } from '@react-router/dev/routes'
 
 const paths = [
-  '/',
-  '/artistas',
-  '/artistas/:id',
   '/entrar',
   '/cadastro',
   '/painel',
@@ -27,9 +24,12 @@ const paths = [
 ]
 
 export default [
-  ...paths.map((path, index) => route(path === '/' ? '' : path.slice(1), './routes/identity.tsx', { id: `page-${index}` })),
+  ...paths.map((path, position) => route(path.slice(1), './routes/identity.tsx', { id: `page-${position}` })),
   // Páginas ligadas ao banco: um módulo por página, dentro de layouts. O restante ainda é o protótipo (identity -> legacy).
   layout('./routes/layouts/public.tsx', [
+    index('./routes/home.tsx'),
+    route('artistas', './routes/artists.tsx'),
+    route('artistas/:id', './routes/artist.tsx'),
     route('eventos', './routes/events.tsx'),
     route('eventos/:id', './routes/event.tsx'),
     route('coletivos', './routes/collectives.tsx'),

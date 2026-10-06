@@ -1,9 +1,6 @@
 import { expect, test } from '@playwright/test'
 
 const publicRoutes = [
-  ['/', 'Início'],
-  ['/artistas', 'Artistas'],
-  ['/artistas/art-anerie', 'ANERIE'],
   ['/entrar', 'Entrar'],
   ['/cadastro', 'Cadastro'],
 ] as const
@@ -38,7 +35,7 @@ test.beforeEach(async ({ page, baseURL }) => {
 })
 
 test.afterEach(async ({ page }, info) => {
-  const visualPaths = ['/', '/artistas/art-anerie', '/cadastro', '/coletivo/col-litoral/painel']
+  const visualPaths = ['/cadastro','/coletivo/col-litoral/painel']
   if (info.status === 'passed' && visualPaths.includes(new URL(page.url()).pathname)) {
     await info.attach('viewport', { body: await page.screenshot({ animations: 'disabled' }), contentType: 'image/png' })
   }
@@ -54,35 +51,6 @@ for (const [path, title] of publicRoutes) {
     expect(errors).toEqual([])
   })
 }
-
-test('link direto do artista mantém o perfil público após recarga', async ({ page }) => {
-  const errors: string[] = []
-  page.on('pageerror', error => errors.push(error.message))
-  await page.goto('/artistas/art-anerie')
-  await expect(page.getByRole('heading', { name: 'ANERIE', exact: true })).toBeVisible()
-  const response = await page.reload()
-  expect(response?.status()).toBe(200)
-  await expect(page).toHaveURL(/\/artistas\/art-anerie$/)
-  await expect(page).toHaveTitle('ANERIE · CIRCUITO NE')
-  await expect(page.getByRole('heading', { name: 'ANERIE', exact: true })).toBeVisible()
-  expect(errors).toEqual([])
-})
-
-test('hidrata a home com o relógio do servidor mesmo se o navegador estiver em outra data', async ({ page }) => {
-  await page.clock.setFixedTime(new Date('2030-01-01T12:00:00.000Z'))
-  const errors: string[] = []
-  page.on('pageerror', (error) => errors.push(error.message))
-  const response = await page.goto('/')
-  expect(response?.status()).toBe(200)
-  const serverEvents = await page.evaluate(
-    (html) => [...new DOMParser().parseFromString(html, 'text/html').querySelectorAll('main a[href^="/eventos/"] h3')]
-      .map((heading) => heading.textContent?.trim()),
-    await response!.text(),
-  )
-  expect(serverEvents).toContain('PORTO NOTURNO — TECHNO NA ORLA')
-  await expect(page.locator('main a[href^="/eventos/"] h3')).toHaveText(serverEvents)
-  expect(errors).toEqual([])
-})
 
 for (const [path, title] of privateRoutes) {
   test(`rota com sessão mock ${path}`, async ({ page }) => {
@@ -103,21 +71,12 @@ for (const [path, title] of privateRoutes) {
   })
 }
 
-test('jornada pública por links, voltar e avançar', async ({ page }) => {
-  await page.goto('/')
-  await page.getByRole('link', { name: 'Explorar artistas', exact: true }).click()
-  await expect(page).toHaveURL(/\/artistas$/)
-  await page.goBack()
-  await expect(page).toHaveTitle('Início · CIRCUITO NE')
-  await page.goForward()
-  await expect(page).toHaveTitle('Artistas · CIRCUITO NE')
-})
-
 test('rota desconhecida permite voltar ao início', async ({ page }) => {
   await page.goto('/rota-inexistente')
   await expect(page.getByText('404 — página não encontrada.', { exact: false })).toBeVisible()
   await page.getByRole('link', { name: 'voltar ao início', exact: true }).click()
-  await expect(page).toHaveTitle('Início · CIRCUITO NE')
+  // A home é servida pelo banco (tests/e2e/db/home.spec.ts); sem Supabase, o preview só confirma a navegação.
+  await expect(page).toHaveURL(/\/$/)
 })
 
 test('parâmetro com escape inválido é rejeitado sem quebrar a página', async ({ page }) => {
@@ -127,27 +86,16 @@ test('parâmetro com escape inválido é rejeitado sem quebrar a página', async
   // Um histórico manipulado também deve oferecer caminho de recuperação.
   const response = await page.goto('/artistas/%E0%A4%A')
   expect(response?.status()).toBe(400)
-  await page.goto('/')
-  await page.getByRole('link', { name: 'Explorar artistas', exact: true }).click()
-  await expect(page).toHaveURL(/\/artistas$/)
+  await page.goto('/entrar')
+  // O clique só funciona com a página hidratada; manipular o histórico antes disso causaria divergência de hidratação.
+  await page.getByRole('button', { name: '[demo] entrar como Ana', exact: true }).click()
+  await expect(page).toHaveURL(/\/painel$/)
   await page.evaluate(() => {
-    window.history.pushState({}, '', '/artistas/%E0%A4%A')
+    window.history.pushState({}, '', '/painel/perfil/%E0%A4%A')
     window.dispatchEvent(new PopStateEvent('popstate'))
   })
   await expect(page.getByRole('link', { name: 'voltar ao início', exact: true })).toBeVisible()
   await page.getByRole('link', { name: 'voltar ao início', exact: true }).click()
-  await expect(page).toHaveTitle('Início · CIRCUITO NE')
+  await expect(page).toHaveURL(/\/$/)
   expect(errors).toEqual([])
-})
-
-test('filtros de artistas combinam busca e estilo e recuperam lista vazia', async ({ page }) => {
-  await page.goto('/artistas')
-  await page.getByRole('searchbox', { name: 'Buscar', exact: true }).fill('recifense')
-  await expect(page.getByRole('article')).toHaveCount(1)
-  await expect(page.getByRole('heading', { name: 'ANERIE', exact: true })).toBeVisible()
-  await page.getByRole('button', { name: 'Dub', exact: true }).click()
-  await expect(page.getByText('Nenhum artista encontrado para os filtros atuais.')).toBeVisible()
-  await page.getByRole('button', { name: 'todos', exact: true }).click()
-  await page.getByRole('searchbox', { name: 'Buscar', exact: true }).fill('')
-  await expect(page.getByRole('article')).toHaveCount(4)
 })

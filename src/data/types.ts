@@ -28,6 +28,34 @@ export interface ArtistProfile {
   social: SocialLinks
 }
 
+/** Par estilo/subestilo da taxonomia (`docs/specs/estilos-musicais.json`), com os rótulos canônicos do banco. */
+export interface ArtistaEstilo {
+  estilo: string
+  subestilo?: string
+}
+
+/**
+ * Artista público servido pelo banco (resumo para hub e home).
+ * Cor e redes sociais só vêm de `get_profile` (as colunas liberadas ao visitante não as incluem),
+ * então ficam fora do resumo; contato de booking, cachê e presskit nunca são públicos.
+ */
+export interface ArtistaResumo {
+  id: string
+  nome: string
+  bio: string
+  cidade: string
+  estado: Estado
+  estilos: ArtistaEstilo[]
+  foto: string
+}
+
+/** Perfil público completo (`get_profile`). `fotos` fica vazia até os uploads (Storage, W11). */
+export interface ArtistaPublico extends ArtistaResumo {
+  corPredominante?: string
+  fotos: string[]
+  social: SocialLinks
+}
+
 export interface ServiceProfile {
   id: string
   tipo: 'servicos'

@@ -1,17 +1,12 @@
-import { Link } from '../../router'
-import { useStore } from '../../context/StoreContext'
-import { usePageTitle } from '../../lib/usePageTitle'
-import { eventoNaoEncerrado, fmtData, porProximidade, tipoEventoLabel } from '../../lib/utils'
+import { Link } from 'react-router'
+import { fmtData, tipoEventoLabel } from '../../lib/utils'
+import { estiloLabels } from '../../lib/artist'
 import { BootLog, Cursor, GlitchText, ScanBeam, TypeText } from '../../components/ui/anim'
-import { Badge, LinkButton, SectionHeading } from '../../components/ui/primitives'
+import { Badge, Empty, LinkButton, SectionHeading } from '../../components/ui/primitives'
 import { DuotoneImage } from '../../components/ui/DuotoneImage'
-import { AccentScope } from '../../components/ui/AccentScope'
+import type { HomeData } from '../../server/mappers/home'
 
-export function Home() {
-  usePageTitle('Início')
-  const { artistas, coletivos, eventos, now } = useStore()
-  const proximos = [...eventos].filter((e) => eventoNaoEncerrado(e, now)).sort((a, b) => porProximidade(a, b, now)).slice(0, 3)
-
+export function Home({ proximos, artistas, coletivos, totais }: HomeData) {
   return (
     <div className="space-y-16">
       {/* HERO */}
@@ -42,9 +37,9 @@ export function Home() {
             className="border border-[var(--color-line)] bg-black/40 p-4"
             lines={[
               'inicializando circuito_ne…',
-              `artistas conectados: ${artistas.length}`,
-              `coletivos/produtoras: ${coletivos.length}`,
-              `eventos indexados: ${eventos.length}`,
+              `artistas conectados: ${totais.artistas}`,
+              `coletivos/produtoras: ${totais.coletivos}`,
+              `eventos programados: ${totais.eventos}`,
               'região: nordeste [PE·CE·RN·BA·PB·MA·AL·SE·PI]',
               'status: online ✓',
             ]}
@@ -58,40 +53,65 @@ export function Home() {
           <SectionHeading as="h2" prompt="cat" sub="Os próximos encontros da cena, ordenados por proximidade.">eventos.log</SectionHeading>
           <Link to="/eventos" className="hidden font-mono text-xs uppercase tracking-widest text-[var(--accent-text)] hover:underline sm:block">todos →</Link>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {proximos.map((e) => (
-            <Link key={e.id} to={`/eventos/${e.id}`} className="group block border border-[var(--color-line)] transition-colors hover:border-[var(--accent)]">
-              <DuotoneImage src={e.capa} alt={`Capa do evento ${e.nome}`} className="aspect-[16/9] w-full" />
-              <div className="p-4">
-                <div className="mb-2 flex items-center gap-2">
-                  <Badge tone="accent">{tipoEventoLabel(e)}</Badge>
-                  {e.gratuito && <Badge tone="ok">Gratuito</Badge>}
+        {proximos.length === 0 ? (
+          <Empty>Nenhum evento programado no momento.</Empty>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {proximos.map((e) => (
+              <Link key={e.id} to={`/eventos/${e.id}`} className="group block border border-[var(--color-line)] transition-colors hover:border-[var(--accent)]">
+                <DuotoneImage src={e.capa} alt={`Capa do evento ${e.nome}`} className="aspect-[16/9] w-full" />
+                <div className="p-4">
+                  <div className="mb-2 flex items-center gap-2">
+                    <Badge tone="accent">{tipoEventoLabel(e)}</Badge>
+                    {e.gratuito && <Badge tone="ok">Gratuito</Badge>}
+                  </div>
+                  <h3 className="font-display text-base font-bold leading-tight group-hover:text-[var(--accent-text)]">{e.nome}</h3>
+                  <p className="mt-1 font-mono text-xs text-[var(--color-muted)]">{fmtData(e.inicio)} · {e.cidade}/{e.estado}</p>
                 </div>
-                <h3 className="font-display text-base font-bold leading-tight group-hover:text-[var(--accent-text)]">{e.nome}</h3>
-                <p className="mt-1 font-mono text-xs text-[var(--color-muted)]">{fmtData(e.inicio)} · {e.cidade}/{e.estado}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* ARTISTAS EM DESTAQUE */}
       <section>
         <SectionHeading as="h2" prompt="ls" sub="Produtores, DJs e projetos ao vivo cadastrados no circuito.">artistas/</SectionHeading>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {artistas.map((a) => (
-            <AccentScope key={a.id} color={a.corPredominante}>
-              <Link to={`/artistas/${a.id}`} className="group block border border-[var(--color-line)] transition-colors hover:border-[var(--accent)]">
-                <DuotoneImage src={a.fotoApresentacao} alt={`Foto de ${a.nome}`} className="aspect-[3/4] w-full" />
+        {artistas.length === 0 ? (
+          <Empty>Nenhum artista publicado ainda.</Empty>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {artistas.map((a) => (
+              <Link key={a.id} to={`/artistas/${a.id}`} className="group block border border-[var(--color-line)] transition-colors hover:border-[var(--accent)]">
+                <DuotoneImage src={a.foto} alt={`Foto de ${a.nome}`} className="aspect-[3/4] w-full" />
                 <div className="p-3">
                   <h3 className="font-display text-sm font-bold group-hover:text-[var(--accent-text)]">{a.nome}</h3>
-                  <p className="mt-1 line-clamp-1 font-mono text-xs text-[var(--color-muted)]">{a.estilos.join(' · ')}</p>
+                  <p className="mt-1 line-clamp-1 font-mono text-xs text-[var(--color-muted)]">{estiloLabels(a.estilos).join(' · ')}</p>
                 </div>
               </Link>
-            </AccentScope>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
+
+      {/* COLETIVOS E PRODUTORAS */}
+      {coletivos.length > 0 && (
+        <section>
+          <div className="mb-6 flex items-end justify-between">
+            <SectionHeading as="h2" prompt="ls" sub="Coletivos e produtoras aprovados no circuito.">coletivos/</SectionHeading>
+            <Link to="/coletivos" className="hidden font-mono text-xs uppercase tracking-widest text-[var(--accent-text)] hover:underline sm:block">todos →</Link>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {coletivos.map((c) => (
+              <Link key={c.id} to={`/coletivos/${c.id}`} className="group block border border-[var(--color-line)] p-4 transition-colors hover:border-[var(--accent)]">
+                <Badge tone="neutral">{c.tipo === 'produtora' ? 'Produtora' : 'Coletivo'}</Badge>
+                <h3 className="mt-2 font-display text-sm font-bold group-hover:text-[var(--accent-text)]">{c.nome}</h3>
+                <p className="mt-1 font-mono text-xs text-[var(--color-muted)]">{c.cidade}/{c.estado}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   )
 }

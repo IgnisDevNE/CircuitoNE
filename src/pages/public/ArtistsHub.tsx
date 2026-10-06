@@ -1,32 +1,27 @@
 import { useMemo, useState } from 'react'
-import { Link } from '../../router'
-import { useStore } from '../../context/StoreContext'
-import { usePageTitle } from '../../lib/usePageTitle'
+import { Link } from 'react-router'
 import { SectionHeading, Empty, Badge } from '../../components/ui/primitives'
 import { Input } from '../../components/ui/form'
 import { DuotoneImage } from '../../components/ui/DuotoneImage'
-import { AccentScope } from '../../components/ui/AccentScope'
-import { Social } from '../../components/ui/Social'
-import { eventoNaoEncerrado, porProximidade } from '../../lib/utils'
+import { estiloLabels } from '../../lib/artist'
+import type { ArtistaResumo } from '../../data/types'
 
-export function ArtistsHub() {
-  usePageTitle('Artistas')
-  const { artistas, eventos, now } = useStore()
+/** Hub: a lista vem do banco (ordem alfabética); busca e filtro de estilo são feitos no cliente. */
+export function ArtistsHub({ artistas }: { artistas: ArtistaResumo[] }) {
   const [q, setQ] = useState('')
   const [estilo, setEstilo] = useState<string | null>(null)
 
-  const estilos = useMemo(() => [...new Set(artistas.flatMap((a) => a.estilos))].sort(), [artistas])
+  // Filtro por estilo principal da taxonomia: inclui os subestilos do artista.
+  const estilos = useMemo(
+    () => [...new Set(artistas.flatMap((a) => a.estilos.map((e) => e.estilo)))].sort((a, b) => a.localeCompare(b, 'pt-BR')),
+    [artistas],
+  )
 
   const filtrados = artistas.filter((a) => {
     const matchQ = !q || a.nome.toLowerCase().includes(q.toLowerCase()) || a.bio.toLowerCase().includes(q.toLowerCase())
-    const matchE = !estilo || a.estilos.includes(estilo)
+    const matchE = !estilo || a.estilos.some((e) => e.estilo === estilo)
     return matchQ && matchE
   })
-
-  const proximoEvento = (artistaId: string) =>
-    eventos
-      .filter((e) => eventoNaoEncerrado(e, now) && e.lineup.some((l) => l.artistaId === artistaId))
-      .sort((a, b) => porProximidade(a, b, now))[0]
 
   return (
     <div>
@@ -48,41 +43,30 @@ export function ArtistsHub() {
       </div>
 
       {filtrados.length === 0 ? (
-        <Empty>Nenhum artista encontrado para os filtros atuais.</Empty>
+        <Empty>{artistas.length === 0 ? 'Nenhum artista publicado ainda.' : 'Nenhum artista encontrado para os filtros atuais.'}</Empty>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtrados.map((a) => {
-            const prox = proximoEvento(a.id)
-            return (
-              <li key={a.id}>
-                <AccentScope color={a.corPredominante}>
-                  <article className="group h-full border border-[var(--color-line)] transition-colors hover:border-[var(--accent)]">
-                    <Link to={`/artistas/${a.id}`} className="block">
-                      <DuotoneImage src={a.fotoApresentacao} alt={`Foto de ${a.nome}`} className="aspect-[16/10] w-full" />
+          {filtrados.map((a) => (
+            <li key={a.id}>
+              <article className="group h-full border border-[var(--color-line)] transition-colors hover:border-[var(--accent)]">
+                <Link to={`/artistas/${a.id}`} className="block">
+                  <DuotoneImage src={a.foto} alt={`Foto de ${a.nome}`} className="aspect-[16/10] w-full" />
+                </Link>
+                <div className="space-y-3 p-4">
+                  <div>
+                    <Link to={`/artistas/${a.id}`}>
+                      <h3 className="font-display text-lg font-bold group-hover:text-[var(--accent-text)]">{a.nome}</h3>
                     </Link>
-                    <div className="space-y-3 p-4">
-                      <div>
-                        <Link to={`/artistas/${a.id}`}>
-                          <h3 className="font-display text-lg font-bold group-hover:text-[var(--accent-text)]">{a.nome}</h3>
-                        </Link>
-                        <p className="mt-1 flex flex-wrap gap-1 font-mono text-xs text-[var(--color-muted)]">
-                          {a.estilos.map((s) => <span key={s}>#{s.toLowerCase().replace(/\s/g, '')}</span>)}
-                        </p>
-                      </div>
-                      <p className="line-clamp-2 text-sm text-[var(--color-muted)]">{a.bio}</p>
-                      {prox && (
-                        <p className="border-t border-[var(--color-line)] pt-2 font-mono text-xs">
-                          <span className="text-[var(--accent-text)]">próximo:</span>{' '}
-                          <Link to={`/eventos/${prox.id}`} className="hover:underline">{prox.nome}</Link>
-                        </p>
-                      )}
-                      <Social links={a.social} />
-                    </div>
-                  </article>
-                </AccentScope>
-              </li>
-            )
-          })}
+                    <p className="mt-1 flex flex-wrap gap-1 font-mono text-xs text-[var(--color-muted)]">
+                      {estiloLabels(a.estilos).map((s) => <span key={s}>#{s.toLowerCase().replace(/\s/g, '')}</span>)}
+                    </p>
+                  </div>
+                  <p className="line-clamp-2 text-sm text-[var(--color-muted)]">{a.bio}</p>
+                  <p className="font-mono text-xs text-[var(--color-muted)]">{a.cidade}/{a.estado}</p>
+                </div>
+              </article>
+            </li>
+          ))}
         </ul>
       )}
     </div>

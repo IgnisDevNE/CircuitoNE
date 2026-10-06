@@ -81,14 +81,20 @@ export function unwrap<T>(result: { data: T; error: unknown }): T {
  * Standard loader wrapper for pages backed by Supabase: builds the per-request client,
  * returns the loaded data with private cache headers (and refreshed auth cookies), and
  * turns failures into thrown `data()` responses so SSR answers with the right HTTP status.
+ *
+ * `anonymous: true` ignores the visitor's cookies and queries as `anon`. Public catalogs
+ * (artists) use it because for a signed-in account RLS also exposes unpublished profiles
+ * (their owners' own, and basic columns of others), which must never appear in a public page.
  */
 export async function supabaseLoader<T>(
   request: Request,
   load: (client: SupabaseServerClient) => Promise<T>,
+  options: { anonymous?: boolean } = {},
 ) {
   const headers = privateHeaders();
   try {
-    return data(await load(createSupabaseServerClient(request, headers)), { headers });
+    const source = options.anonymous ? new Request(request.url) : request;
+    return data(await load(createSupabaseServerClient(source, headers)), { headers });
   } catch (error) {
     const failure = error instanceof HttpError ? error : unavailable();
     throw data({ message: failure.message }, { status: failure.status, headers });

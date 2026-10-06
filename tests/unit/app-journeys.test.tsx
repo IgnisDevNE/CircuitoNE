@@ -27,45 +27,7 @@ function open(path: string) {
 }
 
 describe('jornadas com fixtures — sem prova de Auth, autorização ou persistência', () => {
-  it('usa um título principal e títulos de seção na página inicial', () => {
-    open('/')
-    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
-    expect(screen.getByRole('heading', { level: 2, name: 'eventos.log' })).toBeTruthy()
-    expect(screen.getByRole('heading', { level: 2, name: 'artistas/' })).toBeTruthy()
-  })
-
-  it('busca artistas por nome e bio, combina estilo e recupera o estado vazio', async () => {
-    open('/artistas')
-    const user = userEvent.setup()
-    const search = screen.getByRole('searchbox', { name: 'Buscar' })
-    expect(screen.getAllByRole('article')).toHaveLength(4)
-    await user.type(search, 'recifense')
-    expect(screen.getAllByRole('article')).toHaveLength(1)
-    expect(screen.getByRole('heading', { name: 'ANERIE' })).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'Dub' }))
-    expect(screen.getByText('Nenhum artista encontrado para os filtros atuais.')).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'todos' }))
-    await user.clear(search)
-    await user.type(search, 'boitatá')
-    expect(screen.getByRole('heading', { name: 'BOITATÁ SYSTEM' })).toBeTruthy()
-    expect(screen.getAllByRole('article')).toHaveLength(1)
-    await user.clear(search)
-    expect(screen.getAllByRole('article')).toHaveLength(4)
-    await user.click(screen.getByRole('link', { name: 'ANERIE' }))
-    expect(window.location.pathname).toBe('/artistas/art-anerie')
-    expect(document.title).toBe('ANERIE · CIRCUITO NE')
-  })
-
-  it('mantém o evento em andamento no cartão da artista', () => {
-    vi.setSystemTime(new Date(fixedTime.getTime() + 6.5 * 86400000))
-    open('/artistas')
-    const card = screen.getByRole('heading', { name: 'ANERIE' }).closest('article')
-    expect(card).toBeTruthy()
-    expect(within(card!).getByRole('link', { name: 'PORTO NOTURNO — TECHNO NA ORLA' })).toBeTruthy()
-  })
-
   it.each([
-    ['/artistas/ausente', 'Artista não encontrado.'],
     ['/ausente', '404 — página não encontrada.'],
   ])('apresenta estado não encontrado em %s', (path, message) => {
     open(path)

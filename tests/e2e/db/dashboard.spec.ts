@@ -91,8 +91,8 @@ test('menu leva às páginas ainda em preparação, sem dados de mentira', async
   ]) await expect(nav.getByRole('link', { name: label })).toBeVisible()
   await expect(nav.getByRole('link', { name: `Perfil · Serviços sintéticos` })).toHaveCount(0)
 
-  await nav.getByRole('link', { name: 'Mensagens (1)' }).click()
-  await expect(page).toHaveURL(/\/painel\/mensagens$/)
+  await nav.getByRole('link', { name: 'Explorar Artistas' }).click()
+  await expect(page).toHaveURL(/\/painel\/explorar\/artistas$/)
   await expect(page).toHaveTitle('Em breve · CIRCUITO NE')
   await expect(page.getByRole('heading', { level: 1, name: 'Em breve' })).toBeVisible()
   await expect(page.getByText('Esta função ainda está em preparação')).toBeVisible()

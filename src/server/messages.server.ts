@@ -1,4 +1,3 @@
-import { redirect } from 'react-router'
 import { can } from '../lib/collective-access'
 import {
   MAX_MESSAGE_LENGTH,
@@ -248,19 +247,18 @@ export async function loadNewMessage(client: SupabaseServerClient, para: string 
 }
 
 /** Primeira mensagem (ou mais uma) para um interlocutor; depois do envio leva para a conversa, na área de quem enviou. */
-export async function newMessageAction(request: Request) {
-  let destination: string | undefined
-  const result = await runMutation(
+export function newMessageAction(request: Request) {
+  // runMutation só redireciona depois do RPC e leva os cookies renovados da sessão no redirecionamento.
+  return runMutation(
     request,
     NEW_MESSAGE_PATH,
     async (client, form) => {
       const { route, conversation } = await sendFrom(client, form)
-      destination =
-        route.from.kind === 'collective' ? `/coletivo/${route.from.id}/mensagens/${conversation}` : `/painel/mensagens/${conversation}`
-      return MESSAGE_SENT
+      return {
+        redirectTo:
+          route.from.kind === 'collective' ? `/coletivo/${route.from.id}/mensagens/${conversation}` : `/painel/mensagens/${conversation}`,
+      }
     },
     { maxBytes: MESSAGE_FORM_BYTES },
   )
-  // Os cookies renovados da sessão seguem junto com o redirecionamento.
-  return destination ? redirect(destination, { headers: result.init?.headers }) : result
 }

@@ -42,8 +42,9 @@ test('home mostra os próximos eventos publicados, artistas publicados e coletiv
 
 test('painel de boot mostra os totais do banco', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByText('artistas conectados: 1', { exact: true })).toBeVisible()
-  await expect(page.getByText('coletivos/produtoras: 2', { exact: true })).toBeVisible()
+  // Cada linha do painel é "› <texto>"; a regex ancorada evita casar 11, 12… com 1.
+  await expect(page.getByText(/artistas conectados: 1$/)).toBeVisible()
+  await expect(page.getByText(/coletivos\/produtoras: 2$/)).toBeVisible()
 })
 
 test('hidrata a home com os mesmos eventos do servidor mesmo se o navegador estiver em outra data', async ({ page }) => {

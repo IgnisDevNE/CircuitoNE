@@ -87,6 +87,9 @@ test('parâmetro com escape inválido é rejeitado sem quebrar a página', async
   const response = await page.goto('/artistas/%E0%A4%A')
   expect(response?.status()).toBe(400)
   await page.goto('/entrar')
+  // O clique só funciona com a página hidratada; manipular o histórico antes disso causaria divergência de hidratação.
+  await page.getByRole('button', { name: '[demo] entrar como Ana', exact: true }).click()
+  await expect(page).toHaveURL(/\/painel$/)
   await page.evaluate(() => {
     window.history.pushState({}, '', '/painel/perfil/%E0%A4%A')
     window.dispatchEvent(new PopStateEvent('popstate'))

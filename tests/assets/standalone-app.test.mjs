@@ -77,6 +77,16 @@ test("real SSR document and data routes preserve session cookies, privacy and ac
     assert.notEqual(clientLogin.status, 405);
     assert.match(await clientLogin.text(), /\/painel/);
     assert.ok(clientLogin.headers.getSetCookie().length);
+    // Atrás do Cloudflare/Caddy o Node recebe http://, mas o navegador envia Origin https:// do domínio público.
+    const proxiedLogin = await handler(
+      new Request("http://circuitone-dev.magalz.space/entrar.data", {
+        method: "POST",
+        headers: { Origin: origin, "Content-Type": "application/x-www-form-urlencoded" },
+        body: "email=ssr%40example.invalid&password=synthetic-only-password",
+      }),
+    );
+    assert.notEqual(proxiedLogin.status, 400, "React Router recusou a origem pública atrás do proxy");
+    assert.match(await proxiedLogin.text(), /\/painel/);
     const values = login.headers.getSetCookie();
     assert.ok(values.length);
     for (const value of values) {

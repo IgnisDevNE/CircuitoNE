@@ -20,7 +20,7 @@ export const loader = ({ request, params }: Route.LoaderArgs) =>
 export const headers = supabaseRouteHeaders
 export const shouldRevalidate = revalidateAfterSubmit
 
-const SECTIONS: Record<string, string> = { painel: 'Dashboard', solicitacoes: 'Solicitações', novo: 'Criar Evento' }
+const SECTIONS: Record<string, string> = { painel: 'Dashboard', solicitacoes: 'Solicitações', novo: 'Criar Evento', mensagens: 'Mensagens' }
 
 // O título da seção ligada ao banco vem daqui (as rotas filhas ligadas não definem `meta`, o que sobrescreveria este).
 export const meta = ({ loaderData, location }: Route.MetaArgs) => {

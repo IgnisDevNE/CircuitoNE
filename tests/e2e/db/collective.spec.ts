@@ -84,7 +84,7 @@ test.describe('acesso por permissões', () => {
 
   test('seções ainda em preparação aparecem dentro do layout do coletivo, com o menu por permissões', async ({ page }) => {
     await login(page, accounts.active.email)
-    for (const path of ['mensagens', 'membros', 'editar', 'perfil']) {
+    for (const path of ['membros', 'editar', 'perfil']) {
       const response = await page.goto(`/coletivo/${collectiveId(1)}/${path}`)
       expect(response?.status()).toBe(200)
       await expect(page.getByRole('heading', { level: 1, name: 'Em breve' })).toBeVisible()

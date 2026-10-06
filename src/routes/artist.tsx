@@ -2,6 +2,8 @@ import { ArtistProfile } from '../pages/public/ArtistProfile'
 import { LoadError } from '../components/ui/LoadError'
 import { loadArtistPage } from '../server/artists.server'
 import { supabaseLoader, supabaseRouteHeaders } from '../server/supabase.server'
+import { useRouteLoaderData } from 'react-router'
+import type { loader as publicLoader } from './layouts/public'
 import type { Route } from './+types/artist'
 
 export const loader = ({ request, params }: Route.LoaderArgs) =>
@@ -14,7 +16,9 @@ export const meta = ({ loaderData }: Route.MetaArgs) => [
 ]
 
 export default function ArtistRoute({ loaderData }: Route.ComponentProps) {
-  return <ArtistProfile {...loaderData} />
+  // A sessão do cabeçalho vem do layout público (sem ele, como em testes de componente, não há ação de mensagem).
+  const sessao = useRouteLoaderData<typeof publicLoader>('routes/layouts/public')
+  return <ArtistProfile {...loaderData} sessao={sessao ?? null} />
 }
 
 export function ErrorBoundary() {

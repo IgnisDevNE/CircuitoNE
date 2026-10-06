@@ -3,6 +3,7 @@ import { Badge, Empty, LinkButton, Panel } from '../../components/ui/primitives'
 import { DuotoneImage } from '../../components/ui/DuotoneImage'
 import { AccentScope } from '../../components/ui/AccentScope'
 import { Social } from '../../components/ui/Social'
+import { MessageAction, type PublicSession } from '../../components/ui/MessageAction'
 import { estiloLabels } from '../../lib/artist'
 import { fmtDataHora } from '../../lib/utils'
 import type { Evento } from '../../data/types'
@@ -27,7 +28,7 @@ function EventLinks({ eventos }: { eventos: Evento[] }) {
 }
 
 /** Perfil público: sem contato de booking, cachê ou presskit (dados restritos ao titular). */
-export function ArtistProfile({ artista, proximos, anteriores }: ArtistPageData) {
+export function ArtistProfile({ artista, proximos, anteriores, sessao }: ArtistPageData & { sessao?: PublicSession }) {
   return (
     <AccentScope color={artista.corPredominante ?? '#ff2040'}>
       <div className="space-y-8">
@@ -46,6 +47,7 @@ export function ArtistProfile({ artista, proximos, anteriores }: ArtistPageData)
             <div className="mt-5">
               <Social links={artista.social} />
             </div>
+            <div className="mt-4"><MessageAction para={`profile:${artista.id}`} sessao={sessao} /></div>
           </div>
         </header>
 

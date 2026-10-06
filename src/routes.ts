@@ -6,7 +6,6 @@ const paths = ['/entrar', '/cadastro']
 // Páginas do painel ainda sem dados reais: mostram "Em breve" dentro do layout autenticado, uma por tarefa do plano.
 const comingSoon = [
   '/painel/dados/nova-atuacao',
-  '/painel/mensagens',
   '/painel/explorar/artistas',
   '/painel/explorar/servicos',
   '/painel/explorar/audiovisual',
@@ -15,7 +14,6 @@ const comingSoon = [
 
 // Seções do coletivo ainda sem dados reais (W9–W10): "Em breve" dentro do layout do coletivo, com o menu por permissões.
 const collectiveSoon = [
-  'mensagens',
   'membros',
   'editar',
   'perfil',
@@ -30,6 +28,9 @@ export default [
     route('painel/dados', './routes/account-data.tsx'),
     route('painel/perfil/:atuacaoId', './routes/profile-edit.tsx'),
     route('painel/seguranca', './routes/security.tsx'),
+    // "nova" (estática) vem antes de ":conversationId" e tem prioridade na correspondência.
+    route('painel/mensagens/nova', './routes/message-new.tsx'),
+    route('painel/mensagens/:conversationId?', './routes/messages.tsx'),
     ...comingSoon.map((path, position) => route(path.slice(1), './routes/soon.tsx', { id: `soon-${position}` })),
     // Área do coletivo: 404 para quem não é membro; menu e páginas conforme as permissões (get_collective_access).
     route('coletivo/:id', './routes/layouts/collective.tsx', [
@@ -37,6 +38,7 @@ export default [
       route('solicitacoes', './routes/collective-requests.tsx'),
       route('eventos/novo', './routes/event-create.tsx'),
       route('eventos/:eventId', './routes/event-manage.tsx'),
+      route('mensagens/:conversationId?', './routes/collective-messages.tsx'),
       ...collectiveSoon.map((path, position) => route(path, './routes/soon.tsx', { id: `collective-soon-${position}` })),
     ]),
   ]),

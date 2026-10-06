@@ -1,4 +1,5 @@
 import { ESTADOS, EVENTO_TIPO_LABEL, type Estado, type Evento, type EventoTipo } from '../../data/types'
+import { instant, invalid, isRow, oneOf, optionalText, text, webUrl } from './row'
 
 export type EventoPeriodo = 'future' | 'ongoing' | 'past'
 export type EventoSituacao = 'draft' | 'published' | 'cancelled'
@@ -9,35 +10,6 @@ export type EventPageData = EventoDetalhe & { coletivo: EventoColetivo | null }
 
 /** Capa neutra servida de `public/` quando o evento não tem imagem. */
 export const EVENT_COVER_FALLBACK = '/event-cover-fallback.svg'
-
-const invalid = () => new Error('Resposta inválida do banco de eventos')
-type Row = Record<string, unknown>
-
-const isRow = (value: unknown): value is Row =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
-
-const text = (row: Row, key: string) => {
-  const value = row[key]
-  if (typeof value !== 'string' || !value) throw invalid()
-  return value
-}
-const optionalText = (row: Row, key: string) => {
-  const value = row[key]
-  if (value === null || value === undefined) return undefined
-  if (typeof value !== 'string') throw invalid()
-  return value || undefined
-}
-const instant = (value: string) => {
-  const time = Date.parse(value)
-  if (Number.isNaN(time)) throw invalid()
-  return new Date(time).toISOString()
-}
-const webUrl = (value: string | undefined) =>
-  value && URL.canParse(value) && ['http:', 'https:'].includes(new URL(value).protocol) ? value : undefined
-const oneOf = <T extends string>(value: string, allowed: readonly T[]): T => {
-  if (!(allowed as readonly string[]).includes(value)) throw invalid()
-  return value as T
-}
 
 const TIPOS = Object.keys(EVENTO_TIPO_LABEL) as EventoTipo[]
 const UFS = ESTADOS.map((estado) => estado.value) as Estado[]

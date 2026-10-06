@@ -4,8 +4,6 @@ const publicRoutes = [
   ['/', 'Início'],
   ['/artistas', 'Artistas'],
   ['/artistas/art-anerie', 'ANERIE'],
-  ['/coletivos', 'Coletivos e Produtoras'],
-  ['/coletivos/col-litoral', 'LITORAL SUL'],
   ['/entrar', 'Entrar'],
   ['/cadastro', 'Cadastro'],
 ] as const

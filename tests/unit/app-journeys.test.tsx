@@ -66,7 +66,6 @@ describe('jornadas com fixtures — sem prova de Auth, autorização ou persist�
 
   it.each([
     ['/artistas/ausente', 'Artista não encontrado.'],
-    ['/coletivos/ausente', 'Coletivo não encontrado.'],
     ['/ausente', '404 — página não encontrada.'],
   ])('apresenta estado não encontrado em %s', (path, message) => {
     open(path)

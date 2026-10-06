@@ -5,7 +5,7 @@ import { supabaseLoader, supabaseRouteHeaders } from '../server/supabase.server'
 import type { Route } from './+types/collective'
 
 export const loader = ({ request, params }: Route.LoaderArgs) =>
-  supabaseLoader(request, (client) => loadCollectivePage(client, params.id))
+  supabaseLoader(request, (client) => loadCollectivePage(client, params.id), { anonymous: true })
 export const headers = supabaseRouteHeaders
 
 export const meta = ({ loaderData }: Route.MetaArgs) => [

@@ -40,7 +40,7 @@ export function CollectiveDashboard({ coletivo, permissoes, pendentes, eventos, 
           <ul className="space-y-2">
             {eventos.map((evento) => (
               <li key={evento.id}>
-                <Link to={`/eventos/${evento.id}`} className="flex items-center justify-between gap-4 border border-[var(--color-line)] p-3 hover:border-[var(--accent)]">
+                <Link to={gestao ? `/coletivo/${coletivo.id}/eventos/${evento.id}` : `/eventos/${evento.id}`} className="flex items-center justify-between gap-4 border border-[var(--color-line)] p-3 hover:border-[var(--accent)]">
                   <span>
                     <span className="flex flex-wrap items-center gap-2">
                       <span className="font-display font-bold">{evento.nome}</span>

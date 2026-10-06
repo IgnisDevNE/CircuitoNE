@@ -1,4 +1,4 @@
-import { data } from 'react-router'
+import { data, redirect } from 'react-router'
 import type { ActionResult } from '../lib/action-result'
 import { boundedForm, routePath } from './auth.server'
 import { createSupabaseServerClient, privateHeaders, type SupabaseServerClient } from './supabase.server'
@@ -10,6 +10,8 @@ export class ActionFailure extends Error {
   constructor(
     readonly status: 400 | 401 | 403 | 404 | 409 | 422 | 503,
     message: string,
+    /** Mensagem por campo do formulário, quando a recusa é de validação. */
+    readonly fields?: Record<string, string>,
   ) {
     super(message)
   }
@@ -37,7 +39,30 @@ const KNOWN_FAILURES: Record<string, ActionFailure> = {
   'Pedido já decidido ou decisão inválida': new ActionFailure(409, 'Este pedido já foi decidido.'),
   'Solicitante indisponível': new ActionFailure(409, 'A conta de quem fez o pedido não está mais disponível.'),
   'Operação não autorizada': new ActionFailure(403, 'Você não tem permissão para esta operação.'),
+  // Eventos (RN-23..RN-27); o conflito de versão chega com o código 40001.
+  'Evento alterado; recarregue': new ActionFailure(
+    409,
+    'Este evento foi alterado por outra pessoa enquanto você editava. A página foi recarregada com a versão mais recente: revise e repita a operação.',
+  ),
+  'Edição pública exige publicar': new ActionFailure(403, 'Alterar um evento publicado exige também a permissão de publicar eventos.'),
+  'Evento cancelado não aceita edição': new ActionFailure(409, 'Este evento foi cancelado e não pode mais ser editado.'),
+  'Transição inválida': new ActionFailure(409, 'Só rascunhos podem ser publicados.'),
+  'Evento indisponível': new ActionFailure(404, 'Evento não encontrado.'),
+  'Artista público indisponível': new ActionFailure(422, 'Um artista do lineup não está mais público. Remova-o ou informe só o nome.'),
+  'Solicitação reutilizada com outros dados': new ActionFailure(
+    409,
+    'Este formulário já criou um evento com outros dados. Recarregue a página para criar outro.',
+  ),
+  'Dados de evento/lineup inválidos': new ActionFailure(422, 'O banco recusou os dados do evento. Revise os campos e tente de novo.'),
+  'Dados de evento inválidos': new ActionFailure(422, 'O banco recusou os dados do evento. Revise os campos e tente de novo.'),
+  'Data exige instante ISO com fuso': new ActionFailure(422, 'Informe datas válidas para o início e o fim.'),
+  'Lineup inválido': new ActionFailure(422, 'O lineup é inválido.'),
+  'Participação inválida': new ActionFailure(422, 'Uma participação do lineup é inválida.'),
+  'Crédito exige texto': new ActionFailure(422, 'Uma participação do lineup é inválida.'),
 }
+
+/** SQLSTATE que as funções do banco usam de propósito: recusa (42501), dado inválido (22023) e conflito de versão (40001). */
+const KNOWN_CODES = ['42501', '22023', '40001']
 
 type RpcError = { code?: string; message?: string } | null
 
@@ -45,7 +70,7 @@ type RpcError = { code?: string; message?: string } | null
 export function rpcFailure(error: NonNullable<RpcError>, status?: number): ActionFailure {
   if (status === 401) return new ActionFailure(401, 'Sua sessão expirou. Entre novamente para continuar.')
   const known = error.message ? KNOWN_FAILURES[error.message] : undefined
-  if (known && (error.code === '42501' || error.code === '22023')) return known
+  if (known && error.code && KNOWN_CODES.includes(error.code)) return known
   return new ActionFailure(503, UNAVAILABLE_MESSAGE)
 }
 
@@ -72,7 +97,8 @@ export function formId(form: URLSearchParams, key: string, message: string): str
 export async function runMutation(
   request: Request,
   path: string,
-  work: (client: SupabaseServerClient, form: URLSearchParams) => Promise<string>,
+  work: (client: SupabaseServerClient, form: URLSearchParams) => Promise<string | { redirectTo: string }>,
+  options: { maxBytes?: number } = {},
 ) {
   const headers = privateHeaders()
   const reply = (result: ActionResult, status: number) => data(result, { status, headers })
@@ -85,11 +111,14 @@ export async function runMutation(
   )
     return reply({ ok: false, error: 'Origem recusada.' }, 403)
   try {
-    const form = await boundedForm(request)
-    const message = await work(createSupabaseServerClient(request, headers), form)
-    return reply({ ok: true, message }, 200)
+    const form = await boundedForm(request, options.maxBytes)
+    const outcome = await work(createSupabaseServerClient(request, headers), form)
+    // Também o redirecionamento só acontece depois do RPC; os cookies renovados seguem na resposta.
+    if (typeof outcome !== 'string') return redirect(outcome.redirectTo, { headers })
+    return reply({ ok: true, message: outcome }, 200)
   } catch (error) {
-    if (error instanceof ActionFailure) return reply({ ok: false, error: error.message }, error.status)
+    if (error instanceof ActionFailure)
+      return reply({ ok: false, error: error.message, ...(error.fields ? { fields: error.fields } : {}) }, error.status)
     if (error instanceof Response) return reply({ ok: false, error: 'Requisição inválida.' }, error.status === 413 ? 413 : 415)
     return reply({ ok: false, error: UNAVAILABLE_MESSAGE }, 503)
   }

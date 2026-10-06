@@ -143,8 +143,9 @@ describe('EventPage', () => {
     expect(screen.queryByText('Evento passado')).toBeNull()
     expect(screen.queryByRole('link', { name: /Comprar ingresso/ })).toBeNull()
     cancelled.unmount()
-    page(pageData({ situacao: 'draft' }))
-    expect(screen.getByText('Rascunho')).toBeTruthy()
+    // Rascunho nunca chega à página pública (leitura anônima): não há selo para ele.
+    page(pageData({ situacao: 'published' }))
+    expect(screen.queryByText('Rascunho')).toBeNull()
   })
 
   it('mantém a descrição maliciosa inerte', () => {

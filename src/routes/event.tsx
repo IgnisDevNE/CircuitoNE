@@ -5,7 +5,7 @@ import { supabaseLoader, supabaseRouteHeaders } from '../server/supabase.server'
 import type { Route } from './+types/event'
 
 export const loader = ({ request, params }: Route.LoaderArgs) =>
-  supabaseLoader(request, (client) => loadEventPage(client, params.id))
+  supabaseLoader(request, (client) => loadEventPage(client, params.id), { anonymous: true })
 export const headers = supabaseRouteHeaders
 
 export const meta = ({ loaderData }: Route.MetaArgs) => [

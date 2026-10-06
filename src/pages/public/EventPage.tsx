@@ -23,7 +23,6 @@ export function EventPage({ evento: ev, coletivo: col, periodo, situacao }: Even
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone="accent">{tipoEventoLabel(ev)}</Badge>
             {ev.gratuito ? <Badge tone="ok">Gratuito</Badge> : <Badge tone="neutral">Ingresso</Badge>}
-            {situacao === 'draft' && <Badge tone="warn">Rascunho</Badge>}
             {cancelado && <Badge tone="warn">Cancelado</Badge>}
             {!cancelado && periodo === 'ongoing' && <Badge tone="warn">Em andamento</Badge>}
             {!cancelado && periodo === 'past' && <Badge tone="warn">Evento passado</Badge>}

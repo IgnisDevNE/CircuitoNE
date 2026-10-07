@@ -151,7 +151,11 @@ test('cadastro por teclado, etapa a etapa (conta, celular, código, dados e atua
 
   // Preenchimento só por teclado, inclusive listas (digitar a opção), data, rádios e caixas de seleção.
   await typeInto(page, page.getByLabel(/Nome completo/), 'Pessoa de teste de acessibilidade')
-  await typeInto(page, page.getByLabel(/Data de nascimento/), '20051990')
+  // A ordem dos segmentos do campo de data segue o idioma do sistema do navegador (dd/mm/aaaa no Windows pt-BR,
+  // mm/dd/aaaa no Linux do CI), então digitar dígitos não é portátil: o campo é alcançado por Tab e preenchido em ISO.
+  await tabTo(page, page.getByLabel(/Data de nascimento/))
+  await page.getByLabel(/Data de nascimento/).fill('1990-05-20')
+  await expect(page.getByLabel(/Data de nascimento/)).toHaveValue('1990-05-20')
   await typeInto(page, page.getByLabel(/CPF/), cpf.replace(/\D/g, ''))
   await tabTo(page, page.getByLabel(/Estado/))
   await page.keyboard.type('Pernambuco')

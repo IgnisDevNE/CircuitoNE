@@ -1,7 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { beforeEach, expect, test, vi } from "vitest";
-import IdentityPage from "../../src/routes/identity";
+import LoginRoute, { meta } from "../../src/routes/login";
+import LogoutRoute from "../../src/routes/logout";
 
 beforeEach(() =>
   vi.stubGlobal(
@@ -9,45 +10,49 @@ beforeEach(() =>
     vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })),
   ),
 );
-const page = (path: string, data: object) =>
+const page = (data: object, action?: () => object) =>
   render(
     <RouterProvider
       router={createMemoryRouter(
-        [{ id: "root", path: "*", loader: () => data, Component: IdentityPage }],
-        { initialEntries: [path], hydrationData: { loaderData: { root: data } } },
+        [{ id: "root", path: "*", loader: () => data, action, Component: LoginRoute }],
+        { initialEntries: ["/entrar"], hydrationData: { loaderData: { root: data } } },
       )}
     />,
   );
-test("real login presents empty credentials, no demo login and a link to the real registration", async () => {
-  page("/entrar", {});
+
+test("login presents empty credentials, no demo login, one h1 and a link to the real registration", async () => {
+  page({});
   expect(await screen.findByRole("button", { name: "Entrar" })).toBeTruthy();
   expect((screen.getByLabelText(/E-mail/) as HTMLInputElement).value).toBe("");
   expect((screen.getByLabelText(/Senha/) as HTMLInputElement).value).toBe("");
   expect(screen.queryByRole("button", { name: /demo/i })).toBeNull();
+  expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
   expect(screen.getByRole("link", { name: "Criar conta" }).getAttribute("href")).toBe("/cadastro");
+  expect(screen.queryByRole("alert")).toBeNull();
+  const form = screen.getByRole("button", { name: "Entrar" }).closest("form");
+  expect(form?.getAttribute("method")).toBe("post");
+  expect(form?.getAttribute("action")).toBe("/entrar");
+  expect(meta()).toEqual([{ title: "Entrar · CIRCUITO NE" }]);
 });
-test("account page shows only its verified identity and a POST logout", async () => {
-  page("/painel", {
-    account: { id: "A", name: "Pessoa A sintética", state: "active", reason: null },
-  });
-  expect(await screen.findByText("Pessoa A sintética")).toBeTruthy();
-  const button = screen.getByRole("button", { name: "Sair" });
-  expect(button.closest("form")?.getAttribute("method")).toBe("post");
-  expect(button.closest("form")?.getAttribute("action")).toBe("/sair");
-  expect(screen.queryByText(/Ana Ribeiro/)).toBeNull();
+
+test("a service failure from the loader is announced and tied to the form", async () => {
+  page({ error: "Serviço temporariamente indisponível. Tente novamente." });
+  const alert = await screen.findByRole("alert");
+  expect(alert.textContent).toContain("Serviço temporariamente indisponível");
+  expect(screen.getByRole("button", { name: "Entrar" }).closest("form")?.getAttribute("aria-describedby")).toBe(alert.id);
 });
-test("suspended account exposes reason and support, with no operational menus", async () => {
-  page("/painel", {
-    account: {
-      id: "A",
-      name: "Pessoa A sintética",
-      state: "suspended",
-      reason: "Revisão sintética",
-    },
-  });
-  expect(await screen.findByText("Revisão sintética")).toBeTruthy();
-  expect(screen.getByRole("link", { name: /suporte/i }).getAttribute("href")).toBe(
-    "mailto:ignisdev@magalz.space",
-  );
-  expect(screen.queryByRole("link", { name: /mensagens|coletivos|explorar/i })).toBeNull();
+
+test("a rejected login keeps the typed e-mail, never the password, and announces the error", async () => {
+  const userEvent = (await import("@testing-library/user-event")).default;
+  page({}, () => ({ error: "E-mail ou senha inválidos.", email: "pessoa@example.invalid" }));
+  const user = userEvent.setup();
+  await user.type(await screen.findByLabelText(/E-mail/), "pessoa@example.invalid");
+  await user.type(screen.getByLabelText(/Senha/), "senha-errada");
+  await user.click(screen.getByRole("button", { name: "Entrar" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("E-mail ou senha inválidos.");
+  expect((screen.getByLabelText(/E-mail/) as HTMLInputElement).value).toBe("pessoa@example.invalid");
+});
+
+test("logout is only a POST action: the route has no page of its own", () => {
+  expect(LogoutRoute()).toBeNull();
 });

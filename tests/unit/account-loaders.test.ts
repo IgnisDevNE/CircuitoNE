@@ -6,7 +6,7 @@ import {
   loadAppLayout,
   loadDashboard,
 } from '../../src/server/account.server'
-import { hasAuthCookie, identityAction } from '../../src/server/auth.server'
+import { hasAuthCookie, loginAction } from '../../src/server/auth.server'
 import type { SupabaseServerClient } from '../../src/server/supabase.server'
 
 type Result = { data: unknown; error: unknown }
@@ -236,7 +236,7 @@ describe('loaders de rota com Supabase simulado', () => {
   afterEach(() => vi.unstubAllEnvs())
 
   const login = async () => {
-    const response = await identityAction(
+    const response = await loginAction(
       new Request(origin + '/entrar', {
         method: 'POST',
         headers: { Origin: origin, 'Content-Type': 'application/x-www-form-urlencoded' },

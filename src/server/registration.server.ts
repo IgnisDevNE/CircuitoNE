@@ -44,7 +44,7 @@ export const confirmationUrl = () => (process.env.APP_ORIGIN ? `${process.env.AP
 /** `+` e dígitos: o Auth guarda o celular sem o "+". */
 export const toE164 = (value: string) => `+${value.replace(/\D/g, '')}`
 
-export type RegistrationLoad = { kind: 'redirect'; to: string } | { kind: 'page'; page: Exclude<RegistrationPage, { preview: true }> }
+export type RegistrationLoad = { kind: 'redirect'; to: string } | { kind: 'page'; page: RegistrationPage }
 
 /**
  * Etapa real do cadastro, a partir da identidade validada no servidor (getUser + `get_account_session`): sem sessão,
@@ -80,7 +80,6 @@ export async function loadRegistration(
 }
 
 export async function registrationLoader(request: Request) {
-  if (process.env.CIRCUITONE_RUNTIME !== 'development') return data({ preview: true } satisfies RegistrationPage)
   const headers = privateHeaders()
   let result: RegistrationLoad
   try {

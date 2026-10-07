@@ -25,7 +25,7 @@ import {
 } from '../../src/server/account-settings.server'
 import type { ActionResult } from '../../src/lib/account-forms'
 import { mapMyProfile } from '../../src/server/mappers/account-settings'
-import { identityAction } from '../../src/server/auth.server'
+import { loginAction } from '../../src/server/auth.server'
 import type { SupabaseServerClient } from '../../src/server/supabase.server'
 
 type Result = { data: unknown; error: unknown }
@@ -451,7 +451,7 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs())
 
 const signIn = async () => {
-  const response = await identityAction(
+  const response = await loginAction(
     new Request(origin + '/entrar', {
       method: 'POST',
       headers: { Origin: origin, 'Content-Type': 'application/x-www-form-urlencoded' },

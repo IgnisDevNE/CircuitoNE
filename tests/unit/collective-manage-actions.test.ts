@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { identityAction } from '../../src/server/auth.server'
+import { loginAction } from '../../src/server/auth.server'
 import { collectiveEditAction, collectiveMembersAction, collectiveProfileAction, TRANSFER_NEEDS_MFA } from '../../src/server/collective-manage.server'
 
 const origin = 'https://circuitone-dev.magalz.space'
@@ -51,7 +51,7 @@ const dbError = (status: number, code: string, message: string) => () => Respons
 
 /** Entra como a proprietária (o cliente real lê o nível `aal` do JWT da sessão) e devolve o cabeçalho Cookie. */
 const signIn = async () => {
-  const response = await identityAction(
+  const response = await loginAction(
     new Request(origin + '/entrar', {
       method: 'POST',
       headers: { Origin: origin, 'Content-Type': 'application/x-www-form-urlencoded' },

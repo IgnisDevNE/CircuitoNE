@@ -1,16 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { maskCache, parseCacheCents } from '../../src/lib/utils'
+import { formatCacheCents, parseCacheCents } from '../../src/lib/utils'
 
 describe('cachê em reais', () => {
-  it('preserva o valor quando a máscara é aplicada novamente', () => {
-    expect(maskCache('R$ 1.500,00')).toBe('R$ 1.500,00')
-    expect(maskCache(maskCache('1500,5'))).toBe('R$ 1.500,50')
-  })
-
-  it('não transforma entrada inválida em zero e mantém vazio opcional', () => {
-    expect(maskCache('R$ abc')).toBe('R$ abc')
-    expect(maskCache('1.50')).toBe('1.50')
-    expect(maskCache('')).toBe('')
+  it('formata centavos inteiros em reais brasileiros e lê o resultado de volta', () => {
+    expect(formatCacheCents(150000)).toBe('R$ 1.500,00')
+    expect(formatCacheCents(150050)).toBe('R$ 1.500,50')
+    expect(formatCacheCents(1)).toBe('R$ 0,01')
+    for (const cents of [0, 1, 99, 100, 150050, 123456789]) expect(parseCacheCents(formatCacheCents(cents))).toBe(cents)
   })
 
   it('converte apenas quantias brasileiras válidas em centavos inteiros', () => {

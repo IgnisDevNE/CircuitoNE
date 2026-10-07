@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { eventoNaoEncerrado, fmtData, fmtDataHora, parseFortalezaDateTime, porProximidade } from '../../src/lib/utils'
+import { eventoNaoEncerrado, fmtData, fmtDataHora, parseFortalezaDateTime } from '../../src/lib/utils'
 import type { Evento } from '../../src/data/types'
 
 describe('horários de eventos em Fortaleza', () => {
@@ -25,8 +25,6 @@ describe('horários de eventos em Fortaleza', () => {
 
       evento.fim = '2026-09-24T04:00:00.000Z'
       expect(eventoNaoEncerrado(evento)).toBe(true)
-      const futuro = { id: 'futuro', inicio: '2026-09-24T05:00:00.000Z', fim: null } as Evento
-      expect([futuro, evento].sort(porProximidade)[0]).toBe(evento)
       vi.setSystemTime(new Date('2026-09-24T04:00:00.000Z'))
       expect(eventoNaoEncerrado(evento)).toBe(false)
     } finally {

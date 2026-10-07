@@ -212,10 +212,11 @@ test('criar evento por teclado (rascunho): campos, listas, datas e lineup sem mo
   await tabTo(page, page.getByLabel(/Vertente principal/))
   await page.keyboard.type('techno')
   await expect(page.getByLabel(/Vertente principal/)).toHaveValue('techno')
-  // O ano aceita até seis dígitos: depois dele a seta para a direita passa para a hora.
-  await typeInto(page, page.getByLabel(/Início \(Fortaleza\)/), '01032031')
-  await page.keyboard.press('ArrowRight')
-  await page.keyboard.type('0800')
+  // A ordem dos segmentos de data/hora segue o idioma do sistema do navegador (dd/mm no Windows pt-BR, mm/dd no Linux do CI):
+  // o campo é alcançado por Tab e preenchido em ISO, que independe do idioma.
+  await tabTo(page, page.getByLabel(/Início \(Fortaleza\)/))
+  await page.getByLabel(/Início \(Fortaleza\)/).fill('2031-03-01T08:00')
+  await expect(page.getByLabel(/Início \(Fortaleza\)/)).toHaveValue('2031-03-01T08:00')
   await tabTo(page, page.getByLabel(/Estado/))
   await page.keyboard.type('Pernambuco')
   await tabTo(page, page.getByLabel(/Cidade/))

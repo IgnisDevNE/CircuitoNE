@@ -2,7 +2,7 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
-
+  
   "public": {
           Tables: {
             "artist_profiles": {
@@ -66,7 +66,7 @@ isOneToOne: false
                     "activity"?: string,"city"?: string,"color"?: string | null,"created_at"?: string,"description"?: string,"id"?: string,"image_path"?: string | null,"kind"?: string,"member_role_builtin"?: boolean,"member_role_id"?: string,"name"?: string,"owner_user_id"?: string | null,"social_links"?: NonNullable<Json>,"state"?: string,"state_code"?: string,"updated_at"?: string,"version"?: number
                   }
                   Relationships: [
-
+                    
                   ]
                 },"events": {
                   Row: {
@@ -98,7 +98,7 @@ isOneToOne: false
                     "name"?: string
                   }
                   Relationships: [
-
+                    
                   ]
                 },"music_substyles": {
                   Row: {
@@ -168,7 +168,7 @@ isOneToOne: false
                     "city"?: string,"color"?: string | null,"created_at"?: string,"description"?: string,"id"?: string,"kind"?: string,"name"?: string,"owner_id"?: string,"published"?: boolean,"social_links"?: NonNullable<Json>,"state_code"?: string,"updated_at"?: string
                   }
                   Relationships: [
-
+                    
                   ]
                 }
           }
@@ -178,6 +178,9 @@ isOneToOne: false
           Functions: {
             "assign_collective_role":
 { Args: { "member": string,"target": string,"target_role": string }; Returns: undefined
+                           },
+"attach_profile_image":
+{ Args: { "alt"?: string,"object_path": string,"slot": string,"target": string }; Returns: Json
                            },
 "cancel_collective_request":
 { Args: { "target_request": string }; Returns: undefined
@@ -214,6 +217,9 @@ isOneToOne: false
                            },
 "delete_profile":
 { Args: { "target": string }; Returns: undefined
+                           },
+"detach_profile_image":
+{ Args: { "image": string,"target": string }; Returns: string
                            },
 "edit_collective":
 { Args: { "expected_version": number,"payload": Json,"resubmit"?: boolean,"target": string }; Returns: undefined
@@ -322,6 +328,9 @@ isOneToOne: false
 "mark_conversation_read":
 { Args: { "last_message": string,"target": string }; Returns: undefined
                            },
+"move_profile_image":
+{ Args: { "direction": string,"image": string,"target": string }; Returns: undefined
+                           },
 "publish_event":
 { Args: { "expected_version": number,"target": string }; Returns: undefined
                            },
@@ -346,11 +355,17 @@ isOneToOne: false
 "send_message":
 { Args: { "body": string,"recipient": string,"recipient_kind": string,"request_id": string,"sender": string,"sender_kind": string }; Returns: Json
                            },
+"set_collective_image":
+{ Args: { "object_path": string,"target": string }; Returns: string
+                           },
 "set_conversation_block":
 { Args: { "as_id": string,"as_kind": string,"blocked": boolean,"target": string }; Returns: undefined
                            },
 "set_default_artist":
 { Args: { "target": string }; Returns: undefined
+                           },
+"set_professional_document":
+{ Args: { "kind": string,"object_path": string,"target": string }; Returns: string
                            },
 "support_close_collective":
 { Args: { "reason": string,"target": string }; Returns: undefined
@@ -488,7 +503,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-
+            
           }
         }
 } as const

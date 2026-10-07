@@ -66,7 +66,8 @@ auth_token = "local-only-not-a-secret"
 verify_jwt = false
 
 [storage]
-enabled = false
+# Buckets e políticas vêm da migração 20261009100000_storage_buckets.sql; o serviço só precisa estar ligado para o e2e de uploads.
+enabled = true
 
 [realtime]
 enabled = false

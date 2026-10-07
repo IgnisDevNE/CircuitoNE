@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mapAccountDetails, mapMyProfile, mapTaxonomy } from '../../src/server/mappers/account-settings'
 
 const account = (extra = {}) => ({
@@ -50,10 +50,42 @@ describe('mapMyProfile', () => {
       cor: '#00ff88', publicado: true, padrao: false,
       redes: { instagram: 'https://instagram.com/x', site: 'https://example.invalid' },
       estilos: [{ estilo: 'techno' }, { estilo: 'house', subestilo: 'acid house' }],
+      imagens: [],
       profissional: {
         emailBooking: 'b@example.invalid', emailContato: null, telefoneContato: '+5581977776666', cacheCentavos: 150000, cnpj: null,
         tipoServico: null, servicoOutro: null, tipoAudiovisual: null, presskit: 'https://example.invalid/kit', portfolio: null,
+        presskitPdfBytes: null, listaServicosBytes: null,
       },
+    })
+  })
+
+  describe('arquivos (W11)', () => {
+    const owner = '02000000-0000-4000-8000-000000000001'
+    beforeEach(() => vi.stubEnv('SUPABASE_URL', 'https://synthetic.supabase.test'))
+    afterEach(() => vi.unstubAllEnvs())
+
+    it('imagens em ordem com URL pública; caminho inválido fica sem prévia e tamanho inválido falha', () => {
+      const image = (position: number, path: string, size = 1234) => ({ id: `03000000-0000-4000-8000-00000000000${position}`, position, object_path: path, size_bytes: size, alt_text: '' })
+      const mapped = mapMyProfile(profile({ images: [image(0, `${owner}/principal.png`), image(1, `${owner}/g1.webp`, 5_000_000), image(2, 'fora/do-formato.png')] }))!
+      expect(mapped.imagens).toEqual([
+        { id: '03000000-0000-4000-8000-000000000000', posicao: 0, url: `https://synthetic.supabase.test/storage/v1/object/public/public-images/${owner}/principal.png`, bytes: 1234 },
+        { id: '03000000-0000-4000-8000-000000000001', posicao: 1, url: `https://synthetic.supabase.test/storage/v1/object/public/public-images/${owner}/g1.webp`, bytes: 5_000_000 },
+        { id: '03000000-0000-4000-8000-000000000002', posicao: 2, url: null, bytes: 1234 },
+      ])
+      for (const bad of [{ position: 11 }, { position: -1 }, { position: '1' }, { size_bytes: 0 }, { size_bytes: 1.5 }, { id: '' }])
+        expect(() => mapMyProfile(profile({ images: [{ ...image(1, `${owner}/g1.png`), ...bad }] }))).toThrow()
+      expect(() => mapMyProfile(profile({ images: 'x' }))).toThrow()
+      // Linha de função antiga, sem a chave, continua válida.
+      expect(mapMyProfile(profile({ images: undefined }))!.imagens).toEqual([])
+    })
+
+    it('tamanho do PDF só existe com caminho gravado, e precisa ser válido', () => {
+      const pdf = { presskit_path: `${owner}/kit.pdf`, presskit_bytes: 2500, services_pdf_path: null, services_pdf_bytes: null }
+      const base = profile().professional
+      expect(mapMyProfile(profile({ professional: { ...base, ...pdf } }))!.profissional).toMatchObject({ presskitPdfBytes: 2500, listaServicosBytes: null })
+      expect(mapMyProfile(profile({ professional: { ...base, services_pdf_path: `${owner}/lista.pdf`, services_pdf_bytes: 10_000_000 } }))!.profissional).toMatchObject({ presskitPdfBytes: null, listaServicosBytes: 10_000_000 })
+      expect(() => mapMyProfile(profile({ professional: { ...base, ...pdf, presskit_bytes: null } }))).toThrow()
+      expect(() => mapMyProfile(profile({ professional: { ...base, ...pdf, presskit_bytes: 0 } }))).toThrow()
     })
   })
 

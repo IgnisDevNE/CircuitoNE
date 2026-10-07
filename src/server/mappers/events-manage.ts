@@ -1,5 +1,6 @@
 import type { Estado, EventoTipo } from '../../data/types'
 import type { LineupEntry } from '../../lib/event-form'
+import { publicImageUrl } from '../public-image'
 import { mapEventDetail, type EventoPeriodo, type EventoSituacao } from './events'
 import { invalid, isRow, optionalText, text } from './row'
 
@@ -23,6 +24,8 @@ export type EventoGerido = {
   ingressoLink: string
   /** Endereço da capa informado; vazio quando o evento usa a capa padrão. */
   capa: string
+  /** URL pública da capa enviada (Storage); `null` quando não há. Vale mais que o link e nunca coexiste com ele. */
+  capaEnviada: string | null
   lineup: LineupEntry[]
   /** Quando o evento publicado foi reagendado (RN-27), se foi. */
   reagendadoEm: string | null
@@ -61,6 +64,7 @@ export function mapManagedEvent(row: unknown): EventoGerido {
     gratuito: evento.gratuito,
     ingressoLink: evento.ingressoLink ?? '',
     capa: optionalText(row, 'cover_url') ?? '',
+    capaEnviada: publicImageUrl(optionalText(row, 'cover_path')),
     lineup: evento.lineup.map((item) => (item.artistaId ? { artistaId: item.artistaId, nome: item.nome } : { nome: item.nome })),
     reagendadoEm: rescheduled ? new Date(rescheduled).toISOString() : null,
   }

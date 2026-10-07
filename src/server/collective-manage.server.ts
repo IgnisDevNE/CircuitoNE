@@ -1,4 +1,5 @@
 import { can } from '../lib/collective-access'
+import { IMAGE_MAX_BYTES } from '../lib/uploads'
 import { parseCloseForm, parseCollectiveForm, parseCollectiveProfileForm, parseRoleForm, type Fields } from '../lib/collective-forms'
 import { noPermission, requireAccess } from './collective-area.server'
 import { mapMyCollectives } from './mappers/account'
@@ -13,6 +14,7 @@ import {
   type PerfilAcesso,
 } from './mappers/collective-manage'
 import { ActionFailure, callRpc, formId, runMutation } from './mutation.server'
+import { readUpload, removeStored, returnedPath, storeUpload } from './storage.server'
 import { HttpError, unavailable, unwrap, type SupabaseServerClient } from './supabase.server'
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -188,19 +190,47 @@ export function collectiveEditAction(request: Request, id: string) {
   )
 }
 
-/** Descrição, cor e redes do perfil público (`edit_collective`); a imagem entra com os uploads (W11). */
+/** Imagem do coletivo: um formulário de texto de até 160 KiB, ou multipart com o arquivo de até 5 MB. */
+export const COLLECTIVE_UPLOAD_MAX_BYTES = COLLECTIVE_FORM_MAX_BYTES + IMAGE_MAX_BYTES + 64 * 1024
+
+/**
+ * Perfil público do coletivo: descrição, cor e redes (`edit_collective`, com a versão otimista) e a imagem
+ * (`set_collective_image`, só do proprietário; independe da versão do cadastro). A troca grava a nova referência antes
+ * de apagar o objeto anterior, e uma recusa do banco descarta o objeto recém-enviado.
+ */
 export function collectiveProfileAction(request: Request, id: string) {
   checkId(id)
   return runMutation(
     request,
     collectiveProfilePath(id),
-    async (client, form) => {
+    async (client, form, files) => {
+      const intent = form.get('intent')
+      if (intent === 'upload-image') {
+        const upload = await readUpload(files, 'arquivo', 'image')
+        if (!upload.ok) throw new ActionFailure(422, upload.error, { arquivo: upload.error })
+        const path = await storeUpload(client, 'image', id, upload)
+        let previous: unknown
+        try {
+          previous = await callRpc(client.rpc('set_collective_image', { target: id, object_path: path }))
+        } catch (error) {
+          await removeStored(client, 'image', [path])
+          throw error
+        }
+        await removeStored(client, 'image', [returnedPath(previous)])
+        return 'Imagem do coletivo atualizada.'
+      }
+      if (intent === 'remove-image') {
+        // O banco aceita caminho nulo para remover; os tipos gerados não o marcam como opcional.
+        const previous = await callRpc(client.rpc('set_collective_image', { target: id, object_path: null as unknown as string }))
+        await removeStored(client, 'image', [returnedPath(previous)])
+        return 'Imagem removida. O coletivo volta a usar a imagem padrão.'
+      }
       const parsed = parseCollectiveProfileForm(form)
       if (!parsed.ok) throw invalidFields(parsed.fields)
       await callRpc(client.rpc('edit_collective', { target: id, expected_version: expectedVersion(form), payload: parsed.payload }))
       return 'Perfil público atualizado.'
     },
-    { maxBytes: COLLECTIVE_FORM_MAX_BYTES },
+    { maxBytes: COLLECTIVE_FORM_MAX_BYTES, uploadBytes: COLLECTIVE_UPLOAD_MAX_BYTES },
   )
 }
 

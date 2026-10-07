@@ -57,6 +57,14 @@ A suíte `pnpm test:e2e:db` usa Supabase local: `pnpm exec supabase start`, carr
 
 Para o dev real local, criar `.env.local` com `CIRCUITONE_RUNTIME=development`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` e `APP_ORIGIN`.
 
+## Storage (W11): imagens e documentos
+
+- **Buckets:** criados pela migração `20261009100000_storage_buckets.sql` (`public-images`, público, JPG/PNG/WebP até 5.000.000 bytes; `private-documents`, privado, PDF até 10.000.000 bytes), com as políticas de `storage.objects`. Nada a criar à mão no painel; `db-dev.yml` aplica a migração no `CircuitoNE-dev` como as demais.
+- **Painel do Supabase (dev):** conferir em *Storage → Settings* que o limite global de upload é de pelo menos 10 MB (o padrão do plano Free é 50 MB) e que o Storage não está pausado/desativado. O app só usa a chave publicável e a sessão do titular; nenhuma chave de serviço.
+- **Local/CI:** `supabase/config.toml` liga o Storage (`[storage] enabled = true`); `supabase start` já o sobe e a migração cria os buckets (o `db start` de `tests/database` também encontra as tabelas do Storage). O e2e `uploads.spec.ts` envia e apaga arquivos de verdade.
+- **Fotos de demonstração:** os dados sintéticos não trazem imagens (as páginas mostram as imagens neutras de `public/*-fallback.svg`). Para a demo, entrar com uma conta do dev (por exemplo a dona de um artista ou de um coletivo) e enviar pela interface: foto principal e galeria em `/painel/perfil/:atuacaoId`, imagem do coletivo em `/coletivo/:id/perfil`, capa do evento (ou o link externo) em `/coletivo/:id/eventos/:eventId`. Não há script de carga de imagens: ele exigiria a chave de serviço, que fica fora do app e do repositório.
+- **Órfãos:** substituir ou remover apaga o objeto antigo na hora. Excluir uma atuação (ou a conta) não apaga os objetos dela: o banco só registra o prefixo em `private.storage_cleanup`, cujo executor ainda não existe no PoC.
+
 ## Serviços externos
 
 - **E-mail:** SMTP2GO (`no-reply@magalz.space`) configurado nos dois projetos Supabase. No dev a confirmação de e-mail fica **ligada** e os e-mails são entregues de verdade; o link volta pelo callback do app, `APP_ORIGIN/auth/confirmar` (ver abaixo).

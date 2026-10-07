@@ -29,6 +29,10 @@ export async function loadHome(client: SupabaseServerClient): Promise<HomeData> 
   ])
   const artistRows = unwrap(artists)
   if (!artistRows) throw unavailable()
+  const ids = artistRows.map((row) => row.id)
+  const photos = ids.length
+    ? unwrap(await client.from('profile_images').select('profile_id,position,object_path').in('profile_id', ids).eq('position', 0))
+    : []
   const styles = artistRows.length
     ? unwrap(
         await client
@@ -42,7 +46,7 @@ export async function loadHome(client: SupabaseServerClient): Promise<HomeData> 
   const agenda = [...mapEventList(unwrap(ongoing)), ...mapEventList(unwrap(future))]
   return {
     proximos: agenda.slice(0, HOME_EVENTS),
-    artistas: mapArtistSummaries(artistRows, styles),
+    artistas: mapArtistSummaries(artistRows, styles, photos),
     coletivos: mapCollectiveHighlights(unwrap(collectives)),
     // Cada RPC devolve no máximo 50 eventos por período.
     totais: { artistas: total(artistCount), coletivos: total(collectiveCount), eventos: agenda.length },

@@ -1,4 +1,5 @@
 import { ESTADOS, type Collective, type Estado, type Evento, type SocialLinks } from '../../data/types'
+import { publicImageUrl } from '../public-image'
 import { invalid, isRow, oneOf, optionalText, text, webUrl } from './row'
 
 /** Campos do coletivo que a página pública usa (cargos/membros/solicitações são privados e vêm de RPCs próprias). */
@@ -17,7 +18,7 @@ export type CollectivePageData = {
   anteriores: Evento[]
 }
 
-/** Imagem neutra servida de `public/` enquanto o Storage não está ligado (W11). */
+/** Imagem neutra servida de `public/` para coletivos sem imagem enviada. */
 export const COLLECTIVE_IMAGE_FALLBACK = '/collective-cover-fallback.svg'
 /** Destaque padrão quando o coletivo não escolheu cor (mesmo valor usado nas páginas de evento). */
 export const DEFAULT_ACCENT = '#ff2040'
@@ -56,8 +57,8 @@ export function mapCollectiveRow(row: unknown): ColetivoPublico {
     tipo: oneOf(text(row, 'kind'), ['collective', 'producer'] as const) === 'producer' ? 'produtora' : 'coletivo',
     atuacao: splitActivity(text(row, 'activity')),
     bio: text(row, 'description'),
-    // `image_path` é um caminho do Storage, ainda não servido: imagem neutra até a W11.
-    imagem: COLLECTIVE_IMAGE_FALLBACK,
+    // `image_path` é um caminho do bucket público `public-images`; sem imagem (ou caminho inválido), a imagem neutra.
+    imagem: publicImageUrl(optionalText(row, 'image_path')) ?? COLLECTIVE_IMAGE_FALLBACK,
     cidade: text(row, 'city'),
     // Na UI `estado` é a UF (`state_code`).
     estado: oneOf(text(row, 'state_code'), UFS),

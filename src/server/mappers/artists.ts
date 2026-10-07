@@ -8,10 +8,12 @@ import {
   type SocialLinks,
 } from '../../data/types'
 
+import { publicImageUrl } from '../public-image'
+
 export type ArtistListData = { artistas: ArtistaResumo[] }
 export type ArtistPageData = { artista: ArtistaPublico; proximos: Evento[]; anteriores: Evento[] }
 
-/** Foto neutra servida de `public/` até os uploads (Storage) serem ligados. */
+/** Foto neutra servida de `public/` para artistas sem foto principal enviada. */
 export const ARTIST_PHOTO_FALLBACK = '/artist-photo-fallback.svg'
 
 const invalid = () => new Error('Resposta inválida do banco de artistas')
@@ -43,15 +45,40 @@ const uf = (row: Row) => {
   return value as Estado
 }
 
+/** Fotos de um artista: a principal (posição 0, ou `undefined`) e a galeria, em ordem. URLs públicas do Storage. */
+export type ArtistImages = { main?: string; gallery: string[] }
+
+/**
+ * Linhas de `profile_images` (`profile_id`, `position`, `object_path`) agrupadas por artista. Caminhos fora do formato
+ * do banco são ignorados em vez de virar URL; a ordem da galeria é a da posição.
+ */
+export function groupArtistImages(rows: unknown): Map<string, ArtistImages> {
+  if (rows === null || rows === undefined) return new Map()
+  if (!Array.isArray(rows)) throw invalid()
+  const sorted = rows.map((row: unknown) => {
+    if (!isRow(row) || typeof row.position !== 'number') throw invalid()
+    return { id: text(row, 'profile_id'), position: row.position, url: publicImageUrl(text(row, 'object_path')) }
+  }).sort((a, b) => a.position - b.position)
+  const grouped = new Map<string, ArtistImages>()
+  for (const { id, position, url } of sorted) {
+    if (!url) continue
+    const current = grouped.get(id) ?? { gallery: [] }
+    if (position === 0) current.main = url
+    else current.gallery.push(url)
+    grouped.set(id, current)
+  }
+  return grouped
+}
+
 /** Colunas de `profiles` liberadas ao visitante: id, name, description, city, state_code. */
-const summaryBase = (row: Row) => ({
+const summaryBase = (row: Row, images?: ArtistImages) => ({
   id: text(row, 'id'),
   nome: text(row, 'name'),
   // `description` pode ser vazia no banco.
   bio: typeof row.description === 'string' ? row.description : '',
   cidade: text(row, 'city'),
   estado: uf(row),
-  foto: ARTIST_PHOTO_FALLBACK,
+  foto: images?.main ?? ARTIST_PHOTO_FALLBACK,
 })
 
 function mapStyle(row: unknown): ArtistaEstilo {
@@ -73,13 +100,14 @@ export function groupArtistStyles(rows: unknown): Map<string, ArtistaEstilo[]> {
   return grouped
 }
 
-/** Lista pública: linhas de `profiles` (colunas liberadas) + estilos agrupados. A ordem é a do banco. */
-export function mapArtistSummaries(profiles: unknown, styles: unknown): ArtistaResumo[] {
+/** Lista pública: linhas de `profiles` (colunas liberadas) + estilos agrupados + fotos principais. A ordem é a do banco. */
+export function mapArtistSummaries(profiles: unknown, styles: unknown, images?: unknown): ArtistaResumo[] {
   if (!Array.isArray(profiles)) throw invalid()
   const byArtist = groupArtistStyles(styles)
+  const photos = groupArtistImages(images)
   return profiles.map((row: unknown) => {
     if (!isRow(row)) throw invalid()
-    const base = summaryBase(row)
+    const base = summaryBase(row, photos.get(text(row, 'id')))
     return { ...base, estilos: byArtist.get(base.id) ?? [] }
   })
 }
@@ -109,16 +137,17 @@ function mapSocial(value: unknown): SocialLinks {
  * Resultado de `get_profile` (linha de `profiles` sem `owner_id`) + estilos do artista.
  * Devolve `null` para perfis que não são de artista, que não têm página pública.
  */
-export function mapArtistProfile(row: unknown, styles: unknown): ArtistaPublico | null {
+export function mapArtistProfile(row: unknown, styles: unknown, images?: unknown): ArtistaPublico | null {
   if (!isRow(row)) throw invalid()
   if (row.kind !== 'artist') return null
   if (!Array.isArray(styles)) throw invalid()
   const color = typeof row.color === 'string' && /^#[0-9a-f]{6}$/i.test(row.color) ? row.color : undefined
+  const photos = groupArtistImages(images).get(text(row, 'id'))
   return {
-    ...summaryBase(row),
+    ...summaryBase(row, photos),
     estilos: styles.map(mapStyle),
     corPredominante: color,
-    fotos: [],
+    fotos: photos?.gallery ?? [],
     social: mapSocial(row.social_links),
   }
 }

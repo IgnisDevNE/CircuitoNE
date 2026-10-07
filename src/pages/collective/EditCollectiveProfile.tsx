@@ -5,6 +5,8 @@ import { SOCIAL_FIELDS } from '../../lib/account-forms'
 import type { ColetivoEdicao } from '../../server/mappers/collective-manage'
 import { Button, Panel } from '../../components/ui/primitives'
 import { Checkbox, Input, Textarea } from '../../components/ui/form'
+import { FileField } from '../../components/ui/FileField'
+import { IMAGE_MAX_BYTES } from '../../lib/uploads'
 import { AccentScope } from '../../components/ui/AccentScope'
 
 export interface EditCollectiveProfileProps {
@@ -24,7 +26,7 @@ const SOCIAL_LABEL: Record<(typeof SOCIAL_FIELDS)[number], string> = {
   youtube: 'YouTube',
 }
 
-/** `/coletivo/:id/perfil`: o que a página pública do coletivo mostra. A imagem de capa depende dos uploads (W11). */
+/** `/coletivo/:id/perfil`: o que a página pública do coletivo mostra, inclusive a imagem enviada por upload. */
 export function EditCollectiveProfile({ coletivo, feedback, busy = false }: EditCollectiveProfileProps) {
   const failed = feedback && !feedback.ok ? feedback : null
   const errors = failed?.fields ?? {}
@@ -69,14 +71,31 @@ export function EditCollectiveProfile({ coletivo, feedback, busy = false }: Edit
             <Checkbox name="use_color" defaultChecked={coletivo.cor !== null} label="usar esta cor no perfil" />
             {errors.color && <p className="font-mono text-xs text-[var(--accent-text)]">[erro] {errors.color}</p>}
           </div>
-          <p className="font-mono text-xs text-[var(--color-muted)] sm:col-span-2">
-            A imagem de capa do coletivo será enviada por upload numa próxima etapa.
-          </p>
           <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
             <Button type="submit" variant="solid" disabled={busy}>salvar</Button>
             <Link to={`/coletivos/${coletivo.id}`} className="inline-flex items-center font-mono text-sm text-[var(--accent-text)] hover:underline">ver perfil público ↗</Link>
             <span className="font-mono text-xs text-[var(--color-muted)]">versão {coletivo.versao}</span>
           </div>
+        </Form>
+      </Panel>
+
+      <Panel title="imagem do coletivo" className="mt-6">
+        <p className="mb-4 font-mono text-xs text-[var(--color-muted)]">
+          Aparece na página pública e na lista de coletivos. JPG, PNG ou WebP, até {(IMAGE_MAX_BYTES / 1_000_000).toLocaleString('pt-BR')} MB. Sem imagem, o coletivo usa a imagem padrão.
+        </p>
+        {coletivo.imagem && (
+          <div className="mb-4 flex flex-wrap items-end gap-3">
+            <img src={coletivo.imagem} alt={`Imagem atual de ${coletivo.nome}`} className="aspect-[2/1] w-full max-w-sm border border-[var(--color-line)] object-cover" />
+            <Form method="post">
+              <input type="hidden" name="intent" value="remove-image" />
+              <Button type="submit" variant="danger" size="sm" disabled={busy}>remover imagem</Button>
+            </Form>
+          </div>
+        )}
+        <Form method="post" encType="multipart/form-data" className="max-w-md space-y-3">
+          <input type="hidden" name="intent" value="upload-image" />
+          <FileField label={coletivo.imagem ? 'Substituir a imagem' : 'Enviar imagem'} kind="image" error={errors.arquivo} />
+          <Button type="submit" variant="solid" size="sm" disabled={busy}>{busy ? 'enviando…' : coletivo.imagem ? 'substituir imagem' : 'enviar imagem'}</Button>
         </Form>
       </Panel>
     </AccentScope>

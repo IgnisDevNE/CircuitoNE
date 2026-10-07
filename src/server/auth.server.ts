@@ -48,6 +48,75 @@ export async function boundedForm(request: Request, limit = 4096) {
   return new URLSearchParams(text + decoder.decode());
 }
 
+/** Uploaded files by field name; empty file parts (a file input left blank) are dropped. */
+export type UploadedFiles = Map<string, File>
+
+/** How much of an oversized upload is read and thrown away before the connection is dropped (see `boundedMultipart`). */
+const DRAIN_BYTES = 50_000_000;
+
+export const isMultipart = (request: Request) =>
+  !!request.headers.get("content-type")?.toLowerCase().startsWith("multipart/form-data");
+
+/**
+ * Multipart body read with a hard size cap (so an oversized upload is cut off instead of buffered), then parsed:
+ * text fields become a `URLSearchParams` (same shape as `boundedForm`) and files a map by field name.
+ * Larger bodies are rejected with 413 and malformed ones with 415.
+ */
+export async function boundedMultipart(
+  request: Request,
+  limit: number,
+): Promise<{ form: URLSearchParams; files: UploadedFiles }> {
+  const contentType = request.headers.get("content-type") ?? "";
+  // Past the limit the body is still read (and discarded, never buffered) up to a hard cap, so the browser finishes its
+  // send and can show the 413 message; cutting the connection mid-upload would only show a network error. Beyond the
+  // cap, or when the declared length is already beyond it, the stream is dropped.
+  const hardCap = limit + DRAIN_BYTES;
+  const declared = Number(request.headers.get("content-length"));
+  if (Number.isFinite(declared) && declared > hardCap) throw new Response(null, { status: 413 });
+  const reader = request.body?.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  if (reader)
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > hardCap) {
+        await reader.cancel();
+        throw new Response(null, { status: 413 });
+      }
+      if (size <= limit) chunks.push(value);
+    }
+  if (size > limit) throw new Response(null, { status: 413 });
+  let parsed: FormData;
+  try {
+    parsed = await new Response(new Blob(chunks as BlobPart[]), {
+      headers: { "content-type": contentType },
+    }).formData();
+  } catch {
+    throw new Response(null, { status: 415 });
+  }
+  const form = new URLSearchParams();
+  const files: UploadedFiles = new Map();
+  for (const [name, value] of parsed) {
+    if (typeof value === "string") form.append(name, value);
+    else if (value.size > 0 && !files.has(name)) files.set(name, value);
+  }
+  return { form, files };
+}
+
+/** Body of a write action: urlencoded (`limit`) always, multipart (`uploadLimit`) only where uploads are expected. */
+export async function boundedBody(
+  request: Request,
+  limits: { limit?: number; uploadLimit?: number } = {},
+): Promise<{ form: URLSearchParams; files: UploadedFiles }> {
+  if (isMultipart(request)) {
+    if (!limits.uploadLimit) throw new Response(null, { status: 415 });
+    return boundedMultipart(request, limits.uploadLimit);
+  }
+  return { form: await boundedForm(request, limits.limit), files: new Map() };
+}
+
 /** Pathname of the page, without the `.data` suffix that single-fetch (client-side form posts and loads) appends. */
 export const routePath = (request: Request) => new URL(request.url).pathname.replace(/\.data$/, "");
 

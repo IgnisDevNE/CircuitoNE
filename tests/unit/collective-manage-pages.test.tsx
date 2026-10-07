@@ -27,7 +27,7 @@ const MEMBER = '01000000-0000-4000-8000-000000000005'
 
 const coletivo = (extra: Partial<ColetivoEdicao> = {}): ColetivoEdicao => ({
   id: C, versao: 3, situacao: 'approved', motivo: null, tipo: 'coletivo', nome: 'Organização sintética 1', descricao: 'Fixture sem dados reais',
-  atuacao: 'Música', cidade: 'Recife', estado: 'PE', cnpj: '', cor: null, social: {}, ...extra,
+  atuacao: 'Música', cidade: 'Recife', estado: 'PE', cnpj: '', cor: null, social: {}, imagem: null, ...extra,
 })
 const perfis: PerfilAcesso[] = [
   { id: ROLE_MEMBER, nome: 'Membro', permissoes: [], embutido: true },
@@ -159,7 +159,7 @@ describe('EditCollective', () => {
 describe('EditCollectiveProfile', () => {
   const page = (props: Partial<ComponentProps<typeof EditCollectiveProfile>> = {}) => inRouter(<EditCollectiveProfile coletivo={coletivo()} {...props} />)
 
-  it('descrição, cor opcional e redes sociais com os valores atuais; imagem fica para os uploads', () => {
+  it('descrição, cor opcional e redes sociais com os valores atuais', () => {
     page({ coletivo: coletivo({ cor: '#8b5cf6', social: { instagram: 'https://instagram.com/x', site: 'https://x.example.invalid' } }) })
     expect((screen.getByLabelText(/Descrição pública/) as HTMLTextAreaElement).value).toBe('Fixture sem dados reais')
     expect((screen.getByLabelText(/Instagram/) as HTMLInputElement).value).toBe('https://instagram.com/x')
@@ -167,8 +167,35 @@ describe('EditCollectiveProfile', () => {
     expect((screen.getByLabelText(/YouTube/) as HTMLInputElement).value).toBe('')
     expect((screen.getByLabelText(/usar esta cor/) as HTMLInputElement).checked).toBe(true)
     expect((screen.getByLabelText(/cor predominante/) as HTMLInputElement).value).toBe('#8b5cf6')
-    expect(screen.getByText(/imagem de capa do coletivo será enviada por upload/)).toBeTruthy()
     expect(screen.getByRole('link', { name: 'ver perfil público ↗' }).getAttribute('href')).toBe(`/coletivos/${C}`)
+  })
+
+  it('sem imagem: só o envio (multipart, com o campo de arquivo); com imagem: prévia e remoção', () => {
+    const { unmount } = page()
+    const upload = document.querySelector('input[name="intent"][value="upload-image"]')!.closest('form')!
+    expect(upload.getAttribute('enctype')).toBe('multipart/form-data')
+    expect(upload.querySelector('input[type="file"]')!.getAttribute('name')).toBe('arquivo')
+    expect(upload.querySelector('input[type="file"]')!.getAttribute('accept')).toContain('image/png')
+    expect(screen.getByRole('button', { name: 'enviar imagem' })).toBeTruthy()
+    expect(document.querySelector('input[value="remove-image"]')).toBeNull()
+    unmount()
+    page({ coletivo: coletivo({ imagem: 'https://synthetic.supabase.test/storage/v1/object/public/public-images/x/y.png' }) })
+    expect(screen.getByRole('img', { name: /Imagem atual de Organização sintética 1/ }).getAttribute('src')).toMatch(/public-images/)
+    expect(screen.getByRole('button', { name: 'substituir imagem' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'remover imagem' })).toBeTruthy()
+  })
+
+  it('arquivo recusado pelo servidor aparece no campo; arquivo inválido escolhido no navegador bloqueia o envio', async () => {
+    page({ feedback: { ok: false, error: 'A imagem passa de 5 MB. Envie um arquivo menor.', fields: { arquivo: 'A imagem passa de 5 MB. Envie um arquivo menor.' } } })
+    expect(screen.getAllByText(/A imagem passa de 5 MB/).length).toBeGreaterThan(0)
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement
+    expect(input.getAttribute('aria-invalid')).toBe('true')
+    const user = userEvent.setup({ applyAccept: false })
+    await user.upload(input, new File(['gif'], 'animada.gif', { type: 'image/gif' }))
+    expect(await screen.findByText(/Formato não aceito/)).toBeTruthy()
+    expect(input.validity.customError).toBe(true)
+    await user.upload(input, new File(['png'], 'foto.png', { type: 'image/png' }))
+    expect(input.validity.customError).toBe(false)
   })
 
   it('sem cor escolhida a opção vem desmarcada; erros por campo e feedback aparecem', () => {
@@ -264,6 +291,16 @@ describe('Explore', () => {
     expect(presskit.getAttribute('href')).toBe('https://presskit.example.invalid/a')
     expect(presskit.getAttribute('rel')).toContain('noopener')
     expect(within(details).getByRole('link', { name: /p\.example\.invalid/ })).toBeTruthy()
+  })
+
+  it('PDFs privados: links para a rota que valida a sessão e assina o endereço, nunca um endereço do Storage', () => {
+    page(artistas([perfil('a1', 'Artista A', { restrito: { presskitPdf: true } })], false))
+    const link = screen.getByRole('link', { name: 'abrir PDF do presskit ↗' })
+    expect(link.getAttribute('href')).toBe('/painel/documentos/a1/presskit')
+    expect(link.getAttribute('target')).toBe('_blank')
+    expect(link.getAttribute('rel')).toContain('noopener')
+    expect(screen.queryByRole('link', { name: /lista em PDF/ })).toBeNull()
+    expect(document.body.innerHTML).not.toMatch(/storage\/v1|token=/)
   })
 
   it('a própria atuação mostra os dados restritos dela, sem mensagem para si mesmo, e atuação sem dados cadastrados avisa', () => {

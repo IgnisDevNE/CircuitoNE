@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, data, RouterProvider, useActionData, useLoaderData } from 'react-router'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ActionResult } from '../../src/lib/account-forms'
 import { EditData, formatDate, formatPhone } from '../../src/pages/app/EditData'
 import { EditProfile } from '../../src/pages/app/EditProfile'
@@ -221,6 +221,125 @@ describe('EditProfile', () => {
     inRouter(<EditProfile perfil={perfil()} taxonomia={taxonomia} result={fail('delete-profile', { confirmacao: 'Digite EXCLUIR para confirmar.' })} />)
     expect(screen.getByText('[erro] Digite EXCLUIR para confirmar.')).toBeTruthy()
     expect(screen.queryByRole('status')).toBeNull()
+  })
+})
+
+describe('EditProfile: fotos e documentos (W11)', () => {
+  beforeEach(() => vi.stubEnv('SUPABASE_URL', 'https://synthetic.supabase.test'))
+  afterEach(() => vi.unstubAllEnvs())
+
+  const image = (position: number, size = 120_000) => ({
+    id: `03000000-0000-4000-8000-00000000000${position}`, position, object_path: `${ID}/img${position}.png`, size_bytes: size, alt_text: '',
+  })
+  const professional = (extra = {}) => ({
+    booking_email: null, contact_email: null, contact_phone: null, fee_cents: null, cnpj: null, service_type: null, service_other: null, audiovisual_type: null,
+    presskit_url: null, portfolio_url: null, presskit_path: null, presskit_bytes: null, services_pdf_path: null, services_pdf_bytes: null, ...extra,
+  })
+  const intents = (root: ParentNode = document) => [...root.querySelectorAll<HTMLInputElement>('input[name="intent"]')].map((input) => input.value)
+
+  it('artista sem fotos: só os envios (multipart), com o campo "arquivo" que aceita imagens', () => {
+    inRouter(<EditProfile perfil={perfil({ images: [] })} taxonomia={taxonomia} />)
+    const panel = screen.getByRole('heading', { name: 'fotos' }).closest('section')!
+    expect(panel.querySelector('img')).toBeNull()
+    for (const intent of ['upload-photo', 'upload-gallery']) {
+      const form = panel.querySelector(`input[name="intent"][value="${intent}"]`)!.closest('form')!
+      expect(form.getAttribute('enctype')).toBe('multipart/form-data')
+      const file = form.querySelector('input[type="file"]') as HTMLInputElement
+      expect(file.name).toBe('arquivo')
+      expect(file.accept).toContain('image/webp')
+    }
+    expect(within(panel).getByText('galeria (0/10)')).toBeTruthy()
+    expect(within(panel).getByRole('button', { name: 'enviar foto' })).toBeTruthy()
+  })
+
+  it('com fotos: principal, galeria em ordem, mover e remover (urlencoded); bordas desativadas', () => {
+    inRouter(<EditProfile perfil={perfil({ images: [image(0), image(1), image(2), image(3, 5_000_000)] })} taxonomia={taxonomia} />)
+    const panel = screen.getByRole('heading', { name: 'fotos' }).closest('section')!
+    const main = within(panel).getByRole('img', { name: 'Foto principal de Artista sintético público' })
+    expect(main.getAttribute('src')).toBe(`https://synthetic.supabase.test/storage/v1/object/public/public-images/${ID}/img0.png`)
+    expect(within(panel).getByText('galeria (3/10)')).toBeTruthy()
+    const gallery = within(panel).getAllByRole('img').filter((img) => img.getAttribute('alt')?.includes('galeria'))
+    expect(gallery.map((img) => img.getAttribute('src')!.split('/').pop())).toEqual(['img1.png', 'img2.png', 'img3.png'])
+    expect(within(panel).getByText('#3 · 5,0 MB')).toBeTruthy()
+    expect((within(panel).getByRole('button', { name: 'Mover para antes: imagem 1' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((within(panel).getByRole('button', { name: 'Mover para depois: imagem 1' }) as HTMLButtonElement).disabled).toBe(false)
+    expect((within(panel).getByRole('button', { name: 'Mover para depois: imagem 3' }) as HTMLButtonElement).disabled).toBe(true)
+    const remove = within(panel).getByRole('button', { name: 'Remover a imagem 2 da galeria' }).closest('form')!
+    expect(remove.getAttribute('enctype')).toBeNull()
+    expect((remove.querySelector('input[name="imagem"]') as HTMLInputElement).value).toBe(image(2).id)
+    const move = within(panel).getByRole('button', { name: 'Mover para depois: imagem 1' }).closest('form')!
+    expect((move.querySelector('input[name="direcao"]') as HTMLInputElement).value).toBe('later')
+    expect(intents(panel)).toEqual(expect.arrayContaining(['remove-photo', 'upload-photo', 'move-gallery', 'remove-gallery', 'upload-gallery']))
+    expect(within(panel).getByRole('button', { name: 'trocar foto' })).toBeTruthy()
+  })
+
+  it('galeria cheia (10): sem o envio, com o aviso', () => {
+    inRouter(<EditProfile perfil={perfil({ images: [image(0), ...Array.from({ length: 10 }, (_, i) => image(i + 1))] })} taxonomia={taxonomia} />)
+    const panel = screen.getByRole('heading', { name: 'fotos' }).closest('section')!
+    expect(within(panel).getByText('galeria (10/10)')).toBeTruthy()
+    expect(panel.querySelector('input[value="upload-gallery"]')).toBeNull()
+    expect(within(panel).getByText(/A galeria está cheia/)).toBeTruthy()
+  })
+
+  it('erro de arquivo aparece no campo certo; sucesso só no formulário que o produziu', () => {
+    const { unmount } = inRouter(<EditProfile perfil={perfil({ images: [] })} taxonomia={taxonomia} result={fail('upload-gallery', { arquivo: 'A imagem passa de 5 MB. Envie um arquivo menor.' }, { message: 'x' })} />)
+    const panel = screen.getByRole('heading', { name: 'fotos' }).closest('section')!
+    const galleryForm = panel.querySelector('input[value="upload-gallery"]')!.closest('form')!
+    expect(within(galleryForm).getByText('[erro] A imagem passa de 5 MB. Envie um arquivo menor.')).toBeTruthy()
+    expect(within(panel.querySelector('input[value="upload-photo"]')!.closest('form')!).queryByText(/5 MB/)).toBeNull()
+    unmount()
+    inRouter(<EditProfile perfil={perfil({ images: [image(0)] })} taxonomia={taxonomia} result={success('upload-photo', 'Foto principal atualizada.')} />)
+    expect(screen.getAllByRole('status')).toHaveLength(1)
+    expect(within(screen.getByRole('heading', { name: 'fotos' }).closest('section')!).getByRole('status').textContent).toBe('Foto principal atualizada.')
+  })
+
+  it('presskit: sem PDF só o envio; com PDF link seguro para a rota de recurso, tamanho e remoção; o link de URL avisa', () => {
+    const { unmount } = inRouter(<EditProfile perfil={perfil({ professional: professional() })} taxonomia={taxonomia} />)
+    let panel = screen.getByRole('heading', { name: 'presskit em PDF' }).closest('section')!
+    expect(within(panel).queryByRole('link')).toBeNull()
+    expect(within(panel).getByRole('button', { name: 'enviar PDF' })).toBeTruthy()
+    expect((panel.querySelector('input[type="file"]') as HTMLInputElement).accept).toContain('application/pdf')
+    expect(panel.querySelector('form[enctype="multipart/form-data"]')).toBeTruthy()
+    unmount()
+    inRouter(<EditProfile perfil={perfil({ professional: professional({ presskit_path: `${ID}/kit.pdf`, presskit_bytes: 2_500_000 }) })} taxonomia={taxonomia} />)
+    panel = screen.getByRole('heading', { name: 'presskit em PDF' }).closest('section')!
+    const link = within(panel).getByRole('link', { name: /abrir o PDF enviado \(2,5 MB\)/ })
+    expect(link.getAttribute('href')).toBe(`/painel/documentos/${ID}/presskit`)
+    expect(link.getAttribute('target')).toBe('_blank')
+    expect(link.getAttribute('rel')).toContain('noopener')
+    expect(within(panel).getByRole('button', { name: 'remover PDF' })).toBeTruthy()
+    expect(within(panel).getByRole('button', { name: 'substituir PDF' })).toBeTruthy()
+    expect(screen.getByText(/Há um PDF de presskit enviado/)).toBeTruthy()
+    // O endereço do documento nunca é assinado nem exposto: o link aponta para a rota que valida a sessão.
+    expect(document.body.innerHTML).not.toContain('token=')
+  })
+
+  it('serviços têm a lista em PDF; audiovisual e integrante não têm painel de documento', () => {
+    const base = { styles: [], published: false }
+    const { unmount } = inRouter(<EditProfile perfil={perfil({ ...base, kind: 'services', professional: professional({ services_pdf_path: `${ID}/lista.pdf`, services_pdf_bytes: 900_000 }) })} taxonomia={[]} />)
+    const panel = screen.getByRole('heading', { name: 'lista de serviços e equipamentos (PDF)' }).closest('section')!
+    expect(within(panel).getByRole('link', { name: /abrir o PDF enviado \(900 KB\)/ }).getAttribute('href')).toBe(`/painel/documentos/${ID}/lista-servicos`)
+    expect(screen.queryByRole('heading', { name: 'fotos' })).toBeNull()
+    unmount()
+    const { unmount: again } = inRouter(<EditProfile perfil={perfil({ ...base, kind: 'audiovisual', professional: professional() })} taxonomia={[]} />)
+    expect(screen.queryByRole('heading', { name: /PDF/ })).toBeNull()
+    again()
+    inRouter(<EditProfile perfil={perfil({ kind: 'member', professional: null, styles: [], published: false })} taxonomia={[]} />)
+    expect(screen.queryByRole('heading', { name: /PDF|fotos/ })).toBeNull()
+  })
+
+  it('o navegador recusa antes de enviar: tipo ou tamanho inválido bloqueia o formulário', async () => {
+    inRouter(<EditProfile perfil={perfil({ images: [] })} taxonomia={taxonomia} />)
+    const input = document.querySelector('input[value="upload-photo"]')!.closest('form')!.querySelector('input[type="file"]') as HTMLInputElement
+    const user = userEvent.setup({ applyAccept: false })
+    await user.upload(input, new File([new Uint8Array(5_000_001)], 'grande.png', { type: 'image/png' }))
+    expect(await screen.findByText(/A imagem passa de 5 MB/)).toBeTruthy()
+    expect(input.validity.customError).toBe(true)
+    await user.upload(input, new File(['x'], 'pagina.html', { type: 'text/html' }))
+    expect(await screen.findByText(/Formato não aceito/)).toBeTruthy()
+    await user.upload(input, new File(['png'], 'ok.png', { type: 'image/png' }))
+    expect(input.validity.customError).toBe(false)
+    expect(screen.queryByText(/Formato não aceito/)).toBeNull()
   })
 })
 

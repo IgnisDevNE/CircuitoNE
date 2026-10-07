@@ -3,7 +3,12 @@ import { data, type HeadersFunction } from "react-router";
 import type { Database } from "../types/database.generated";
 
 /** Per-request client: publishable key + RLS only; cookies are read from `request` and written to `headers`. */
-export function createSupabaseServerClient(request: Request, headers: Headers) {
+export function createSupabaseServerClient(
+  request: Request,
+  headers: Headers,
+  /** Uploads de até 10 MB precisam de mais que os 10 s das chamadas comuns. */
+  options: { timeoutMs?: number } = {},
+) {
   if (
     process.env.CIRCUITONE_RUNTIME !== "development" ||
     !process.env.SUPABASE_URL ||
@@ -42,7 +47,7 @@ export function createSupabaseServerClient(request: Request, headers: Headers) {
       },
       global: {
         fetch: (url, init) =>
-          fetch(url, { ...init, redirect: "error", signal: AbortSignal.timeout(10000) }),
+          fetch(url, { ...init, redirect: "error", signal: AbortSignal.timeout(options.timeoutMs ?? 10000) }),
       },
     },
   );

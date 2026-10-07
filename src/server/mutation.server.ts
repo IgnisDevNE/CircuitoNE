@@ -1,9 +1,12 @@
 import { data, redirect } from 'react-router'
 import type { ActionResult } from '../lib/action-result'
-import { boundedForm, routePath } from './auth.server'
+import { boundedBody, routePath, type UploadedFiles } from './auth.server'
 import { createSupabaseServerClient, privateHeaders, type SupabaseServerClient } from './supabase.server'
 
 export type { ActionResult }
+
+/** Limite de espera por chamada ao Supabase nas ações com arquivo (a conexão de saída do servidor pode ser lenta). */
+export const UPLOAD_TIMEOUT_MS = 60_000
 
 /** Falha esperada de uma ação, já com mensagem em pt-BR e o status HTTP correspondente. */
 export class ActionFailure extends Error {
@@ -131,8 +134,9 @@ export function formId(form: URLSearchParams, key: string, message: string): str
 export async function runMutation(
   request: Request,
   path: string,
-  work: (client: SupabaseServerClient, form: URLSearchParams) => Promise<string | { redirectTo: string }>,
-  options: { maxBytes?: number } = {},
+  work: (client: SupabaseServerClient, form: URLSearchParams, files: UploadedFiles) => Promise<string | { redirectTo: string }>,
+  /** `maxBytes`: corpo urlencoded. `uploadBytes`: corpo multipart (formulários com arquivo); sem ele, multipart é recusado. */
+  options: { maxBytes?: number; uploadBytes?: number } = {},
 ) {
   const headers = privateHeaders()
   const reply = (result: ActionResult, status: number) => data(result, { status, headers })
@@ -145,8 +149,9 @@ export async function runMutation(
   )
     return reply({ ok: false, error: 'Origem recusada.' }, 403)
   try {
-    const form = await boundedForm(request, options.maxBytes)
-    const outcome = await work(createSupabaseServerClient(request, headers), form)
+    const { form, files } = await boundedBody(request, { limit: options.maxBytes, uploadLimit: options.uploadBytes })
+    const client = createSupabaseServerClient(request, headers, options.uploadBytes ? { timeoutMs: UPLOAD_TIMEOUT_MS } : {})
+    const outcome = await work(client, form, files)
     // Também o redirecionamento só acontece depois do RPC; os cookies renovados seguem na resposta.
     if (typeof outcome !== 'string') return redirect(outcome.redirectTo, { headers })
     return reply({ ok: true, message: outcome }, 200)

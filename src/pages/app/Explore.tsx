@@ -2,6 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { Link, NavLink } from '../../router'
 import { ESTADOS } from '../../data/types'
 import { estiloLabels } from '../../lib/artist'
+import { documentPath } from '../../lib/uploads'
 import type { ColetivoPublico } from '../../server/mappers/collectives'
 import type { DadosRestritos, ExploreColetivosData, ExploreData, ExplorePerfisData, ExploreKind, PerfilExplorar } from '../../server/mappers/explore'
 import { Badge, Empty, LinkButton, Panel, SectionHeading } from '../../components/ui/primitives'
@@ -33,7 +34,7 @@ function Info({ label, children }: { label: string; children: ReactNode }) {
 
 const external = 'text-[var(--accent-text)] underline break-all'
 
-function Restricted({ dados }: { dados: DadosRestritos }) {
+function Restricted({ dados, perfilId }: { dados: DadosRestritos; perfilId: string }) {
   const empty = Object.keys(dados).length === 0
   return (
     <dl aria-label="Dados restritos" className="mt-3 space-y-2 border-t border-[var(--color-line)] pt-3 font-mono text-sm">
@@ -46,6 +47,16 @@ function Restricted({ dados }: { dados: DadosRestritos }) {
       {dados.presskit && (
         <Info label="presskit">
           <a href={dados.presskit} target="_blank" rel="noopener noreferrer" className={external}>abrir presskit ↗</a>
+        </Info>
+      )}
+      {dados.presskitPdf && (
+        <Info label="presskit (PDF)">
+          <a href={documentPath(perfilId, 'presskit')} target="_blank" rel="noopener noreferrer" className={external}>abrir PDF do presskit ↗</a>
+        </Info>
+      )}
+      {dados.listaServicosPdf && (
+        <Info label="serviços e equipamentos (PDF)">
+          <a href={documentPath(perfilId, 'lista-servicos')} target="_blank" rel="noopener noreferrer" className={external}>abrir lista em PDF ↗</a>
         </Info>
       )}
       {dados.portfolio && (
@@ -69,7 +80,7 @@ function ProfileCard({ perfil, kind }: { perfil: PerfilExplorar; kind: ExplorePe
         {estiloLabels(perfil.estilos).map((estilo) => <Badge key={estilo} tone="accent">{estilo}</Badge>)}
       </div>
       {perfil.descricao && <p className="line-clamp-3 text-sm text-[var(--color-muted)]">{perfil.descricao}</p>}
-      {perfil.restrito && <Restricted dados={perfil.restrito} />}
+      {perfil.restrito && <Restricted dados={perfil.restrito} perfilId={perfil.id} />}
       <div className="mt-4 flex flex-wrap items-center gap-3">
         {publico && <Link to={`/artistas/${perfil.id}`} className="font-mono text-xs text-[var(--accent-text)] underline">ver perfil público →</Link>}
         {!perfil.minha && <LinkButton to={`/painel/mensagens/nova?para=profile:${perfil.id}`} variant="outline" size="sm">Enviar mensagem</LinkButton>}

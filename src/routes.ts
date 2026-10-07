@@ -8,6 +8,8 @@ export default [
   // Cadastro real (e confirmação do link do e-mail): fora do layout autenticado, mas com SSR e a sessão validada no servidor.
   route('cadastro', './routes/registration.tsx'),
   route('auth/confirmar', './routes/auth-confirm.tsx'),
+  // Documentos privados (presskit, lista de serviços): rota de recurso que valida a sessão e redireciona ao PDF assinado.
+  route('painel/documentos/:atuacaoId/:tipo', './routes/document.tsx'),
   // Layout autenticado: valida a sessão no servidor e redireciona visitantes para /entrar.
   layout('./routes/layouts/app.tsx', [
     route('painel', './routes/dashboard.tsx'),

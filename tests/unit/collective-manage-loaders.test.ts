@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { loadCollectiveMembers, loadEditCollective, loadEditCollectiveProfile } from '../../src/server/collective-manage.server'
 import { loadExplore } from '../../src/server/explore.server'
 import { HttpError, type SupabaseServerClient } from '../../src/server/supabase.server'
@@ -85,6 +85,20 @@ describe('loadEditCollective', () => {
     ])
     expect(data.sucessores.map((membro) => membro.nome)).toEqual(['Membro sintético ativo'])
     expect(data.mfa).toBe('confirmada')
+  })
+
+  it('imagem enviada: URL pública do bucket; sem imagem ou sem Supabase configurado, nula', async () => {
+    vi.stubEnv('SUPABASE_URL', 'https://synthetic.supabase.test')
+    try {
+      const withImage = fakeClient({ rpc: { list_my_collectives: ok([mine({ state: 'pending' })]), get_collective_status: ok(status({ state: 'pending' }, { image_path: `${C}/capa.png` })) } })
+      expect((await loadEditCollective(withImage.client, C)).coletivo.imagem).toBe(`https://synthetic.supabase.test/storage/v1/object/public/public-images/${C}/capa.png`)
+      const without = fakeClient({ rpc: { list_my_collectives: ok([mine({ state: 'pending' })]), get_collective_status: ok(status({ state: 'pending' })) } })
+      expect((await loadEditCollective(without.client, C)).coletivo.imagem).toBeNull()
+      vi.stubEnv('SUPABASE_URL', '')
+      expect((await loadEditCollective(withImage.client, C)).coletivo.imagem).toBeNull()
+    } finally {
+      vi.unstubAllEnvs()
+    }
   })
 
   it.each([
@@ -212,10 +226,10 @@ describe('loadExplore', () => {
       ['Artista do membro', false, false],
     ])
     expect(data.perfis[1].estilos).toEqual([{ estilo: 'techno' }])
-    // Só as colunas liberadas e o tipo da página; nada de caminhos de arquivo privado.
+    // Só as colunas liberadas e o tipo da página. Os caminhos dos PDFs privados são lidos só para saber se há arquivo (o RLS os entrega ao dono e ao leitor elegível).
     const details = queried.find((entry) => entry.table === 'professional_details')!
     expect(details.calls).toContainEqual({ method: 'eq', args: ['kind', 'artist'] })
-    expect(JSON.stringify(details.calls)).not.toMatch(/_path/)
+    expect(JSON.stringify(details.calls)).toContain('presskit_path,services_pdf_path')
     const profiles = queried.find((entry) => entry.table === 'profiles')!
     expect(profiles.calls).toContainEqual({ method: 'select', args: ['id,name,description,city,state_code'] })
   })
@@ -233,6 +247,22 @@ describe('loadExplore', () => {
     if (data.kind === 'coletivos') throw new Error('esperava perfis')
     expect(data.restritoIndisponivel).toBe(false)
     expect(data.perfis[1].restrito).toEqual({ emailBooking: 'booking@example.invalid', telefone: '+5581999000001', cache: 'R$ 1.500,00', presskit: 'https://presskit.example.invalid/a' })
+  })
+
+  it('PDFs privados: o catálogo só sabe que existem (o caminho do arquivo nunca chega à tela)', async () => {
+    const { client } = fakeClient({
+      rpc: { list_my_profiles: ok([]) },
+      tables: {
+        profiles: ok([profileRow(OTHER, 'Artista com PDF')]),
+        professional_details: ok([detail(OTHER, { presskit_path: `${OTHER}/kit.pdf`, presskit_bytes: 2000, services_pdf_path: null })]),
+        artist_styles: ok([]),
+      },
+    })
+    const data = await loadExplore(client, 'artistas')
+    if (data.kind === 'coletivos') throw new Error('esperava perfis')
+    expect(data.perfis[0].restrito).toMatchObject({ presskitPdf: true })
+    expect(data.perfis[0].restrito).not.toHaveProperty('listaServicosPdf')
+    expect(JSON.stringify(data)).not.toContain('kit.pdf')
   })
 
   it('serviços e audiovisual: o tipo é dado restrito e vem rotulado; artistas não consultam estilos nos outros tipos', async () => {

@@ -41,6 +41,7 @@ const evento = (extra: Partial<EventoGerido> = {}): EventoGerido => ({
   gratuito: false,
   ingressoLink: 'https://tickets.example.invalid/e',
   capa: '',
+  capaEnviada: null,
   lineup: [{ artistaId: ARTIST, nome: 'Artista sintético público' }, { nome: 'Convidada livre' }],
   reagendadoEm: null,
   ...extra,
@@ -79,6 +80,14 @@ describe('CreateEvent', () => {
     expect([...field('kind').options].map((o) => o.value)).toEqual(['festa', 'festival', 'evento-cultural', 'feira', 'encontro', 'capacitacao', 'outros'])
     expect(screen.getByText(/nasce como/).textContent).toMatch(/rascunho/)
     expect((screen.getByRole('button', { name: 'salvar rascunho' }) as HTMLButtonElement).type).toBe('submit')
+  })
+
+  it('criar: o envio de capa por arquivo só existe depois do rascunho (o caminho leva o id do evento); o link continua', () => {
+    page()
+    expect(field('cover_file')).toBeNull()
+    expect(field('cover_url')).toBeTruthy()
+    expect(field('name').closest('form')!.getAttribute('enctype')).not.toBe('multipart/form-data')
+    expect(screen.getByText(/disponível depois de criar o rascunho/)).toBeTruthy()
   })
 
   it('o identificador da solicitação continua o mesmo quando a página recebe outro valor do loader', () => {
@@ -214,6 +223,31 @@ describe('ManageEvent', () => {
     expect(field('cover_url').value).toBe('https://img.example.invalid/c.jpg')
     expect(field('ends_at').value).toBe('')
     expect(screen.getByText(/10 mai 2030 · 20:00 \(Fortaleza\) · Local sintético, Recife\/PE/)).toBeTruthy()
+  })
+
+  it('gestão: formulário multipart com o campo de arquivo da capa; sem capa enviada não há remoção', () => {
+    page()
+    const form = field('name').closest('form')!
+    expect(form.getAttribute('enctype')).toBe('multipart/form-data')
+    expect(field('cover_file').type).toBe('file')
+    expect(field('cover_file').required).toBe(false)
+    expect(field('cover_file').accept).toContain('image/png')
+    expect(field('remove_cover')).toBeNull()
+    expect(screen.getByText(/Nenhuma capa enviada/)).toBeTruthy()
+    expect(screen.getByText(/informar um link remove a capa enviada/)).toBeTruthy()
+  })
+
+  it('gestão: com capa enviada mostra a prévia e a opção de remover; o campo vira "substituir"', () => {
+    page({ evento: evento({ capaEnviada: 'https://synthetic.supabase.test/storage/v1/object/public/public-images/x/y.png' }) })
+    expect(screen.getByRole('img', { name: /Capa enviada do evento Evento sintético 5/ }).getAttribute('src')).toMatch(/public-images/)
+    expect(field('remove_cover').type).toBe('checkbox')
+    expect(screen.getByLabelText(/Substituir a capa/)).toBe(field('cover_file'))
+  })
+
+  it('gestão: erro do arquivo da capa aparece no campo', () => {
+    page({ feedback: { ok: false, error: 'Corrija os campos destacados.', fields: { cover_file: 'A imagem passa de 5 MB. Envie um arquivo menor.' } } })
+    expect(screen.getByText('[erro] A imagem passa de 5 MB. Envie um arquivo menor.')).toBeTruthy()
+    expect(field('cover_file').getAttribute('aria-invalid')).toBe('true')
   })
 
   it('publicar: formulário com a versão; some quando não há permissão ou o evento não é rascunho', () => {
@@ -404,6 +438,8 @@ describe('módulos de rota de eventos', () => {
     const user = userEvent.setup()
     await screen.findByRole('button', { name: 'salvar alterações' })
     fill('name', 'Meu nome')
+    // O jsdom não consegue montar a requisição com a parte vazia do campo de arquivo; o servidor ignora partes vazias.
+    field('cover_file').remove()
     await user.click(screen.getByRole('button', { name: 'salvar alterações' }))
 
     expect((await screen.findByRole('alert')).textContent).toMatch(/alterado por outra pessoa/)

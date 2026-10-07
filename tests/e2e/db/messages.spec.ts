@@ -224,8 +224,9 @@ test('visitante vê "Entrar para enviar mensagem"; logado compõe, envia e cai n
   await page.goto(`/coletivos/${collectiveId(1)}`)
   await expect(page.getByRole('link', { name: 'Enviar mensagem' })).toHaveAttribute('href', `/painel/mensagens/nova?para=collective:${collectiveId(1)}`)
 
+  // O clique comum abre o chat flutuante (chat-dock.spec.ts); a tela completa continua valendo pelo link (nova aba, sem JavaScript).
   await page.goto(`/artistas/${activeProfile}`)
-  await page.getByRole('link', { name: 'Enviar mensagem' }).click()
+  await page.goto((await page.getByRole('link', { name: 'Enviar mensagem' }).getAttribute('href'))!)
   await expect(page).toHaveURL(new RegExp(`/painel/mensagens/nova\\?para=profile:${activeProfile}$`))
   await expect(page.getByRole('heading', { level: 2, name: `para ${activeArtist}` })).toBeVisible()
   const text = `Primeiro contato ${Date.now()}`

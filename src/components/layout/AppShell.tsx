@@ -3,6 +3,7 @@ import { Link, NavLink } from 'react-router'
 import { TIPO_LABEL } from '../../data/types'
 import { cx, navClass } from '../../lib/utils'
 import type { MeuColetivo, MeuPerfil } from '../../server/mappers/account'
+import { clearChatStorage } from '../chat/ChatDockProvider'
 import { Avatar } from '../ui/primitives'
 
 interface NavItem {
@@ -102,7 +103,7 @@ export function AppShell({ nome, perfis, coletivos, naoLidas, children }: AppShe
       ))}
 
       <div className="mt-auto border-t border-[var(--color-line)] pt-4">
-        <form method="post" action="/sair">
+        <form method="post" action="/sair" onSubmit={clearChatStorage}>
           <button type="submit" className={logoutClass}>
             [→] Sair da sessão
           </button>

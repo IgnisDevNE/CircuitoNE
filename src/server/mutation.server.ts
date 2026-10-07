@@ -136,7 +136,11 @@ export function formId(form: URLSearchParams, key: string, message: string): str
 export async function runMutation(
   request: Request,
   path: string,
-  work: (client: SupabaseServerClient, form: URLSearchParams, files: UploadedFiles) => Promise<string | { redirectTo: string }>,
+  work: (
+    client: SupabaseServerClient,
+    form: URLSearchParams,
+    files: UploadedFiles,
+  ) => Promise<string | { redirectTo: string } | { message: string; extra: Record<string, unknown> }>,
   /** `maxBytes`: corpo urlencoded. `uploadBytes`: corpo multipart (formulários com arquivo); sem ele, multipart é recusado. */
   options: { maxBytes?: number; uploadBytes?: number } = {},
 ) {
@@ -155,8 +159,10 @@ export async function runMutation(
     const client = createSupabaseServerClient(request, headers, options.uploadBytes ? { timeoutMs: UPLOAD_TIMEOUT_MS } : {})
     const outcome = await work(client, form, files)
     // Também o redirecionamento só acontece depois do RPC; os cookies renovados seguem na resposta.
-    if (typeof outcome !== 'string') return redirect(outcome.redirectTo, { headers })
-    return reply({ ok: true, message: outcome }, 200)
+    if (typeof outcome === 'string') return reply({ ok: true, message: outcome }, 200)
+    // `extra`: dados que a tela precisa depois do RPC (por exemplo, a conversa criada pelo envio do chat flutuante).
+    if ('extra' in outcome) return reply({ ok: true, message: outcome.message, ...outcome.extra }, 200)
+    return redirect(outcome.redirectTo, { headers })
   } catch (error) {
     if (error instanceof ActionFailure)
       return reply({ ok: false, error: error.message, ...(error.fields ? { fields: error.fields } : {}) }, error.status)

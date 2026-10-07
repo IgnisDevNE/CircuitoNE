@@ -9,6 +9,8 @@ export default [
   route('auth/confirmar', './routes/auth-confirm.tsx'),
   // Documentos privados (presskit, lista de serviços): rota de recurso que valida a sessão e redireciona ao PDF assinado.
   route('painel/documentos/:atuacaoId/:tipo', './routes/document.tsx'),
+  // Chat flutuante: rotas de recurso JSON (sem tela) que validam a sessão e a origem; ver server/chat.server.ts.
+  route('api/chat/*', './routes/api/chat.tsx'),
   // Layout autenticado: valida a sessão no servidor e redireciona visitantes para /entrar.
   layout('./routes/layouts/app.tsx', [
     route('painel', './routes/dashboard.tsx'),

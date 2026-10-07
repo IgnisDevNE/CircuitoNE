@@ -10,6 +10,9 @@ if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_'))
 const ACCOUNT_SPEC = /account\.spec\.ts$/
 const MESSAGES_SPEC = /messages\.spec\.ts/
 const REGISTER_SPEC = /register\.spec\.ts/
+const MANAGE_SPEC = /collective-manage\.spec\.ts/
+const EXPLORE_SPEC = /explore\.spec\.ts/
+const WRITE_SPECS = [ACCOUNT_SPEC, MESSAGES_SPEC, REGISTER_SPEC, MANAGE_SPEC, EXPLORE_SPEC]
 const port = '5183'
 const origin = `http://127.0.0.1:${port}`
 
@@ -30,11 +33,12 @@ export default defineConfig({
   },
   projects: [
     // Leituras: rodam em paralelo nos dois tamanhos de tela.
-    { name: 'desktop', testIgnore: [ACCOUNT_SPEC, MESSAGES_SPEC, REGISTER_SPEC], use: { browserName: 'chromium', viewport: { width: 1366, height: 900 } } },
-    { name: 'mobile', testIgnore: [ACCOUNT_SPEC, MESSAGES_SPEC, REGISTER_SPEC], use: { browserName: 'chromium', viewport: { width: 390, height: 844 } } },
+    { name: 'desktop', testIgnore: WRITE_SPECS, use: { browserName: 'chromium', viewport: { width: 1366, height: 900 } } },
+    { name: 'mobile', testIgnore: WRITE_SPECS, use: { browserName: 'chromium', viewport: { width: 390, height: 844 } } },
     // Escritas: depois de todas as leituras e uma suíte por vez, para não competir com testes que contam dados das fixtures.
-    // account.spec.ts altera perfis e dados da conta; messages.spec.ts envia, bloqueia e cria conversas. Cada teste desfaz o que altera.
-    // register.spec.ts não altera as fixtures: só cria contas novas.
+    // account.spec.ts altera perfis e dados da conta; messages.spec.ts envia, bloqueia e cria conversas; collective-manage.spec.ts edita o
+    // coletivo 1, seus perfis de acesso e membros; explore.spec.ts ativa MFA na fixture-active e muda dados profissionais.
+    // Cada teste desfaz o que altera. register.spec.ts não altera as fixtures: só cria contas novas.
     {
       name: 'account-desktop',
       testMatch: ACCOUNT_SPEC,
@@ -53,12 +57,24 @@ export default defineConfig({
       dependencies: ['account-mobile'],
       use: { browserName: 'chromium', viewport: { width: 1366, height: 900 } },
     },
+    {
+      name: 'collective-manage',
+      testMatch: MANAGE_SPEC,
+      dependencies: ['messages'],
+      use: { browserName: 'chromium', viewport: { width: 1366, height: 900 } },
+    },
+    {
+      name: 'explore',
+      testMatch: EXPLORE_SPEC,
+      dependencies: ['collective-manage'],
+      use: { browserName: 'chromium', viewport: { width: 1366, height: 900 } },
+    },
     // register.spec.ts cria contas novas (e-mail e CPF únicos por execução) e consome os celulares de teste de
     // supabase/config.toml [auth.sms.test_otp]; roda por último e uma tela só.
     {
       name: 'register',
       testMatch: REGISTER_SPEC,
-      dependencies: ['messages'],
+      dependencies: ['explore'],
       use: { browserName: 'chromium', viewport: { width: 1366, height: 900 } },
     },
   ],

@@ -126,6 +126,7 @@ test(
       queryFile("tests/database/collective-area.sql")
       queryFile("tests/database/account-editing.sql")
       queryFile("tests/database/messaging-ui.sql")
+      queryFile("tests/database/collective-management.sql")
     }
     // Duas conexões reais: lock da identidade e UNIQUE do CPF devem decidir no banco.
     for (const sameAccount of [false, true]) {

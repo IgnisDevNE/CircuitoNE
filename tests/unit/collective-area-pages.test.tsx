@@ -331,7 +331,7 @@ describe('módulos de rota', () => {
   it('o título da seção vem do nome do coletivo e do caminho', () => {
     expect(areaMeta({ loaderData: available, location: { pathname: `/coletivo/${C}/painel` } } as never)).toEqual([{ title: 'Organização sintética 1 · Dashboard · CIRCUITO NE' }])
     expect(areaMeta({ loaderData: available, location: { pathname: `/coletivo/${C}/solicitacoes/` } } as never)).toEqual([{ title: 'Organização sintética 1 · Solicitações · CIRCUITO NE' }])
-    expect(areaMeta({ loaderData: available, location: { pathname: `/coletivo/${C}/membros` } } as never)).toEqual([{ title: 'Organização sintética 1 · CIRCUITO NE' }])
+    expect(areaMeta({ loaderData: available, location: { pathname: `/coletivo/${C}/membros` } } as never)).toEqual([{ title: 'Organização sintética 1 · Membros · CIRCUITO NE' }])
     expect(areaMeta({ loaderData: undefined, location: { pathname: `/coletivo/${C}/painel` } } as never)).toEqual([{ title: 'Coletivo · Dashboard · CIRCUITO NE' }])
   })
 

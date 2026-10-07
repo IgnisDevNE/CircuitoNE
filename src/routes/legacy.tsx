@@ -14,10 +14,6 @@ const titles: Record<string, string> = {
   '/painel': 'Dashboard', '/painel/dados': 'Editar Dados',
   '/painel/dados/nova-atuacao': 'Nova atuação', '/painel/seguranca': 'Segurança',
   '/painel/mensagens': 'Central de Mensagens', '/painel/coletivos': 'Meus Coletivos',
-  '/painel/explorar/artistas': 'explorar/artistas',
-  '/painel/explorar/servicos': 'explorar/serviços',
-  '/painel/explorar/audiovisual': 'explorar/audiovisual',
-  '/painel/explorar/coletivos': 'explorar/coletivos',
 }
 
 export const meta: MetaFunction = ({ location }) => {

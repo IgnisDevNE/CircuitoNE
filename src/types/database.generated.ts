@@ -232,6 +232,11 @@ isOneToOne: false
               "last_activity_at": string,"user_id": string
             }[]
                            },
+"get_collective_member_roster":
+{ Args: { "target": string }; Returns: {
+              "artist_name": string,"artist_profile_id": string,"is_owner": boolean,"last_activity_at": string,"member_name": string,"role_id": string,"role_name": string,"user_id": string
+            }[]
+                           },
 "get_collective_members":
 { Args: { "target": string }; Returns: {
               "artist_profile_id": string,"name": string

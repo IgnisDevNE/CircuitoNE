@@ -46,23 +46,20 @@ export function AppShell({ nome, perfis, coletivos, naoLidas, onLogout, children
         ? [{ to: '/painel/coletivos', label: 'Coletivos/Produtoras' }]
         : []
 
-    // Quem responde por um coletivo aprovado libera as buscas com dados não-públicos.
-    const explorarLiberado = coletivos.some((c) => c.dono && c.situacao === 'approved')
-    const explorar: NavItem[] = explorarLiberado
-      ? [
-          { to: '/painel/explorar/artistas', label: 'Explorar Artistas', hint: 'cachê, presskit, booking' },
-          { to: '/painel/explorar/servicos', label: 'Explorar Serviços' },
-          { to: '/painel/explorar/audiovisual', label: 'Explorar Audiovisual' },
-          { to: '/painel/explorar/coletivos', label: 'Explorar Coletivos' },
-        ]
-      : []
+    // Catálogo interno (RN-06): toda conta ativa o abre. Dados restritos (RN-07) dependem de o banco os devolver ao leitor.
+    const explorar: NavItem[] = [
+      { to: '/painel/explorar/artistas', label: 'Explorar Artistas', hint: 'cachê, presskit, booking' },
+      { to: '/painel/explorar/servicos', label: 'Explorar Serviços' },
+      { to: '/painel/explorar/audiovisual', label: 'Explorar Audiovisual' },
+      { to: '/painel/explorar/coletivos', label: 'Explorar Coletivos' },
+    ]
 
     return [
       { title: 'geral', items: geral },
       ...(itensPerfil.length ? [{ title: 'perfis', items: itensPerfil }] : []),
       { title: 'conta', items: conta },
       ...(itensColetivo.length ? [{ title: 'coletivos', items: itensColetivo }] : []),
-      ...(explorar.length ? [{ title: 'explorar (admin)', items: explorar }] : []),
+      { title: 'explorar', items: explorar },
     ]
   }, [perfis, coletivos, naoLidas])
 

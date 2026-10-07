@@ -3,7 +3,7 @@ import { GENEROS } from '../../data/types'
 import { cx } from '../../lib/utils'
 
 const fieldBase =
-  'w-full bg-[var(--color-bg-elev)] border border-[var(--color-line)] px-3 py-2 font-mono text-sm text-[var(--foreground)] placeholder:text-[var(--color-muted)] focus:border-[var(--accent)] outline-none transition-colors'
+  'w-full bg-[var(--color-bg-elev)] border border-[var(--color-control)] px-3 py-2 font-mono text-sm text-[var(--foreground)] placeholder:text-[var(--color-muted)] focus:border-[var(--accent)] outline-none transition-colors'
 
 function Label({ htmlFor, children, required }: { htmlFor: string; children: ReactNode; required?: boolean }) {
   return (

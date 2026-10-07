@@ -47,7 +47,7 @@ export function FileField({
           setLocal(problem)
         }}
         className={cx(
-          'block w-full cursor-pointer border border-[var(--color-line)] bg-[var(--color-bg-elev)] px-3 py-2 font-mono text-sm text-[var(--foreground)] file:mr-3 file:cursor-pointer file:border-0 file:bg-transparent file:font-mono file:text-xs file:uppercase file:text-[var(--accent-text)]',
+          'block w-full cursor-pointer border border-[var(--color-control)] bg-[var(--color-bg-elev)] px-3 py-2 font-mono text-sm text-[var(--foreground)] file:mr-3 file:cursor-pointer file:border-0 file:bg-transparent file:font-mono file:text-xs file:uppercase file:text-[var(--accent-text)]',
           message && 'border-[var(--accent)]',
         )}
       />

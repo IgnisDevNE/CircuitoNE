@@ -9,6 +9,8 @@ export function CollectivesHub({ coletivos }: CollectiveListData) {
     <div>
       <SectionHeading prompt="ls" sub="Coletivos e produtoras que movimentam a cena — organização, curadoria e estrutura.">coletivos/</SectionHeading>
 
+      {/* Os cartões são h3: o h2 oculto mantém a ordem dos títulos (h1, h2, h3) para quem navega por eles. */}
+      <h2 className="sr-only">Coletivos e produtoras</h2>
       {coletivos.length === 0 ? (
         <Empty>Nenhum coletivo ou produtora cadastrado ainda.</Empty>
       ) : (
@@ -24,7 +26,7 @@ export function CollectivesHub({ coletivos }: CollectiveListData) {
                       <span className="font-mono text-xs text-[var(--color-muted)]">{c.cidade}/{c.estado}</span>
                     </div>
                     <h3 className="font-display text-xl font-bold group-hover:text-[var(--accent-text)]">{c.nome}</h3>
-                    <p className="mt-2 line-clamp-2 flex-1 text-sm text-[var(--color-muted)]">{c.bio}</p>
+                    <p data-teaser className="mt-2 line-clamp-2 flex-1 text-sm text-[var(--color-muted)]">{c.bio}</p>
                     <div className="mt-4 flex flex-wrap gap-1">
                       {c.atuacao.map((a) => <span key={a} className="font-mono text-[0.65rem] uppercase tracking-widest text-[var(--color-muted)]">[{a}]</span>)}
                     </div>

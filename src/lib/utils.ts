@@ -105,35 +105,54 @@ export function contrastRatio(fg: string, bg: string) {
   return (hi + 0.05) / (lo + 0.05)
 }
 
-// Ensure an accent color is bright enough to serve as non-text UI (>= 3:1 on black).
+// Superfícies de index.css (--color-bg, --color-bg-elev, --color-surface) sobre as quais o destaque é desenhado. O destaque
+// também aparece como tom de 12% a 15% (itens ativos, hover), então o texto é conferido contra as superfícies puras e tingidas.
+const SURFACES = ['#050506', '#0b0b0d', '#101014']
+const TINT = 0.15
+
+function mixHex(base: string, over: string, amount: number) {
+  const [br, bg, bb] = hexToRgb(base)
+  const [or, og, ob] = hexToRgb(over)
+  return rgbHex(Math.round(br + (or - br) * amount), Math.round(bg + (og - bg) * amount), Math.round(bb + (ob - bb) * amount))
+}
+
+const lighten = ([r, g, b]: [number, number, number], amount: number): [number, number, number] => [
+  Math.min(255, Math.round(r + (255 - r) * amount)),
+  Math.min(255, Math.round(g + (255 - g) * amount)),
+  Math.min(255, Math.round(b + (255 - b) * amount)),
+]
+
+// Ensure an accent color is bright enough to serve as non-text UI (>= 3:1 on every dark surface, WCAG 1.4.11).
 // If too dark, lighten it toward white until it clears the floor.
-export function ensureAccent(hex: string, bg = '#050506', floor = 3): string {
+export function ensureAccent(hex: string, floor = 3): string {
   try {
-    let [r, g, b] = hexToRgb(hex)
+    let rgb = hexToRgb(hex)
     let steps = 0
-    while (contrastRatio(rgbHex(r, g, b), bg) < floor && steps < 20) {
-      r = Math.min(255, Math.round(r + (255 - r) * 0.15))
-      g = Math.min(255, Math.round(g + (255 - g) * 0.15))
-      b = Math.min(255, Math.round(b + (255 - b) * 0.15))
+    while (SURFACES.some((surface) => contrastRatio(rgbHex(...rgb), surface) < floor) && steps < 20) {
+      rgb = lighten(rgb, 0.15)
       steps++
     }
-    return rgbHex(r, g, b)
+    return rgbHex(...rgb)
   } catch {
     return '#ff2040'
   }
 }
 
-// Lighter variant for accent-as-small-text (aim >= 4.5:1 on black).
-export function accentTextColor(hex: string, bg = '#050506'): string {
-  let [r, g, b] = hexToRgb(hex)
+// Lighter variant for accent-as-small-text (>= 4.5:1 on the dark surfaces, plain and accent-tinted, WCAG 1.4.3).
+export function accentTextColor(hex: string, floor = 4.5): string {
+  let rgb = hexToRgb(hex)
   let steps = 0
-  while (contrastRatio(rgbHex(r, g, b), bg) < 4.5 && steps < 30) {
-    r = Math.min(255, Math.round(r + (255 - r) * 0.12))
-    g = Math.min(255, Math.round(g + (255 - g) * 0.12))
-    b = Math.min(255, Math.round(b + (255 - b) * 0.12))
+  const clears = (color: string) => [...SURFACES, ...SURFACES.map((surface) => mixHex(surface, color, TINT))].every((surface) => contrastRatio(color, surface) >= floor)
+  while (!clears(rgbHex(...rgb)) && steps < 40) {
+    rgb = lighten(rgb, 0.12)
     steps++
   }
-  return rgbHex(r, g, b)
+  return rgbHex(...rgb)
+}
+
+// Cor do texto sobre um preenchimento do destaque (botão sólido): preto ou branco, a que tiver mais contraste (>= 4,58:1 sempre).
+export function accentContrastColor(accent: string): string {
+  return contrastRatio('#000000', accent) >= contrastRatio('#ffffff', accent) ? '#000000' : '#ffffff'
 }
 
 function rgbHex(r: number, g: number, b: number) {

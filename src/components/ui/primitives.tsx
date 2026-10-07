@@ -56,7 +56,7 @@ export function btnClass(variant: BtnBase['variant'] = 'outline', size: BtnBase[
   const base =
     'inline-flex items-center justify-center gap-2 font-mono uppercase tracking-wider transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer select-none'
   const variants = {
-    solid: 'bg-[var(--accent)] text-black font-bold hover:brightness-110 border border-[var(--accent)]',
+    solid: 'bg-[var(--accent)] text-[var(--accent-contrast)] font-bold hover:shadow-[0_0_14px_color-mix(in_srgb,var(--accent)_70%,transparent)] border border-[var(--accent)]',
     outline:
       'border border-[color:color-mix(in_srgb,var(--accent)_60%,transparent)] text-[var(--foreground)] hover:bg-[color:color-mix(in_srgb,var(--accent)_15%,transparent)] hover:border-[var(--accent)]',
     ghost: 'text-[var(--color-muted)] hover:text-[var(--foreground)] hover:bg-white/5',
@@ -80,6 +80,9 @@ export function LinkButton({ to, children, variant, size, className }: BtnBase &
     </Link>
   )
 }
+
+/** Marca extra do filtro ativo (WCAG 1.4.1): negrito e sublinhado, além da cor, para quem não distingue as cores. */
+export const PRESSED_BADGE = 'font-bold underline underline-offset-4'
 
 export function Badge({ children, tone = 'neutral', className }: { children: ReactNode; tone?: 'neutral' | 'accent' | 'ok' | 'warn'; className?: string }) {
   const tones = {

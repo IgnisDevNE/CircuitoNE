@@ -52,6 +52,7 @@ export function LocationFields({
         }}
         error={ufError}
         required={required}
+        autoComplete="address-level1"
         options={[{ value: '', label: 'Selecione' }, ...ESTADOS.map((estado) => ({ value: estado.value, label: shortUf ? estado.value : estado.label }))]}
       />
       <Select

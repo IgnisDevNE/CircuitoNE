@@ -77,7 +77,7 @@ export function Dashboard({ nome, perfis, coletivos, naoLidas, proximos }: Dashb
         </Panel>
 
         <div className="space-y-6">
-          <Panel title="meus coletivos" actions={<LinkButton to="/painel/coletivos" size="sm" variant="ghost">abrir</LinkButton>}>
+          <Panel title="meus coletivos" actions={<LinkButton to="/painel/coletivos" size="sm" variant="ghost">abrir<span className="sr-only"> meus coletivos</span></LinkButton>}>
             {coletivos.length === 0 ? (
               <Empty>Você ainda não participa de coletivos.</Empty>
             ) : (
@@ -102,7 +102,7 @@ export function Dashboard({ nome, perfis, coletivos, naoLidas, proximos }: Dashb
             )}
           </Panel>
 
-          <Panel title="mensagens" actions={<LinkButton to="/painel/mensagens" size="sm" variant="ghost">abrir</LinkButton>}>
+          <Panel title="mensagens" actions={<LinkButton to="/painel/mensagens" size="sm" variant="ghost">abrir<span className="sr-only"> mensagens</span></LinkButton>}>
             <p className="font-mono text-sm" role="status">
               {naoLidas === 0
                 ? 'Nenhuma mensagem não lida.'

@@ -77,8 +77,8 @@ export function AppShell({ nome, perfis, coletivos, naoLidas, children }: AppShe
       <div className="flex items-center gap-3 border-b border-[var(--color-line)] pb-4">
         <Avatar alt={nome} size={44} />
         <div className="min-w-0">
-          <p className="truncate font-display text-sm font-bold">{nome}</p>
-          <p className="truncate font-mono text-xs text-[var(--color-muted)]">{tipos}</p>
+          <p className="break-words font-display text-sm font-bold">{nome}</p>
+          <p className="break-words font-mono text-xs text-[var(--color-muted)]">{tipos}</p>
         </div>
       </div>
 
@@ -122,7 +122,7 @@ export function AppShell({ nome, perfis, coletivos, naoLidas, children }: AppShe
       <header className="sticky top-0 z-40 flex items-center justify-between border-b border-[var(--color-line)] bg-[var(--color-bg)]/90 px-4 py-3 backdrop-blur lg:hidden">
         <Link to="/" className="font-display font-bold">CIRCUITO<span className="text-[var(--accent-text)]">_</span>NE</Link>
         <button aria-expanded={open} aria-controls="painel-nav" aria-label="Menu do painel" onClick={() => setOpen((o) => !o)} className="font-mono text-xl">
-          {open ? '[x]' : '[≡]'}
+          {open ? '[✕]' : '[≡]'}
         </button>
       </header>
 

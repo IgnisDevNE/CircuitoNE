@@ -70,7 +70,7 @@ export function CollectiveProfile({ coletivo: col, membros, proximos, anteriores
                   const inner = (
                     <span className="flex items-center gap-3">
                       <Avatar alt={m.nome} size={32} />
-                      <span className="block min-w-0 truncate font-mono text-sm">{m.nome}</span>
+                      <span className="block min-w-0 break-words font-mono text-sm">{m.nome}</span>
                     </span>
                   )
                   return (

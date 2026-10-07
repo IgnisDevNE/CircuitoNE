@@ -16,21 +16,38 @@
   --color-ok: #35e06f;
   --color-warn: #ffcc33;
   --color-line: #23232a;
+  /* Contorno de campos e controles (WCAG 1.4.11: 3:1 ou mais contra o fundo da página e dos painéis); --color-line fica para divisórias. */
+  --color-control: #6b6b75;
 }
 
 :root {
   /* Per-scope accent, overridable by AccentScope. Defaults to neon red. */
   --accent: #ff2040;
   --accent-text: #ff7285;
+  /* Texto sobre o preenchimento do destaque (botão sólido): AccentScope escolhe preto ou branco pelo contraste. */
+  --accent-contrast: #000000;
   color-scheme: dark;
 }
 
-* {
-  border-color: var(--color-line);
+/* Na camada `base`: fora dela, esta regra venceria todo `border-[...]` do Tailwind (utilitários ficam em camada) e os contornos
+   de erro, foco, item ativo e campos (WCAG 1.4.11) nunca seriam aplicados. */
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
 }
 
 html {
   scrollbar-width: none;
+  /* Cabeçalhos fixos (público e painel no celular) não cobrem o campo que recebe o foco por teclado (WCAG 2.4.11). */
+  scroll-padding-top: 5rem;
+}
+
+/* Títulos com nomes longos e sem espaços (ex.: "coletivos_e_produtoras") quebram em vez de passar da tela a 320 px (WCAG 1.4.10). */
+h1,
+h2,
+h3 {
+  overflow-wrap: anywhere;
 }
 
 body {
@@ -79,6 +96,11 @@ textarea:focus-visible,
   outline: 2px solid #ffffff;
   outline-offset: 2px;
 }
+/* Campos de data e hora do navegador focam um subcampo interno: :focus-visible não chega ao próprio campo. */
+input:is([type='date'], [type='datetime-local'], [type='time'], [type='month'], [type='week']):focus-within {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
 
 /* Chat flutuante (ChatDock): com uma janela ou barra fixa no canto da tela, o foco por teclado não pode terminar escondido
    embaixo dela (WCAG 2.4.11) e o fim da página continua alcançável. Num celular a janela é uma folha de 75% da altura. */
@@ -87,6 +109,13 @@ html[data-chat-dock] {
 }
 html[data-chat-dock] body {
   padding-bottom: 3.5rem;
+}
+/* Janela aberta: o foco por teclado fica acima dela (altura da janela: 28 rem, no máximo 80% da tela; no celular, 75% da tela). */
+html[data-chat-dock='open'] {
+  scroll-padding-bottom: min(29rem, 82dvh);
+}
+html[data-chat-dock='open'] body {
+  padding-bottom: min(29rem, 82dvh);
 }
 @media (max-width: 639px) {
   html[data-chat-dock='open'] {
@@ -97,6 +126,18 @@ html[data-chat-dock] body {
   }
 }
 
+/* Caixas e botões de opção com alvo de 24 px ou mais (WCAG 2.5.8): a caixa em 1,25 rem e o rótulo que a envolve com 1,5 rem. */
+input[type='checkbox'],
+input[type='radio'] {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+}
+label:has(> input[type='checkbox']),
+label:has(> input[type='radio']) {
+  min-height: 1.5rem;
+}
+
 /* Foco movido por código ao mudar de página (RouteA11y): sem contorno em títulos e áreas de conteúdo. */
 h1[tabindex='-1']:focus-visible,
 main[tabindex='-1']:focus-visible {
@@ -105,7 +146,7 @@ main[tabindex='-1']:focus-visible {
 
 ::selection {
   background: var(--accent);
-  color: #000;
+  color: var(--accent-contrast);
 }
 
 /* ---- Terminal animations ---- */
@@ -137,8 +178,9 @@ main[tabindex='-1']:focus-visible {
 }
 
 .animate-fade-up { animation: fadeUp 0.4s ease both; }
-.cursor-blink { animation: blink 1s step-end infinite; }
-.crt-flicker { animation: flicker 6s linear infinite; }
+/* WCAG 2.2.2: nada pisca ou se move sozinho por mais de 5 s. O cursor pisca 4 vezes e fica aceso; o tremor do CRT roda uma vez. */
+.cursor-blink { animation: blink 1s step-end 4; }
+.crt-flicker { animation: flicker 4s linear 1; }
 
 .scanlines::after {
   content: '';

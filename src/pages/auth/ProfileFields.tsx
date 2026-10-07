@@ -50,6 +50,7 @@ export function ProfileFields({
                 checked={kind === item.value}
                 onChange={() => setKind(item.value)}
                 aria-invalid={!!errors.tipo}
+                aria-describedby={errors.tipo ? 'tipo-erro' : undefined}
                 className="mt-1 accent-[var(--accent)]"
               />
               <span>

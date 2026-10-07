@@ -212,7 +212,7 @@ export function EditProfile({ perfil, taxonomia, result, busy }: EditProfileProp
                 defaultValue={value('cor', perfil.cor ?? DEFAULT_COLOR)}
                 aria-invalid={errors.cor ? true : undefined}
                 aria-describedby={errors.cor ? 'cor-erro' : undefined}
-                className="h-10 w-16 cursor-pointer border border-[var(--color-line)] bg-transparent"
+                className="h-10 w-16 cursor-pointer border border-[var(--color-control)] bg-transparent"
               />
               {errors.cor && <p id="cor-erro" className="font-mono text-xs text-[var(--accent-text)]">[erro] {errors.cor}</p>}
             </div>

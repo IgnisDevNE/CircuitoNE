@@ -32,13 +32,13 @@ export function PendingRequests({ pedidos, feedback, busy = false }: PendingRequ
               <div className="flex flex-wrap items-center gap-3">
                 <Avatar alt={pedido.nome} size={36} />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-mono text-sm">{pedido.nome}</span>
+                  <span className="block break-words font-mono text-sm">{pedido.nome}</span>
                   {pedido.atuacao && (
                     <span className="flex flex-wrap items-center gap-2 font-mono text-xs">
                       {pedido.atuacao.tipo === 'artista' && pedido.atuacao.publicada ? (
-                        <Link to={`/artistas/${pedido.atuacao.id}`} className="truncate text-[var(--accent-text)] underline">{pedido.atuacao.nome}</Link>
+                        <Link to={`/artistas/${pedido.atuacao.id}`} className="break-words text-[var(--accent-text)] underline">{pedido.atuacao.nome}</Link>
                       ) : (
-                        <span className="truncate">{pedido.atuacao.nome}</span>
+                        <span className="break-words">{pedido.atuacao.nome}</span>
                       )}
                       <Badge tone="accent">{TIPO_LABEL[pedido.atuacao.tipo]}</Badge>
                     </span>

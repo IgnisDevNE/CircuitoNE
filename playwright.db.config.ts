@@ -14,7 +14,8 @@ const REGISTER_SPEC = /register\.spec\.ts/
 const MANAGE_SPEC = /collective-manage\.spec\.ts/
 const EXPLORE_SPEC = /explore\.spec\.ts/
 const UPLOADS_SPEC = /uploads\.spec\.ts/
-const WRITE_SPECS = [ACCOUNT_SPEC, MESSAGES_SPEC, CHAT_DOCK_SPEC, REGISTER_SPEC, MANAGE_SPEC, EXPLORE_SPEC, UPLOADS_SPEC]
+const A11Y_WRITE_SPEC = /a11y-write\.spec\.ts/
+const WRITE_SPECS = [ACCOUNT_SPEC, MESSAGES_SPEC, CHAT_DOCK_SPEC, REGISTER_SPEC, MANAGE_SPEC, EXPLORE_SPEC, UPLOADS_SPEC, A11Y_WRITE_SPEC]
 const port = '5183'
 const origin = `http://127.0.0.1:${port}`
 
@@ -95,6 +96,21 @@ export default defineConfig({
       testMatch: REGISTER_SPEC,
       dependencies: ['uploads'],
       use: { browserName: 'chromium', viewport: { width: 1366, height: 900 } },
+    },
+    // a11y-write.spec.ts (W16): estados e jornadas de teclado da auditoria de acessibilidade que gravam dados (MFA da conta
+    // candidata, duas contas de cadastro, rascunho de evento cancelado, mensagem do chat). Roda por último, nos dois tamanhos de
+    // tela, um de cada vez; cada teste desfaz o que altera, e as contas de cadastro consomem celulares de teste (oito, três por rodada).
+    {
+      name: 'a11y-write-desktop',
+      testMatch: A11Y_WRITE_SPEC,
+      dependencies: ['register'],
+      use: { browserName: 'chromium', viewport: { width: 1366, height: 900 } },
+    },
+    {
+      name: 'a11y-write-mobile',
+      testMatch: A11Y_WRITE_SPEC,
+      dependencies: ['a11y-write-desktop'],
+      use: { browserName: 'chromium', viewport: { width: 390, height: 844 } },
     },
   ],
   webServer: {

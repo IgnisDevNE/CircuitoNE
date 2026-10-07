@@ -250,7 +250,7 @@ export function RegisterFlow({ page, result, busy }: { page: FlowPage; result?: 
       </Panel>
       {page.step === 'account' && (
         <p className="mt-4 text-center font-mono text-xs text-[var(--color-muted)]">
-          Já tem conta? <Link to="/entrar" className="text-[var(--accent-text)] hover:underline">entrar</Link>
+          Já tem conta? <Link to="/entrar" className="text-[var(--accent-text)] underline">entrar</Link>
         </p>
       )}
       {page.step !== 'account' && (

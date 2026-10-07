@@ -47,33 +47,6 @@ export function Home({ proximos, artistas, coletivos, totais }: HomeData) {
         </div>
       </section>
 
-      {/* PRÓXIMOS EVENTOS */}
-      <section>
-        <div className="mb-6 flex items-end justify-between">
-          <SectionHeading as="h2" prompt="cat" sub="Os próximos encontros da cena, ordenados por proximidade.">eventos.log</SectionHeading>
-          <Link to="/eventos" className="hidden font-mono text-xs uppercase tracking-widest text-[var(--accent-text)] hover:underline sm:block">todos →</Link>
-        </div>
-        {proximos.length === 0 ? (
-          <Empty>Nenhum evento programado no momento.</Empty>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {proximos.map((e) => (
-              <Link key={e.id} to={`/eventos/${e.id}`} className="group block border border-[var(--color-line)] transition-colors hover:border-[var(--accent)]">
-                <DuotoneImage src={e.capa} alt={`Capa do evento ${e.nome}`} className="aspect-[16/9] w-full" />
-                <div className="p-4">
-                  <div className="mb-2 flex items-center gap-2">
-                    <Badge tone="accent">{tipoEventoLabel(e)}</Badge>
-                    {e.gratuito && <Badge tone="ok">Gratuito</Badge>}
-                  </div>
-                  <h3 className="font-display text-base font-bold leading-tight group-hover:text-[var(--accent-text)]">{e.nome}</h3>
-                  <p className="mt-1 font-mono text-xs text-[var(--color-muted)]">{fmtData(e.inicio)} · {e.cidade}/{e.estado}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
-
       {/* ARTISTAS EM DESTAQUE */}
       <section>
         <SectionHeading as="h2" prompt="ls" sub="Produtores, DJs e projetos ao vivo cadastrados no circuito.">artistas/</SectionHeading>
@@ -87,6 +60,7 @@ export function Home({ proximos, artistas, coletivos, totais }: HomeData) {
                 <div className="p-3">
                   <h3 className="font-display text-sm font-bold group-hover:text-[var(--accent-text)]">{a.nome}</h3>
                   <p className="mt-1 line-clamp-1 font-mono text-xs text-[var(--color-muted)]">{estiloLabels(a.estilos).join(' · ')}</p>
+                  <p className="mt-1 font-mono text-xs text-[var(--color-muted)]">{a.cidade}/{a.estado}</p>
                 </div>
               </Link>
             ))}
@@ -112,6 +86,34 @@ export function Home({ proximos, artistas, coletivos, totais }: HomeData) {
           </div>
         </section>
       )}
+
+      {/* PRÓXIMOS EVENTOS */}
+      <section>
+        <div className="mb-6 flex items-end justify-between">
+          <SectionHeading as="h2" prompt="cat" sub="Os próximos encontros da cena, ordenados por proximidade.">eventos.log</SectionHeading>
+          <Link to="/eventos" className="hidden font-mono text-xs uppercase tracking-widest text-[var(--accent-text)] hover:underline sm:block">todos →</Link>
+        </div>
+        {proximos.length === 0 ? (
+          <Empty>Nenhum evento programado no momento.</Empty>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {proximos.map((e) => (
+              <Link key={e.id} to={`/eventos/${e.id}`} className="group block border border-[var(--color-line)] transition-colors hover:border-[var(--accent)]">
+                <DuotoneImage src={e.capa} alt={`Capa do evento ${e.nome}`} className="aspect-[16/9] w-full" />
+                <div className="p-4">
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <Badge tone="accent">{tipoEventoLabel(e)}</Badge>
+                    {e.estilo && <Badge tone="neutral">{e.estilo}</Badge>}
+                    {e.gratuito && <Badge tone="ok">Gratuito</Badge>}
+                  </div>
+                  <h3 className="font-display text-base font-bold leading-tight group-hover:text-[var(--accent-text)]">{e.nome}</h3>
+                  <p className="mt-1 font-mono text-xs text-[var(--color-muted)]">{fmtData(e.inicio)} · {e.cidade}/{e.estado}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   )
 }

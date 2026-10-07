@@ -258,7 +258,7 @@ describe('cabeçalho público conforme a sessão do servidor', () => {
     const toggle = await screen.findByRole('button', { name: 'Abrir menu' })
     await user.click(toggle)
     const mobile = within(screen.getByRole('navigation', { name: 'Principal (móvel)' }))
-    expect(mobile.getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual(['/artistas', '/coletivos', '/eventos', '/entrar'])
+    expect(mobile.getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual(['/artistas', '/coletivos', '/eventos', '/manifesto', '/entrar'])
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('navigation', { name: 'Principal (móvel)' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Abrir menu' }).getAttribute('aria-expanded')).toBe('false')

@@ -114,6 +114,12 @@ describe('CollectiveProfile', () => {
     expect(screen.getByRole('link', { name: /Evento sintético 1/ }).getAttribute('href')).toBe('/eventos/0a000000-0000-4000-8000-000000000001')
   })
 
+  it('eventos do coletivo mostram a vertente principal como selo, quando existe', () => {
+    profile(pageData({ proximos: [evento(1, { estilo: 'trance' }), evento(2)] }))
+    expect(within(screen.getByRole('link', { name: /Evento sintético 1/ })).getByText('trance')).toBeTruthy()
+    expect(within(screen.getByRole('link', { name: /Evento sintético 2/ })).queryByText('trance')).toBeNull()
+  })
+
   it('separa próximos eventos de eventos anteriores', () => {
     profile(pageData())
     const proximos = screen.getByRole('heading', { name: 'próximos eventos' }).closest('section')!

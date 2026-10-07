@@ -421,7 +421,7 @@ test('imagem do coletivo: quem não é o proprietário não envia nem remove (o 
 test('capa do evento: envia no formulário de gestão, aparece na agenda e na página pública, troca por link e remove', async ({ page, browser, baseURL, request }) => {
   const created = await rpcAs<string>(email, 'create_event', {
     collective: collectiveId,
-    payload: { name: `Festa W11 ${stamp}`, kind: 'festa', starts_at: '2031-06-20T20:00:00-03:00', city: 'Recife', state_code: 'PE', venue: 'Pátio sintético', is_free: true },
+    payload: { name: `Festa W11 ${stamp}`, kind: 'festa', style: 'techno', starts_at: '2031-06-20T20:00:00-03:00', city: 'Recife', state_code: 'PE', venue: 'Pátio sintético', is_free: true },
     request_id: crypto.randomUUID(),
   })
   const eventId = created

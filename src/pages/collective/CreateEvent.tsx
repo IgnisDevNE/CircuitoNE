@@ -7,13 +7,14 @@ export interface CreateEventProps {
   /** Identificador da solicitação, gerado ao carregar o formulário: reenviar o mesmo formulário não cria outro evento. */
   requestId: string
   artistas: ArtistaOpcao[]
+  estilos: string[]
   /** Resultado da última tentativa; só existe depois de o banco responder. */
   feedback?: ActionResult | null
   busy?: boolean
 }
 
 /** `/coletivo/:id/eventos/novo`: cria um rascunho, que só vira público quando alguém com "publicar eventos" o publica (RN-27). */
-export function CreateEvent({ requestId, artistas, feedback, busy = false }: CreateEventProps) {
+export function CreateEvent({ requestId, artistas, estilos, feedback, busy = false }: CreateEventProps) {
   // Fixo enquanto o formulário estiver montado, mesmo que o loader rode de novo depois de uma recusa.
   const [request] = useState(requestId)
   const failed = feedback && !feedback.ok ? feedback : null
@@ -30,6 +31,7 @@ export function CreateEvent({ requestId, artistas, feedback, busy = false }: Cre
       <EventForm
         initial={EMPTY_EVENT_VALUES}
         artistas={artistas}
+        estilos={estilos}
         errors={failed?.fields}
         busy={busy}
         hidden={{ request }}

@@ -76,6 +76,14 @@ describe('EventsList', () => {
     )
   })
 
+  it('card da agenda mostra a vertente principal como selo, quando existe', () => {
+    list([], [evento(1, { estilo: 'dubstep' }), evento(6)])
+    const card = (n: number) => screen.getByRole('heading', { name: `Evento sintético ${n}` }).closest('li')!
+    expect(within(card(1)).getByText('dubstep')).toBeTruthy()
+    expect(within(card(1)).getByText('Festa')).toBeTruthy()
+    expect(within(card(6)).queryByText('dubstep')).toBeNull()
+  })
+
   it('filtra por UF no cliente e volta a mostrar tudo', async () => {
     const user = userEvent.setup()
     list([evento(2)], [evento(1), evento(6, { estado: 'CE' })])
@@ -109,6 +117,14 @@ describe('EventPage', () => {
     expect(screen.getByText('Não informado')).toBeTruthy()
     expect(screen.getByText('Entrada gratuita — é só chegar!')).toBeTruthy()
     expect(screen.queryByRole('button', { name: /Entrada gratuita/ })).toBeNull()
+  })
+
+  it('página do evento mostra a vertente principal como selo; sem vertente, nenhum selo extra', () => {
+    const view = page(pageData({}, { estilo: 'drum and bass' }))
+    expect(screen.getByText('drum and bass')).toBeTruthy()
+    view.unmount()
+    page(pageData())
+    expect(screen.queryByText('drum and bass')).toBeNull()
   })
 
   it('usa a cor do coletivo como destaque e o padrão quando não há cor', () => {

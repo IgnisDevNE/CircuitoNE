@@ -119,6 +119,9 @@ describe('loadCollectivePage', () => {
     expect(eventCalls).toContainEqual({ table: 'events', method: 'eq', args: ['collective_id', id] })
     expect(eventCalls).toContainEqual({ table: 'events', method: 'eq', args: ['state', 'published'] })
     expect(calls).toContainEqual({ table: 'collectives', method: 'eq', args: ['id', id] })
+    // A página lê a tabela direto (grant de select ao visitante): a vertente principal precisa estar nas colunas pedidas.
+    const eventSelect = eventCalls.find((c) => c.method === 'select')!
+    expect(String(eventSelect.args[0]).split(',')).toContain('style')
   })
 
   it('evento sem fim continua em andamento até o fim do dia em Fortaleza', async () => {

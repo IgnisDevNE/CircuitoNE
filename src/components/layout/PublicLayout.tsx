@@ -9,6 +9,7 @@ const NAV = [
   { to: '/artistas', label: 'Artistas' },
   { to: '/coletivos', label: 'Coletivos' },
   { to: '/eventos', label: 'Eventos' },
+  { to: '/manifesto', label: 'Manifesto' },
 ]
 
 /** `signedIn` vem da sessão validada no servidor (layout público); `name` só enriquece o rótulo do link. */

@@ -23,6 +23,9 @@ const artistas = [
   { id: ARTIST_2, nome: 'Álvaro sintético' },
 ]
 
+// Só vertentes principais (a taxonomia completa vem de `music_styles`, sem subestilos).
+const estilos = ['ambient', 'house', 'techno']
+
 const evento = (extra: Partial<EventoGerido> = {}): EventoGerido => ({
   id: E,
   coletivoId: C,
@@ -32,6 +35,7 @@ const evento = (extra: Partial<EventoGerido> = {}): EventoGerido => ({
   nome: 'Evento sintético 5',
   tipo: 'festa',
   tipoOutro: '',
+  estilo: 'techno',
   descricao: '# Olá\n\nTexto **forte**',
   inicio: '2030-05-10T23:00:00.000Z',
   fim: '2030-05-11T05:00:00.000Z',
@@ -63,7 +67,7 @@ const lbl = (text: string) => screen.getByLabelText(new RegExp(`^\\$ ${text}$`))
 const fill = (name: string, value: string) => fireEvent.change(field(name), { target: { value } })
 
 describe('CreateEvent', () => {
-  const page = (props: Partial<ComponentProps<typeof CreateEvent>> = {}) => inRouter(<CreateEvent requestId={REQUEST} artistas={artistas} {...props} />)
+  const page = (props: Partial<ComponentProps<typeof CreateEvent>> = {}) => inRouter(<CreateEvent requestId={REQUEST} artistas={artistas} estilos={estilos} {...props} />)
 
   it('formulário POST com a solicitação oculta e os campos do evento, sem valores prontos', () => {
     page()
@@ -82,6 +86,20 @@ describe('CreateEvent', () => {
     expect((screen.getByRole('button', { name: 'salvar rascunho' }) as HTMLButtonElement).type).toBe('submit')
   })
 
+  it('vertente principal: seletor com só as vertentes principais, vazio até escolher, e o erro do campo', async () => {
+    const view = page()
+    const select = field('style') as unknown as HTMLSelectElement
+    expect(screen.getByLabelText(/Vertente principal/)).toBe(select)
+    expect([...select.options].map((o) => o.value)).toEqual(['', 'ambient', 'house', 'techno'])
+    expect(select.value).toBe('')
+    await userEvent.setup().selectOptions(select, 'house')
+    expect(select.value).toBe('house')
+    view.unmount()
+    inRouter(<CreateEvent requestId={REQUEST} artistas={artistas} estilos={estilos} feedback={{ ok: false, error: 'Corrija os campos destacados.', fields: { style: 'Escolha a vertente principal do evento.' } }} />)
+    expect(screen.getByText('[erro] Escolha a vertente principal do evento.')).toBeTruthy()
+    expect(field('style').getAttribute('aria-invalid')).toBe('true')
+  })
+
   it('criar: o envio de capa por arquivo só existe depois do rascunho (o caminho leva o id do evento); o link continua', () => {
     page()
     expect(field('cover_file')).toBeNull()
@@ -92,7 +110,7 @@ describe('CreateEvent', () => {
 
   it('o identificador da solicitação continua o mesmo quando a página recebe outro valor do loader', () => {
     const view = page()
-    view.rerender(<RouterProvider router={createMemoryRouter([{ path: '*', element: <CreateEvent requestId="outro" artistas={artistas} /> }])} />)
+    view.rerender(<RouterProvider router={createMemoryRouter([{ path: '*', element: <CreateEvent requestId="outro" artistas={artistas} estilos={estilos} /> }])} />)
     expect(values('request').every((v) => v === REQUEST || v === 'outro')).toBe(true)
   })
 
@@ -201,7 +219,17 @@ describe('CreateEvent', () => {
 })
 
 describe('ManageEvent', () => {
-  const page = (props: Partial<ComponentProps<typeof ManageEvent>> = {}) => inRouter(<ManageEvent evento={evento()} acoes={all} artistas={artistas} {...props} />)
+  const page = (props: Partial<ComponentProps<typeof ManageEvent>> = {}) => inRouter(<ManageEvent evento={evento()} acoes={all} artistas={artistas} estilos={estilos} {...props} />)
+
+  it('vertente principal: formulário vem com a do evento; evento anterior à coluna começa vazio e mostra a vertente no resumo', () => {
+    const view = page()
+    expect((field('style') as unknown as HTMLSelectElement).value).toBe('techno')
+    expect(screen.getByText(/Festa · techno · 10 mai 2030/)).toBeTruthy()
+    view.unmount()
+    page({ evento: evento({ estilo: '' }) })
+    expect((field('style') as unknown as HTMLSelectElement).value).toBe('')
+    expect(screen.getByText(/Festa · 10 mai 2030/)).toBeTruthy()
+  })
 
   it('rascunho: situação, versão, formulário preenchido com a hora de Fortaleza e o lineup atual', () => {
     page()
@@ -389,7 +417,7 @@ describe('módulos de rota de eventos', () => {
     routed(`/coletivo/${C}/eventos/novo`, [
       {
         path: 'eventos/novo',
-        loader: () => ({ requestId: REQUEST, artistas }),
+        loader: () => ({ requestId: REQUEST, artistas, estilos }),
         action: async ({ request }: { request: Request }) => {
           const form = await request.formData()
           for (const key of new Set(form.keys())) received[key] = form.getAll(key).map(String)
@@ -430,7 +458,7 @@ describe('módulos de rota de eventos', () => {
     routed(`/coletivo/${C}/eventos/${E}`, [
       {
         path: 'eventos/:eventId',
-        loader: () => ({ evento: current, acoes: all, artistas }),
+        loader: () => ({ evento: current, acoes: all, artistas, estilos }),
         action: async ({ request }: { request: Request }) => {
           const form = await request.formData()
           sentVersions.push(`${form.get('intent')}:${form.get('version')}`)
@@ -464,7 +492,7 @@ describe('módulos de rota de eventos', () => {
     routed(`/coletivo/${C}/eventos/${E}`, [
       {
         path: 'eventos/:eventId',
-        loader: () => ({ evento: current, acoes: current.situacao === 'draft' ? all : { ...all, publicar: false }, artistas }),
+        loader: () => ({ evento: current, acoes: current.situacao === 'draft' ? all : { ...all, publicar: false }, artistas, estilos }),
         action: async ({ request }: { request: Request }) => {
           const form = await request.formData()
           sent.push(`${form.get('intent')}:${form.get('version')}`)

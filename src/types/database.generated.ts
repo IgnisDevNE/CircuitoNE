@@ -70,13 +70,13 @@ isOneToOne: false
                   ]
                 },"events": {
                   Row: {
-                    "cancelled_at": string | null,"city": string,"collective_id": string,"cover_bytes": number | null,"cover_path": string | null,"cover_url": string | null,"created_at": string,"description": string,"ends_at": string | null,"first_published_at": string | null,"id": string,"is_free": boolean,"kind": string,"name": string,"other_kind": string | null,"previous_starts_at": string | null,"rescheduled_at": string | null,"starts_at": string,"state": string,"state_code": string,"ticket_url": string | null,"timezone": string,"updated_at": string,"venue": string,"version": number
+                    "cancelled_at": string | null,"city": string,"collective_id": string,"cover_bytes": number | null,"cover_path": string | null,"cover_url": string | null,"created_at": string,"description": string,"ends_at": string | null,"first_published_at": string | null,"id": string,"is_free": boolean,"kind": string,"name": string,"other_kind": string | null,"previous_starts_at": string | null,"rescheduled_at": string | null,"starts_at": string,"state": string,"state_code": string,"style": string | null,"ticket_url": string | null,"timezone": string,"updated_at": string,"venue": string,"version": number
                   }
                   Insert: {
-                    "cancelled_at"?: string | null,"city": string,"collective_id": string,"cover_bytes"?: number | null,"cover_path"?: string | null,"cover_url"?: string | null,"created_at"?: string,"description"?: string,"ends_at"?: string | null,"first_published_at"?: string | null,"id"?: string,"is_free": boolean,"kind": string,"name": string,"other_kind"?: string | null,"previous_starts_at"?: string | null,"rescheduled_at"?: string | null,"starts_at": string,"state"?: string,"state_code": string,"ticket_url"?: string | null,"timezone"?: string,"updated_at"?: string,"venue": string,"version"?: number
+                    "cancelled_at"?: string | null,"city": string,"collective_id": string,"cover_bytes"?: number | null,"cover_path"?: string | null,"cover_url"?: string | null,"created_at"?: string,"description"?: string,"ends_at"?: string | null,"first_published_at"?: string | null,"id"?: string,"is_free": boolean,"kind": string,"name": string,"other_kind"?: string | null,"previous_starts_at"?: string | null,"rescheduled_at"?: string | null,"starts_at": string,"state"?: string,"state_code": string,"style"?: string | null,"ticket_url"?: string | null,"timezone"?: string,"updated_at"?: string,"venue": string,"version"?: number
                   }
                   Update: {
-                    "cancelled_at"?: string | null,"city"?: string,"collective_id"?: string,"cover_bytes"?: number | null,"cover_path"?: string | null,"cover_url"?: string | null,"created_at"?: string,"description"?: string,"ends_at"?: string | null,"first_published_at"?: string | null,"id"?: string,"is_free"?: boolean,"kind"?: string,"name"?: string,"other_kind"?: string | null,"previous_starts_at"?: string | null,"rescheduled_at"?: string | null,"starts_at"?: string,"state"?: string,"state_code"?: string,"ticket_url"?: string | null,"timezone"?: string,"updated_at"?: string,"venue"?: string,"version"?: number
+                    "cancelled_at"?: string | null,"city"?: string,"collective_id"?: string,"cover_bytes"?: number | null,"cover_path"?: string | null,"cover_url"?: string | null,"created_at"?: string,"description"?: string,"ends_at"?: string | null,"first_published_at"?: string | null,"id"?: string,"is_free"?: boolean,"kind"?: string,"name"?: string,"other_kind"?: string | null,"previous_starts_at"?: string | null,"rescheduled_at"?: string | null,"starts_at"?: string,"state"?: string,"state_code"?: string,"style"?: string | null,"ticket_url"?: string | null,"timezone"?: string,"updated_at"?: string,"venue"?: string,"version"?: number
                   }
                   Relationships: [
                     {
@@ -85,6 +85,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "collectives"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "events_style_fkey"
+      columns: ["style"]
+isOneToOne: false
+      referencedRelation: "music_styles"
+      referencedColumns: ["name"]
     }
                   ]
                 },"music_styles": {

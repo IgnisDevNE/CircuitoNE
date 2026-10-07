@@ -326,7 +326,7 @@ describe('collectiveProfileAction: imagem do coletivo', () => {
 describe('eventManageAction: capa do evento', () => {
   const path = `/coletivo/${C}/eventos/${E}`
   const fields = (extra: Record<string, string | File> = {}) => ({
-    intent: 'update', version: '3', name: 'Festa', kind: 'festa', starts_at: '2030-05-10T20:00', state_code: 'PE', city: 'Recife', venue: 'Pátio', is_free: 'on', ...extra,
+    intent: 'update', version: '3', name: 'Festa', kind: 'festa', style: 'techno', starts_at: '2030-05-10T20:00', state_code: 'PE', city: 'Recife', venue: 'Pátio', is_free: 'on', ...extra,
   })
   const send = (extra: Record<string, string | File> = {}) => outcome(eventManageAction(multipart(path, fields(extra)), C, E))
   const payload = () => rpcBody('update_event').payload as Record<string, unknown>

@@ -11,6 +11,7 @@ export interface ManageEventProps {
   evento: EventoGerido
   acoes: EventActions
   artistas: ArtistaOpcao[]
+  estilos: string[]
   /** Resultado da última operação; só existe depois de o banco responder. */
   feedback?: ActionResult | null
   busy?: boolean
@@ -25,7 +26,7 @@ const SITUACAO = {
 const tipo = (evento: EventoGerido) => (evento.tipo === 'outros' && evento.tipoOutro ? evento.tipoOutro : EVENTO_TIPO_LABEL[evento.tipo])
 
 /** `/coletivo/:id/eventos/:eventId`: situação do evento e as ações que as permissões e o estado atual permitem. */
-export function ManageEvent({ evento, acoes, artistas, feedback, busy = false }: ManageEventProps) {
+export function ManageEvent({ evento, acoes, artistas, estilos, feedback, busy = false }: ManageEventProps) {
   const situacao = SITUACAO[evento.situacao]
   const failed = feedback && !feedback.ok ? feedback : null
   return (
@@ -48,7 +49,7 @@ export function ManageEvent({ evento, acoes, artistas, feedback, busy = false }:
               {evento.periodo === 'past' && <Badge>encerrado</Badge>}
             </p>
             <p className="font-mono text-xs text-[var(--color-muted)]">
-              {tipo(evento)} · {fmtDataHora(evento.inicio)}
+              {tipo(evento)}{evento.estilo ? ` · ${evento.estilo}` : ''} · {fmtDataHora(evento.inicio)}
               {evento.fim ? ` até ${fmtDataHora(evento.fim)}` : ''} · {evento.local}, {evento.cidade}/{evento.estado}
             </p>
             <p className="font-mono text-xs text-[var(--color-muted)]">versão {evento.versao}</p>
@@ -91,6 +92,7 @@ export function ManageEvent({ evento, acoes, artistas, feedback, busy = false }:
           key={evento.versao}
           initial={eventToFormValues(evento)}
           artistas={artistas}
+          estilos={estilos}
           errors={failed?.fields}
           busy={busy}
           hidden={{ intent: 'update', version: String(evento.versao) }}

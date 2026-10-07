@@ -293,19 +293,19 @@ Uma noite de **jungle, breaks e bass** na capital potiguar, com line-up de vári
 
 with anchor as (select current_setting('circuitone.seed_time')::timestamptz t)
 insert into public.events as ev(id,collective_id,name,kind,other_kind,description,starts_at,ends_at,city,state_code,venue,is_free,ticket_url,cover_url,
-  state,first_published_at,version,created_at,updated_at)
+  state,first_published_at,version,created_at,updated_at,style)
 select pg_temp.demo_id('d00a0000',e.n),pg_temp.demo_id('d0050000',e.collective_n),e.name,e.kind,e.other_kind,e.description,
   s.starts_at,case when e.dur is not null then s.starts_at+make_interval(hours=>e.dur) end,
   e.city,e.uf,e.venue,e.is_free,
   case when not e.is_free then 'https://ingressos.example.invalid/demo-evento-'||e.n end,
   'https://images.unsplash.com/photo-'||e.cover||'?w=1600&h=800&fit=crop&auto=format',
-  'published',s.published_at,2,s.published_at,anchor.t
+  'published',s.published_at,2,s.published_at,anchor.t,(array['techno','bass music','electronica','experimental e noise','reggae','electronica','techno','house','bass music','house','reggae','ambient','trance','eletrônica africana','electronica','breakbeat'])[e.n]
 from demo_events e cross join anchor
 cross join lateral (select x.starts_at,least(anchor.t,x.starts_at-interval '1 day')-interval '10 days' published_at
   from (select case when e.d is null then anchor.t+make_interval(hours=>e.rel)
       else (date_trunc('day',anchor.t at time zone 'America/Fortaleza')+make_interval(days=>e.d,hours=>e.h)) at time zone 'America/Fortaleza' end starts_at) x) s
 where exists(select from public.collectives c where c.id=pg_temp.demo_id('d0050000',e.collective_n))
-on conflict(id) do update set starts_at=excluded.starts_at,ends_at=excluded.ends_at,updated_at=excluded.updated_at
+on conflict(id) do update set starts_at=excluded.starts_at,ends_at=excluded.ends_at,updated_at=excluded.updated_at,style=excluded.style
   where ev.state='published';
 
 -- Detalhes e line-up apenas dos eventos recém-criados: não reconstruir line-up removido por quem testa.

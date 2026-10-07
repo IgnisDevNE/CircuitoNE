@@ -55,6 +55,7 @@ const outcome = async (promise: Promise<unknown>) => {
 const eventFields = (extra: Record<string, string | string[]> = {}) => ({
   name: 'Festa sintética',
   kind: 'festa',
+  style: 'techno',
   description: 'Texto **forte**',
   starts_at: '2030-05-10T20:00',
   ends_at: '2030-05-11T02:00',
@@ -84,6 +85,7 @@ describe('eventCreateAction', () => {
           payload: {
             name: 'Festa sintética',
             kind: 'festa',
+            style: 'techno',
             other_kind: null,
             description: 'Texto **forte**',
             starts_at: '2030-05-10T23:00:00.000Z',
@@ -128,6 +130,25 @@ describe('eventCreateAction', () => {
       fields: { name: 'Informe o nome do evento.', ends_at: 'O fim deve ser posterior ao início.', ticket_url: 'Informe o link de ingresso ou marque o evento como gratuito.' },
     })
     expect(sent).toEqual([])
+  })
+
+  it('vertente principal é obrigatória: sem ela, 422 no campo "style" e nenhum RPC', async () => {
+    const { style: _style, ...semEstilo } = eventFields()
+    expect(await createOutcome({ ...semEstilo, request: REQUEST })).toMatchObject({
+      ok: false,
+      status: 422,
+      fields: { style: 'Escolha a vertente principal do evento.' },
+    })
+    expect(await createOutcome({ ...eventFields({ style: '  ' }), request: REQUEST })).toMatchObject({ ok: false, status: 422 })
+    expect(sent).toEqual([])
+  })
+
+  it.each([
+    ['Vertente principal obrigatória', 'Escolha a vertente principal do evento.'],
+    ['Vertente principal inválida', 'Escolha uma das vertentes da lista.'],
+  ])('recusa do banco "%s" aponta o campo "style"', async (message, field) => {
+    reply = dbError(400, '22023', message)
+    expect(await createOutcome({ ...eventFields(), request: REQUEST })).toMatchObject({ ok: false, status: 422, fields: { style: field } })
   })
 
   it('identificador da solicitação ausente ou inválido não chega ao banco', async () => {

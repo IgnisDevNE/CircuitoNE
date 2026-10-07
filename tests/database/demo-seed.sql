@@ -42,6 +42,8 @@ do $$ declare t timestamptz:=current_setting('circuitone.seed_time')::timestampt
     raise exception 'Evento demo em andamento não foi reancorado'; end if;
   if exists(select from public.events where id::text like 'd00a0000-%' and (is_free=(ticket_url is not null) or cover_url is null)) then
     raise exception 'Ingresso/capa demo inconsistentes'; end if;
+  if exists(select from public.events where id::text like 'd00a0000-%' and style is null) then
+    raise exception 'Evento demo sem vertente principal'; end if;
 end $$;
 set local role anon;
 select set_config('request.jwt.claims','{}',true);

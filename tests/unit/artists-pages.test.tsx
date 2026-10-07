@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react'
-import { render, screen, within } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, data, MemoryRouter, RouterProvider, useLoaderData } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -122,6 +122,48 @@ describe('ArtistsHub', () => {
     expect(names()).toHaveLength(3)
   })
 
+  it('estilo: oferece só estilos principais (nunca subestilos) e o principal casa com artistas que só têm um subestilo', async () => {
+    const user = userEvent.setup()
+    hub([resumo(1, { nome: 'SÓ SUBESTILO', estilos: [{ estilo: 'techno', subestilo: 'hypnotic techno' }] }), resumo(2, { nome: 'OUTRO', estilos: [{ estilo: 'house' }] })])
+    const filtros = within(screen.getByRole('group', { name: 'Filtrar por estilo' }))
+    expect(filtros.getAllByRole('button').map((b) => b.textContent)).toEqual(['todos', 'house', 'techno'])
+    expect(filtros.queryByRole('button', { name: 'hypnotic techno' })).toBeNull()
+    await user.click(filtros.getByRole('button', { name: 'techno' }))
+    expect(names()).toEqual(['SÓ SUBESTILO'])
+  })
+
+  it('estado: chips com os 9 estados do Nordeste (selecionar de novo ou "todos" limpa) e filtro por UF', async () => {
+    const user = userEvent.setup()
+    hub(lista)
+    const filtros = within(screen.getByRole('group', { name: 'Filtrar por estado' }))
+    expect(filtros.getAllByRole('button').map((b) => b.textContent)).toEqual(['todos', 'AL', 'BA', 'CE', 'MA', 'PB', 'PE', 'PI', 'RN', 'SE'])
+    expect(filtros.getByRole('button', { name: 'todos' }).getAttribute('aria-pressed')).toBe('true')
+    await user.click(filtros.getByRole('button', { name: 'CE' }))
+    expect(names()).toEqual(['BOITATÁ'])
+    expect(filtros.getByRole('button', { name: 'CE' }).getAttribute('aria-pressed')).toBe('true')
+    await user.click(filtros.getByRole('button', { name: 'PE' }))
+    expect(names()).toEqual(['ANERIE', 'SEM ESTILO'])
+    await user.click(filtros.getByRole('button', { name: 'PE' }))
+    expect(names()).toHaveLength(3)
+    await user.click(filtros.getByRole('button', { name: 'BA' }))
+    expect(screen.getByText('Nenhum artista encontrado para os filtros atuais.')).toBeTruthy()
+    await user.click(filtros.getByRole('button', { name: 'todos' }))
+    expect(names()).toHaveLength(3)
+  })
+
+  it('estado combina com estilo e busca', async () => {
+    const user = userEvent.setup()
+    hub([...lista, resumo(4, { nome: 'TECHNO CEARENSE', bio: 'Fortaleza', cidade: 'Fortaleza', estado: 'CE', estilos: [{ estilo: 'techno' }] })])
+    const estado = within(screen.getByRole('group', { name: 'Filtrar por estado' }))
+    const estilo = within(screen.getByRole('group', { name: 'Filtrar por estilo' }))
+    await user.click(estilo.getByRole('button', { name: 'techno' }))
+    expect(names()).toEqual(['ANERIE', 'TECHNO CEARENSE'])
+    await user.click(estado.getByRole('button', { name: 'CE' }))
+    expect(names()).toEqual(['TECHNO CEARENSE'])
+    await user.type(screen.getByRole('searchbox', { name: 'Buscar' }), 'recifense')
+    expect(screen.getByText('Nenhum artista encontrado para os filtros atuais.')).toBeTruthy()
+  })
+
   it('combina busca (nome e bio) com estilo e recupera a lista vazia', async () => {
     const user = userEvent.setup()
     hub(lista)
@@ -130,7 +172,7 @@ describe('ArtistsHub', () => {
     expect(names()).toEqual(['ANERIE'])
     await user.click(screen.getByRole('button', { name: 'reggae' }))
     expect(screen.getByText('Nenhum artista encontrado para os filtros atuais.')).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'todos' }))
+    await user.click(within(screen.getByRole('group', { name: 'Filtrar por estilo' })).getByRole('button', { name: 'todos' }))
     await user.clear(search)
     await user.type(search, 'SOUND')
     expect(names()).toEqual(['BOITATÁ'])
@@ -165,6 +207,13 @@ describe('ArtistProfile', () => {
     expect(screen.getByRole('link', { name: '← artistas/' }).getAttribute('href')).toBe('/artistas')
     expect(screen.getByRole('img', { name: 'Foto de apresentação de Artista 1' }).getAttribute('src')).toBe(ARTIST_PHOTO_FALLBACK)
     expect((container.firstElementChild as HTMLElement).style.getPropertyValue('--accent')).toBeTruthy()
+  })
+
+  it('eventos do perfil mostram a vertente principal como selo, quando existe', () => {
+    profile(pageData({ proximos: [evento(1, { estilo: 'house' })], anteriores: [evento(3)] }))
+    const link = (n: number) => screen.getByRole('link', { name: new RegExp(`Evento sintético ${n}`) })
+    expect(within(link(1)).getByText('house')).toBeTruthy()
+    expect(within(link(3)).queryByText('house')).toBeNull()
   })
 
   it('não mostra contato de booking, cachê, presskit nem galeria', () => {
@@ -218,6 +267,29 @@ describe('Home', () => {
     expect(screen.getByText('Produtora')).toBeTruthy()
     expect(screen.getByText('Coletivo')).toBeTruthy()
     expect(screen.getByText('Gratuito')).toBeTruthy()
+  })
+
+  it('seções em destaque: artistas, coletivos e, por último, os eventos', () => {
+    home(homeData())
+    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent?.split(' ').pop())).toEqual(['artistas/', 'coletivos/', 'eventos.log'])
+    // Sem coletivos em destaque, os eventos continuam depois dos artistas.
+    cleanup()
+    home(homeData({ coletivos: [] }))
+    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent?.split(' ').pop())).toEqual(['artistas/', 'eventos.log'])
+  })
+
+  it('card de artista traz uma linha extra com cidade/UF', () => {
+    home(homeData({ artistas: [resumo(1), resumo(2, { nome: 'BOITATÁ', cidade: 'Fortaleza', estado: 'CE', estilos: [] })] }))
+    const card = (nome: string) => screen.getByRole('heading', { name: nome }).closest('a')!
+    expect(within(card('Artista 1')).getByText('Recife/PE')).toBeTruthy()
+    expect(within(card('BOITATÁ')).getByText('Fortaleza/CE')).toBeTruthy()
+  })
+
+  it('card de evento mostra a vertente principal como selo (omitida em evento sem vertente)', () => {
+    home(homeData({ proximos: [evento(2, { estilo: 'techno' }), evento(1)] }))
+    const card = (n: number) => screen.getByRole('heading', { name: `Evento sintético ${n}` }).closest('a')!
+    expect(within(card(2)).getByText('techno')).toBeTruthy()
+    expect(within(card(1)).queryByText('techno')).toBeNull()
   })
 
   it('mostra estados vazios sem seções de coletivos quando não há dados', () => {

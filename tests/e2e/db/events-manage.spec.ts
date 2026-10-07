@@ -56,8 +56,10 @@ test('criar um rascunho com lineup vinculado e livre: aparece no dashboard como 
   await expect(page.getByText('[erro] Informe o nome do evento.')).toBeVisible()
   await expect(page.getByText('[erro] Informe a data e a hora de início.')).toBeVisible()
   await expect(page.getByText('[erro] Informe a cidade.')).toBeVisible()
+  await expect(page.getByText('[erro] Escolha a vertente principal do evento.')).toBeVisible()
 
   await field(page, 'name').fill(name)
+  await field(page, 'style').selectOption('house')
   await field(page, 'starts_at').fill('2031-03-15T20:00')
   await field(page, 'ends_at').fill('2031-03-15T19:00')
   await field(page, 'city').fill('Recife')
@@ -82,6 +84,7 @@ test('criar um rascunho com lineup vinculado e livre: aparece no dashboard como 
   await expect(page.getByText('versão 1')).toBeVisible()
   await expect(field(page, 'starts_at')).toHaveValue('2031-03-15T20:00')
   await expect(field(page, 'ends_at')).toHaveValue('2031-03-15T23:30')
+  await expect(field(page, 'style')).toHaveValue('house')
   await expect(page.getByRole('list', { name: 'Lineup do evento' }).getByRole('listitem')).toHaveText([/Artista sintético público/, /Convidada W8 livre/])
   await expect(page.getByRole('link', { name: /página pública/ })).toHaveCount(0)
 
@@ -113,6 +116,7 @@ test('publicar: o evento entra na agenda e ganha página pública com o lineup',
   await expect(page.locator('main strong')).toHaveText('destaque')
   await expect(page.getByText('Entrada gratuita — é só chegar!')).toBeVisible()
   await expect(page.locator('main b')).toHaveCount(0)
+  await expect(page.getByText('house', { exact: true })).toBeVisible()
   expect(await agendaTitles(page)).toContain(name)
 })
 
@@ -121,12 +125,17 @@ test('editar o nome atualiza a página pública; edição concorrente mostra o c
   await page.goto(managePath())
   await expect(page.getByText(/aparece na página pública imediatamente/)).toBeVisible()
   await field(page, 'name').fill(renamed)
+  // A vertente principal também é editável depois de criado.
+  await field(page, 'style').selectOption('trance')
   await page.getByRole('button', { name: 'salvar alterações' }).click()
   await expect(page.getByRole('status')).toHaveText('Alterações salvas.')
   await expect(page.getByText('versão 3')).toBeVisible()
   await expect(field(page, 'name')).toHaveValue(renamed)
+  await expect(field(page, 'style')).toHaveValue('trance')
   await page.goto(`/eventos/${eventId}`)
   await expect(page.getByRole('heading', { level: 1, name: renamed })).toBeVisible()
+  await expect(page.getByText('trance', { exact: true })).toBeVisible()
+  await expect(page.getByText('house', { exact: true })).toHaveCount(0)
 
   // Outra pessoa (outro dispositivo) salva antes: este envio usa a versão antiga e é recusado.
   await page.goto(managePath())

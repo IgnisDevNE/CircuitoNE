@@ -15,7 +15,7 @@ export const shouldRevalidate = revalidateAfterSubmit
 
 export default function EventCreateRoute({ loaderData, actionData }: Route.ComponentProps) {
   const busy = useNavigation().state !== 'idle'
-  return <CreateEvent requestId={loaderData.requestId} artistas={loaderData.artistas} feedback={actionData ?? null} busy={busy} />
+  return <CreateEvent requestId={loaderData.requestId} artistas={loaderData.artistas} estilos={loaderData.estilos} feedback={actionData ?? null} busy={busy} />
 }
 
 export function ErrorBoundary() {

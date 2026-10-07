@@ -120,6 +120,7 @@ test(
       queryFile("tests/database/account-session.sql")
       queryFile("tests/database/collectives.sql")
       queryFile("tests/database/events.sql")
+      queryFile("tests/database/event-style.sql")
       queryFile("tests/database/messages.sql")
       queryFile("tests/database/message-permissions.sql")
       queryFile("tests/database/lifecycle.sql")

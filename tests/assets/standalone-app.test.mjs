@@ -18,6 +18,8 @@ test('o build SSR publica cliente e servidor sem metadados do Figma nem dados do
   for (const file of [...files(join('build', 'server')), ...files(join('build', 'client'))])
     assert.doesNotMatch(readFileSync(file, 'utf8'), /Ana Ribeiro|ANERIE|LITORAL SUL|\[demo\] entrar|useStore must be/, file)
   assert.equal(readFileSync(join('build', 'client', 'robots.txt'), 'utf8'), 'User-agent: *\nDisallow: /\n')
+  // O navegador pede /favicon.ico sem ler o HTML: os dois formatos saem no cliente.
+  for (const icon of ['favicon.ico', 'favicon.svg']) assert.ok(existsSync(join('build', 'client', icon)), icon)
 })
 
 test("real SSR document and data routes preserve session cookies, privacy and account isolation", async () => {

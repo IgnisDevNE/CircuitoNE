@@ -85,9 +85,9 @@ select id,'a6000000-0000-4000-8000-000000000003',member_role_id from public.coll
 set local role authenticated;
 select pg_temp.actor(1);
 select set_config('test.event',public.create_event(current_setting('test.c')::uuid,
-  '{"name":"Evento de arquivos","kind":"festa","starts_at":"2099-01-01T18:00:00-03:00","city":"Recife","state_code":"PE","venue":"Local","is_free":true}',gen_random_uuid())::text,true);
+  '{"name":"Evento de arquivos","kind":"festa","style":"techno","starts_at":"2099-01-01T18:00:00-03:00","city":"Recife","state_code":"PE","venue":"Local","is_free":true}',gen_random_uuid())::text,true);
 select set_config('test.event2',public.create_event(current_setting('test.c')::uuid,
-  '{"name":"Outro evento de arquivos","kind":"festa","starts_at":"2099-02-01T18:00:00-03:00","city":"Recife","state_code":"PE","venue":"Local","is_free":true}',gen_random_uuid())::text,true);
+  '{"name":"Outro evento de arquivos","kind":"festa","style":"techno","starts_at":"2099-02-01T18:00:00-03:00","city":"Recife","state_code":"PE","venue":"Local","is_free":true}',gen_random_uuid())::text,true);
 
 -- ---- Políticas de public-images ----
 -- Titular da atuação de artista envia sob o id da própria atuação; outras contas e atuações que não são de artista, não.

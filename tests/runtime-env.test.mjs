@@ -10,13 +10,12 @@ const dev = {
   APP_ORIGIN: "https://circuitone-dev.magalz.space",
 }
 
-test("runtime requires an explicit mode and public Supabase configuration", () => {
+test("runtime requires the development mode and public Supabase configuration", () => {
   assert.throws(() => validateRuntimeEnv({}), /CIRCUITONE_RUNTIME/)
-  assert.throws(() => validateRuntimeEnv({ CIRCUITONE_RUNTIME: "production" }))
-  assert.equal(validateRuntimeEnv({ CIRCUITONE_RUNTIME: "preview" }), "preview")
-  assert.throws(() =>
-    validateRuntimeEnv({ CIRCUITONE_RUNTIME: "preview", SUPABASE_URL: dev.SUPABASE_URL }),
-  )
+  assert.throws(() => validateRuntimeEnv({ CIRCUITONE_RUNTIME: "production" }), /CIRCUITONE_RUNTIME/)
+  // O antigo modo "preview" (protótipo com mocks) não existe mais: sem Supabase o app não sobe.
+  assert.throws(() => validateRuntimeEnv({ CIRCUITONE_RUNTIME: "preview" }), /CIRCUITONE_RUNTIME/)
+  assert.throws(() => validateRuntimeEnv({ CIRCUITONE_RUNTIME: "development" }), /SUPABASE_URL/)
   assert.equal(validateRuntimeEnv(dev), "development")
   assert.equal(
     validateRuntimeEnv({

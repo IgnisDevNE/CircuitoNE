@@ -19,13 +19,8 @@ export function validateRuntimeEnv(env) {
   }
 
   const mode = env.CIRCUITONE_RUNTIME
-  if (mode === "preview") {
-    if (env.SUPABASE_URL || env.SUPABASE_PUBLISHABLE_KEY)
-      throw new Error("Preview must not receive a Supabase project")
-    return mode
-  }
   if (mode !== "development")
-    throw new Error("CIRCUITONE_RUNTIME must be preview or development")
+    throw new Error("CIRCUITONE_RUNTIME must be development")
   if (
     !/^https?:\/\/[^/]+$/.test(env.SUPABASE_URL ?? "") ||
     !env.SUPABASE_PUBLISHABLE_KEY?.startsWith("sb_publishable_") ||

@@ -31,8 +31,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
       - run: pnpm audit --audit-level=high
-      - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm test:e2e
+      # O e2e (Playwright) roda no job `e2e`, contra o Supabase local.
       - run: pnpm test:coverage
       - name: Preserve LCOV for Codecov
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -46,9 +45,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: quality-reports
-          path: |
-            playwright-report/
-            coverage/
+          path: coverage/
           retention-days: 7
           if-no-files-found: warn
 

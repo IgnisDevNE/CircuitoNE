@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Form } from 'react-router'
-import { Link } from '../../router'
+import { Link } from 'react-router'
 import type { ActionResult } from '../../lib/action-result'
 import { MAX_MESSAGE_LENGTH, routeKey } from '../../lib/messages'
 import type { NewMessageData } from '../../server/mappers/messages'

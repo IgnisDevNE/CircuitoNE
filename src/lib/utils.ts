@@ -4,6 +4,9 @@ export function cx(...parts: (string | false | null | undefined)[]) {
   return parts.filter(Boolean).join(' ')
 }
 
+/** `className` de `NavLink` com um trecho extra quando o link da rota está ativo. */
+export const navClass = (base: string, active: string) => ({ isActive }: { isActive: boolean }) => cx(base, isActive && active)
+
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 const eventZone = 'America/Fortaleza'
 const eventParts = new Intl.DateTimeFormat('en-US', {

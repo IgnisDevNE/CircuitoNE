@@ -65,7 +65,7 @@ test('detalhe mostra nome, coletivo, line-up vinculado e descrição', async ({ 
     `/artistas/${artistId}`,
   )
   await expect(page.locator('main strong')).toHaveText('Fixture')
-  await expect(page.getByRole('button', { name: 'Entrada gratuita' })).toBeVisible()
+  await expect(page.getByText('Entrada gratuita — é só chegar!')).toBeVisible()
   await expect(page.getByText('(Fortaleza)').first()).toBeVisible()
 })
 
@@ -89,7 +89,7 @@ test('detalhe de evento cancelado informa o cancelamento e não oferece ingresso
   const response = await page.goto(`/eventos/${eventId(4)}`)
   expect(response?.status()).toBe(200)
   await expect(page.getByText('Cancelado', { exact: true })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Entrada gratuita' })).toHaveCount(0)
+  await expect(page.getByText('Entrada gratuita — é só chegar!')).toHaveCount(0)
 })
 
 for (const [label, id] of [

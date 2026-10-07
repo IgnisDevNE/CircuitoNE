@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { createMemoryRouter, data, MemoryRouter, Outlet, RouterProvider, useLoaderData } from 'react-router'
+import { createMemoryRouter, data, MemoryRouter, RouterProvider, useLoaderData } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ArtistProfile } from '../../src/pages/public/ArtistProfile'
 import { ArtistsHub } from '../../src/pages/public/ArtistsHub'
@@ -194,7 +194,7 @@ describe('Home', () => {
     home(homeData())
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
     for (const name of ['eventos.log', 'artistas/', 'coletivos/']) expect(screen.getByRole('heading', { level: 2, name })).toBeTruthy()
-    // O painel de boot revela uma linha por vez (animação do protótipo).
+    // O painel de boot revela uma linha por vez (animação da página inicial).
     for (const line of ['artistas conectados: 12', 'coletivos/produtoras: 5', 'eventos programados: 9'])
       expect(await screen.findByText(line, {}, { timeout: 3000 })).toBeTruthy()
   })
@@ -240,8 +240,7 @@ describe('módulos de rota', () => {
     render(
       <RouterProvider
         router={createMemoryRouter(
-          [{ id: 'root', path: '/', loader: () => ({ renderedAt: Date.parse('2026-10-06T12:00:00Z') }), Component: Outlet,
-             children: [{ Component: PublicRoute, children: [child] }] }],
+          [{ path: '/', Component: PublicRoute, children: [child] }],
           { initialEntries: [path] },
         )}
       />,

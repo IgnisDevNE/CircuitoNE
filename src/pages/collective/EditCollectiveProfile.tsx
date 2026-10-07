@@ -1,5 +1,5 @@
 import { Form } from 'react-router'
-import { Link } from '../../router'
+import { Link } from 'react-router'
 import type { ActionResult } from '../../lib/action-result'
 import { SOCIAL_FIELDS } from '../../lib/account-forms'
 import type { ColetivoEdicao } from '../../server/mappers/collective-manage'

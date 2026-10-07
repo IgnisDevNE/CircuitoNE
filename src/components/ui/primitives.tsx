@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import { cx } from '../../lib/utils'
-import { Link } from '../../router'
+import { Link } from 'react-router'
 
 /** Terminal window panel with a titled chrome bar. */
 export function Panel({
@@ -110,10 +110,6 @@ export function Avatar({ src, alt, size = 40, corner }: { src?: string; alt: str
       )}
     </span>
   )
-}
-
-export function Kbd({ children }: { children: ReactNode }) {
-  return <kbd className="border border-[var(--color-line)] bg-[var(--color-bg-elev)] px-1.5 py-0.5 font-mono text-[0.65rem]">{children}</kbd>
 }
 
 export function SectionHeading({ prompt = '~/', children, sub, as: Heading = 'h1' }: { prompt?: string; children: ReactNode; sub?: string; as?: 'h1' | 'h2' }) {

@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import { Link, NavLink } from '../../router'
+import { Link, NavLink } from 'react-router'
 import { TIPO_LABEL } from '../../data/types'
-import { cx } from '../../lib/utils'
+import { cx, navClass } from '../../lib/utils'
 import type { MeuColetivo, MeuPerfil } from '../../server/mappers/account'
 import { Avatar } from '../ui/primitives'
 
@@ -19,12 +19,10 @@ export interface AppShellProps {
   perfis: MeuPerfil[]
   coletivos: MeuColetivo[]
   naoLidas: number
-  /** Sem ele, "Sair" é o formulário real `POST /sair` (sessão do servidor); o protótipo passa um callback. */
-  onLogout?: () => void
   children: ReactNode
 }
 
-export function AppShell({ nome, perfis, coletivos, naoLidas, onLogout, children }: AppShellProps) {
+export function AppShell({ nome, perfis, coletivos, naoLidas, children }: AppShellProps) {
   const [open, setOpen] = useState(false)
 
   // Menus SOMAM conforme as atuações e coletivos da conta
@@ -85,8 +83,7 @@ export function AppShell({ nome, perfis, coletivos, naoLidas, onLogout, children
                   to={it.to}
                   end={it.to === '/painel'}
                   onClick={() => setOpen(false)}
-                  className="block border-l-2 border-transparent px-3 py-2 font-mono text-sm text-[var(--color-muted)] transition-colors hover:bg-white/5 hover:text-[var(--foreground)]"
-                  activeClassName="!border-[var(--accent)] !text-[var(--foreground)] bg-[color:color-mix(in_srgb,var(--accent)_12%,transparent)]"
+                  className={navClass('block border-l-2 border-transparent px-3 py-2 font-mono text-sm text-[var(--color-muted)] transition-colors hover:bg-white/5 hover:text-[var(--foreground)]', '!border-[var(--accent)] !text-[var(--foreground)] bg-[color:color-mix(in_srgb,var(--accent)_12%,transparent)]')}
                 >
                   {it.label}
                 </NavLink>
@@ -97,17 +94,11 @@ export function AppShell({ nome, perfis, coletivos, naoLidas, onLogout, children
       ))}
 
       <div className="mt-auto border-t border-[var(--color-line)] pt-4">
-        {onLogout ? (
-          <button type="button" onClick={onLogout} className={logoutClass}>
+        <form method="post" action="/sair">
+          <button type="submit" className={logoutClass}>
             [→] Sair da sessão
           </button>
-        ) : (
-          <form method="post" action="/sair">
-            <button type="submit" className={logoutClass}>
-              [→] Sair da sessão
-            </button>
-          </form>
-        )}
+        </form>
       </div>
     </nav>
   )

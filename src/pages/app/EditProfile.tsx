@@ -1,5 +1,5 @@
 import { Form } from 'react-router'
-import { Link } from '../../router'
+import { Link } from 'react-router'
 import { ESTADOS, TIPO_LABEL, type AtuacaoTipo } from '../../data/types'
 import {
   AUDIOVISUAL_TYPES,

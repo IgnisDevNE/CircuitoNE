@@ -1,4 +1,4 @@
-import { Link } from '../../router'
+import { Link } from 'react-router'
 import { Badge, Empty, LinkButton, Panel } from '../../components/ui/primitives'
 import { BootLog } from '../../components/ui/anim'
 import { fmtDataHora } from '../../lib/utils'

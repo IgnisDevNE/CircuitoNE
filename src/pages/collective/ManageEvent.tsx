@@ -1,5 +1,5 @@
 import { Form } from 'react-router'
-import { Link } from '../../router'
+import { Link } from 'react-router'
 import { EVENTO_TIPO_LABEL } from '../../data/types'
 import type { ActionResult } from '../../lib/action-result'
 import { fmtDataHora } from '../../lib/utils'

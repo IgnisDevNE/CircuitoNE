@@ -3,13 +3,11 @@ import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, MemoryRouter, RouterProvider, useLoaderData } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppShell } from '../../src/components/layout/AppShell'
-import { ComingSoon } from '../../src/pages/app/ComingSoon'
 import { Dashboard } from '../../src/pages/app/Dashboard'
 import { RestrictedAccount } from '../../src/pages/app/RestrictedAccount'
 import AppRoute from '../../src/routes/layouts/app'
 import PublicRoute from '../../src/routes/layouts/public'
 import DashboardRoute, { meta as dashboardMeta } from '../../src/routes/dashboard'
-import SoonRoute, { meta as soonMeta } from '../../src/routes/soon'
 import { EVENT_COVER_FALLBACK } from '../../src/server/mappers/events'
 import type { AppLayoutData } from '../../src/server/account.server'
 import type { MeuColetivo, MeuPerfil, ProximoEvento } from '../../src/server/mappers/account'
@@ -48,7 +46,7 @@ beforeEach(() => {
 })
 
 describe('AppShell com dados reais por props (sem StoreProvider)', () => {
-  it('mostra a conta e o menu da conta, sem nada do protótipo', () => {
+  it('mostra a conta e o menu da conta, sem dados de mentira', () => {
     shell({ perfis: [perfil(), perfil({ id: 'svc', tipo: 'servicos', nome: 'Serviços sintéticos', publicado: false })], naoLidas: 3 })
     expect(screen.getByText('Pessoa A sintética')).toBeTruthy()
     expect(screen.getByText('Artista + Serviços')).toBeTruthy()
@@ -84,21 +82,13 @@ describe('AppShell com dados reais por props (sem StoreProvider)', () => {
     ])
   })
 
-  it('"Sair" é o formulário real POST /sair, sem callback do protótipo', () => {
+  it('"Sair" é o formulário real POST /sair', () => {
     shell()
     const button = screen.getByRole('button', { name: '[→] Sair da sessão' })
     expect(button.closest('form')?.getAttribute('method')).toBe('post')
     expect(button.closest('form')?.getAttribute('action')).toBe('/sair')
   })
 
-  it('o protótipo pode trocar o logout por um callback', async () => {
-    const onLogout = vi.fn()
-    shell({ onLogout })
-    const button = screen.getByRole('button', { name: '[→] Sair da sessão' })
-    expect(button.closest('form')).toBeNull()
-    await userEvent.setup().click(button)
-    expect(onLogout).toHaveBeenCalledTimes(1)
-  })
 })
 
 describe('Dashboard real', () => {
@@ -150,7 +140,7 @@ describe('Dashboard real', () => {
   })
 })
 
-describe('RestrictedAccount e Em breve', () => {
+describe('RestrictedAccount', () => {
   const restricted = (situacao: Parameters<typeof RestrictedAccount>[0]['situacao'], motivo: string | null = null, nome: string | null = 'Pessoa A sintética') =>
     render(<RestrictedAccount nome={nome} situacao={situacao} motivo={motivo} />)
 
@@ -173,13 +163,6 @@ describe('RestrictedAccount e Em breve', () => {
     restricted('incomplete', null, null)
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Minha conta')
   })
-
-  it('"Em breve" avisa sem fingir sucesso e volta ao dashboard', () => {
-    render(<MemoryRouter><ComingSoon /></MemoryRouter>)
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Em breve')
-    expect(screen.getByText(/ainda está em preparação/)).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'voltar ao dashboard' }).getAttribute('href')).toBe('/painel')
-  })
 })
 
 describe('módulos de rota autenticados', () => {
@@ -200,7 +183,7 @@ describe('módulos de rota autenticados', () => {
               id: 'routes/layouts/app', Component: withData(AppRoute), loader: () => layout,
               children: [
                 { path: 'painel', loader: () => ({ proximos: [proximo(1)] }), Component: withData(DashboardRoute) },
-                { path: 'painel/mensagens', Component: SoonRoute },
+                { path: 'painel/mensagens', Component: () => <p>mensagens</p> },
               ],
             },
           ],
@@ -218,11 +201,6 @@ describe('módulos de rota autenticados', () => {
     expect(screen.getByText('— Artista sintético público')).toBeTruthy()
   })
 
-  it('páginas ainda não ligadas mostram "Em breve" dentro do shell, com o menu', async () => {
-    app(active, '/painel/mensagens')
-    expect(await screen.findByRole('heading', { level: 1, name: 'Em breve' })).toBeTruthy()
-    expect(screen.getByRole('navigation', { name: 'Painel' })).toBeTruthy()
-  })
 
   it('conta suspensa: só o aviso restrito, sem menu nem conteúdo do painel', async () => {
     app({ status: 'restricted', nome: 'Pessoa A sintética', situacao: 'suspended', motivo: 'Revisão sintética' })
@@ -234,7 +212,6 @@ describe('módulos de rota autenticados', () => {
 
   it('títulos das rotas', () => {
     expect(dashboardMeta()[0]).toEqual({ title: 'Dashboard · CIRCUITO NE' })
-    expect(soonMeta()[0]).toEqual({ title: 'Em breve · CIRCUITO NE' })
   })
 })
 
@@ -243,9 +220,7 @@ describe('cabeçalho público conforme a sessão do servidor', () => {
     render(
       <RouterProvider
         router={createMemoryRouter(
-          [{ id: 'root', path: '/', loader: () => ({ renderedAt: Date.parse('2026-10-06T12:00:00Z') }), children: [
-            { Component: PublicRoute, ...(session ? { loader: () => session } : {}), children: [{ index: true, Component: () => <p>página</p> }] },
-          ] }],
+          [{ Component: PublicRoute, ...(session ? { loader: () => session } : {}), children: [{ index: true, Component: () => <p>página</p> }] }],
           { initialEntries: ['/'] },
         )}
       />,

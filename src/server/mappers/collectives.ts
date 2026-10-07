@@ -1,12 +1,21 @@
-import { ESTADOS, type Collective, type Estado, type Evento, type SocialLinks } from '../../data/types'
+import { ESTADOS, type Estado, type Evento, type SocialLinks } from '../../data/types'
 import { publicImageUrl } from '../public-image'
 import { invalid, isRow, oneOf, optionalText, text, webUrl } from './row'
 
 /** Campos do coletivo que a página pública usa (cargos/membros/solicitações são privados e vêm de RPCs próprias). */
-export type ColetivoPublico = Pick<
-  Collective,
-  'id' | 'nome' | 'tipo' | 'atuacao' | 'bio' | 'imagem' | 'cidade' | 'estado' | 'corPredominante' | 'social'
->
+export interface ColetivoPublico {
+  id: string
+  nome: string
+  tipo: 'coletivo' | 'produtora'
+  /** Eventos Musicais, Culturais, Serviços, Artistas: uma etiqueta por item. */
+  atuacao: string[]
+  bio: string
+  imagem: string
+  cidade: string
+  estado: Estado
+  corPredominante: string
+  social: SocialLinks
+}
 export type MembroPublico = { nome: string; artistaId?: string }
 export type CollectiveListData = { coletivos: ColetivoPublico[] }
 export type CollectivePageData = {

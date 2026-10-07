@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Link } from '../../router'
+import { Link } from 'react-router'
 import { Badge, Panel } from '../../components/ui/primitives'
 import type { ColetivoArea, SituacaoBloqueada } from '../../server/mappers/collective-area'
 

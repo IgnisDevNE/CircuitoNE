@@ -6,9 +6,10 @@ import { documentPath } from '../../lib/uploads'
 import { navClass } from '../../lib/utils'
 import type { ColetivoPublico } from '../../server/mappers/collectives'
 import type { DadosRestritos, ExploreColetivosData, ExploreData, ExplorePerfisData, ExploreKind, PerfilExplorar } from '../../server/mappers/explore'
-import { Badge, Empty, LinkButton, Panel, SectionHeading } from '../../components/ui/primitives'
+import { Badge, Empty, Panel, SectionHeading } from '../../components/ui/primitives'
 import { Input, Select } from '../../components/ui/form'
 import { AccentScope } from '../../components/ui/AccentScope'
+import { ChatLink } from '../../components/chat/ChatLink'
 
 const PAGES: Record<ExploreKind, { title: string; sub: string; label: string }> = {
   artistas: { title: 'explorar/artistas', label: 'Artistas', sub: 'Artistas ativos no circuito. Contatos de booking, cachê e presskit aparecem só para quem pode vê-los.' },
@@ -84,7 +85,7 @@ function ProfileCard({ perfil, kind }: { perfil: PerfilExplorar; kind: ExplorePe
       {perfil.restrito && <Restricted dados={perfil.restrito} perfilId={perfil.id} />}
       <div className="mt-4 flex flex-wrap items-center gap-3">
         {publico && <Link to={`/artistas/${perfil.id}`} className="font-mono text-xs text-[var(--accent-text)] underline">ver perfil público →</Link>}
-        {!perfil.minha && <LinkButton to={`/painel/mensagens/nova?para=profile:${perfil.id}`} variant="outline" size="sm">Enviar mensagem</LinkButton>}
+        {!perfil.minha && <ChatLink para={`profile:${perfil.id}`} />}
       </div>
     </Panel>
   )
@@ -159,7 +160,7 @@ function CollectiveCard({ coletivo }: { coletivo: ColetivoPublico }) {
         {coletivo.bio && <p className="line-clamp-3 text-sm text-[var(--color-muted)]">{coletivo.bio}</p>}
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <Link to={`/coletivos/${coletivo.id}`} className="font-mono text-xs text-[var(--accent-text)] underline">ver perfil público →</Link>
-          <LinkButton to={`/painel/mensagens/nova?para=collective:${coletivo.id}`} variant="outline" size="sm">Enviar mensagem</LinkButton>
+          <ChatLink para={`collective:${coletivo.id}`} />
         </div>
       </Panel>
     </AccentScope>

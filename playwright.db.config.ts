@@ -9,11 +9,12 @@ if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_'))
 
 const ACCOUNT_SPEC = /account\.spec\.ts$/
 const MESSAGES_SPEC = /messages\.spec\.ts/
+const CHAT_DOCK_SPEC = /chat-dock\.spec\.ts/
 const REGISTER_SPEC = /register\.spec\.ts/
 const MANAGE_SPEC = /collective-manage\.spec\.ts/
 const EXPLORE_SPEC = /explore\.spec\.ts/
 const UPLOADS_SPEC = /uploads\.spec\.ts/
-const WRITE_SPECS = [ACCOUNT_SPEC, MESSAGES_SPEC, REGISTER_SPEC, MANAGE_SPEC, EXPLORE_SPEC, UPLOADS_SPEC]
+const WRITE_SPECS = [ACCOUNT_SPEC, MESSAGES_SPEC, CHAT_DOCK_SPEC, REGISTER_SPEC, MANAGE_SPEC, EXPLORE_SPEC, UPLOADS_SPEC]
 const port = '5183'
 const origin = `http://127.0.0.1:${port}`
 
@@ -58,10 +59,18 @@ export default defineConfig({
       dependencies: ['account-mobile'],
       use: { browserName: 'chromium', viewport: { width: 1366, height: 900 } },
     },
+    // chat-dock.spec.ts envia mensagens pelo chat flutuante (conversa nova da fixture-member com o artista público) e restaura as
+    // não lidas da fixture-active; roda depois de messages, que cria as conversas que ele reaproveita.
+    {
+      name: 'chat-dock',
+      testMatch: CHAT_DOCK_SPEC,
+      dependencies: ['messages'],
+      use: { browserName: 'chromium', viewport: { width: 1366, height: 900 } },
+    },
     {
       name: 'collective-manage',
       testMatch: MANAGE_SPEC,
-      dependencies: ['messages'],
+      dependencies: ['chat-dock'],
       use: { browserName: 'chromium', viewport: { width: 1366, height: 900 } },
     },
     {

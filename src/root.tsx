@@ -1,4 +1,6 @@
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteError } from 'react-router'
+import { ChatDock } from './components/chat/ChatDock'
+import { ChatDockProvider } from './components/chat/ChatDockProvider'
 import { RouteA11y } from './components/layout/RouteA11y'
 import './index.css'
 
@@ -37,10 +39,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function Root() {
   return (
-    <>
+    // O estado das janelas de chat vive aqui para sobreviver à navegação entre os layouts; o dock só aparece para quem está logado.
+    <ChatDockProvider>
       <RouteA11y />
       <Outlet />
-    </>
+      <ChatDock />
+    </ChatDockProvider>
   )
 }
 

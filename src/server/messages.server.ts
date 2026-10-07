@@ -28,7 +28,7 @@ import { ActionFailure, callRpc, formId, runMutation } from './mutation.server'
 import { HttpError, unwrap, type SupabaseServerClient } from './supabase.server'
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const PAGE = 50
+export const PAGE = 50
 /** Páginas de `list_conversations` percorridas (200 conversas); a lista mostra as 50 mais recentes. */
 const LIST_PAGES = 4
 /** Páginas de histórico que uma conversa carrega de uma vez (500 mensagens). */
@@ -60,7 +60,7 @@ async function resolveContext(client: SupabaseServerClient, scope: MessageScope)
 }
 
 /** Todas as conversas legíveis pelo titular, da mais recente à mais antiga (a RPC pagina por cursor). */
-async function listConversations(client: SupabaseServerClient): Promise<Conversa[]> {
+export async function listConversations(client: SupabaseServerClient): Promise<Conversa[]> {
   const all: Conversa[] = []
   let after: { time: string; id: string } | undefined
   for (let page = 0; page < LIST_PAGES; page++) {
@@ -75,7 +75,7 @@ async function listConversations(client: SupabaseServerClient): Promise<Conversa
   return all
 }
 
-async function loadDetails(client: SupabaseServerClient, ids: string[]): Promise<Map<string, DetalheConversa>> {
+export async function loadDetails(client: SupabaseServerClient, ids: string[]): Promise<Map<string, DetalheConversa>> {
   if (ids.length === 0) return new Map()
   return mapConversationDetails(unwrap(await client.rpc('get_conversation_details', { targets: ids })))
 }
@@ -84,7 +84,7 @@ async function loadDetails(client: SupabaseServerClient, ids: string[]): Promise
  * Histórico da conversa a partir da página mais recente; cada página extra volta mais 50 mensagens usando
  * como cursor a mais antiga já carregada (o cursor é o texto original do banco, com microssegundos).
  */
-async function loadThread(client: SupabaseServerClient, id: string, pages: number) {
+export async function loadThread(client: SupabaseServerClient, id: string, pages: number) {
   const mensagens: Mensagem[] = []
   let before: { time: string; id: string } | undefined
   let more = false
@@ -152,7 +152,7 @@ const requestId = (form: URLSearchParams) => {
   return uuid.test(value) ? value : crypto.randomUUID()
 }
 
-async function sendFrom(client: SupabaseServerClient, form: URLSearchParams) {
+export async function sendFrom(client: SupabaseServerClient, form: URLSearchParams) {
   const route = parseRoute(form.get('via'))
   if (!route) throw new ActionFailure(400, 'Escolha com qual atuação ou coletivo enviar.')
   const body = messageText(form, 'body', 'Escreva uma mensagem.', `A mensagem pode ter até ${MAX_MESSAGE_LENGTH.toLocaleString('pt-BR')} caracteres.`)

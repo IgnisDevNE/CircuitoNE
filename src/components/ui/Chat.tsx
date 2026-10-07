@@ -22,7 +22,8 @@ const party = (lado: Lado) => ({ kind: lado.kind, id: lado.id ?? '' })
 const fieldClass =
   'w-full bg-[var(--color-bg-elev)] border border-[var(--color-line)] px-3 py-2 font-mono text-sm outline-none focus:border-[var(--accent)]'
 
-function Bubble({ mensagem, minha, autor }: { mensagem: Mensagem; minha: boolean; autor: boolean }) {
+/** Balão de uma mensagem; `reportable` (padrão) oferece "denunciar" (um formulário da página, que o chat flutuante não usa). */
+export function Bubble({ mensagem, minha, autor, reportable = true }: { mensagem: Mensagem; minha: boolean; autor: boolean; reportable?: boolean }) {
   return (
     <li className={cx('flex flex-col', minha ? 'items-end' : 'items-start')}>
       <div className={cx('max-w-[85%] border px-3 py-2', minha ? 'border-[var(--accent)] bg-[color:color-mix(in_srgb,var(--accent)_12%,transparent)]' : 'border-[var(--color-line)] bg-[var(--color-bg-elev)]')}>
@@ -31,7 +32,7 @@ function Bubble({ mensagem, minha, autor }: { mensagem: Mensagem; minha: boolean
         <p className="whitespace-pre-wrap break-words text-sm">{mensagem.texto}</p>
       </div>
       <span className="mt-0.5 font-mono text-[0.6rem] text-[var(--color-muted)]">{fmtDataHora(mensagem.criadaEm)}</span>
-      {!minha && (
+      {!minha && reportable && (
         <details className="mt-0.5 w-full max-w-[85%] font-mono text-[0.65rem] text-[var(--color-muted)]">
           <summary className="cursor-pointer select-none hover:text-[var(--accent-text)]">denunciar</summary>
           <Form method="post" className="mt-1 space-y-1" preventScrollReset>

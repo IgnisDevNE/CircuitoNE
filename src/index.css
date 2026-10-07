@@ -80,6 +80,23 @@ textarea:focus-visible,
   outline-offset: 2px;
 }
 
+/* Chat flutuante (ChatDock): com uma janela ou barra fixa no canto da tela, o foco por teclado não pode terminar escondido
+   embaixo dela (WCAG 2.4.11) e o fim da página continua alcançável. Num celular a janela é uma folha de 75% da altura. */
+html[data-chat-dock] {
+  scroll-padding-bottom: 3.5rem;
+}
+html[data-chat-dock] body {
+  padding-bottom: 3.5rem;
+}
+@media (max-width: 639px) {
+  html[data-chat-dock='open'] {
+    scroll-padding-bottom: 80dvh;
+  }
+  html[data-chat-dock='open'] body {
+    padding-bottom: 80dvh;
+  }
+}
+
 /* Foco movido por código ao mudar de página (RouteA11y): sem contorno em títulos e áreas de conteúdo. */
 h1[tabindex='-1']:focus-visible,
 main[tabindex='-1']:focus-visible {

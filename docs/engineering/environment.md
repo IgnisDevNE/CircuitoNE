@@ -8,7 +8,7 @@ Atualizado em 06/10/2026.
 |---|---|---|---|
 | Dev (PoC) | `https://circuitone-dev.magalz.space` (Cloudflare Access) | `CircuitoNE-dev` (`odphoxozclrshqjgwbqk`, São Paulo) | App completo com seeds sintéticos |
 | Produção | `https://circuitone.magalz.space` | `CircuitoNE` (`ukyoyrmebwadmuzkswdw`) — sem schema de negócio | Somente página de espera |
-| CI | runner descartável | Supabase local (Docker) | Migrações, testes SQL, e2e (preview e com banco) |
+| CI | runner descartável | Supabase local (Docker) | Migrações, testes SQL, e2e com banco |
 
 Ambos os projetos Supabase estão no plano Free. Um projeto Free pausa após ~7 dias sem atividade; se o dev pausar, retomar pelo painel do Supabase.
 
@@ -48,14 +48,16 @@ podman pod start circuitone
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm dev            # protótipo (preview) ou dev real com .env.local
+pnpm dev            # exige .env.local (modelo em .env.example): o app só sobe com o Supabase configurado
 pnpm check          # testes de infra/unidade, typecheck, build
-pnpm test:e2e      # suíte preview (protótipo)
+pnpm test:e2e:db    # Playwright contra o Supabase local (abaixo): a suíte de ponta a ponta
 ```
 
 A suíte `pnpm test:e2e:db` usa Supabase local: `pnpm exec supabase start`, carregar as seeds com `psql` (como no job `e2e` de `ci.yml`; `collective-area.sql` só entra aí, não no dev) e exportar `SUPABASE_URL`/`SUPABASE_PUBLISHABLE_KEY` a partir de `pnpm exec supabase status -o env` (`API_URL`, `PUBLISHABLE_KEY`).
 
-Para o dev real local, criar `.env.local` com `CIRCUITONE_RUNTIME=development`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` e `APP_ORIGIN`.
+No Windows com Podman (VM WSL), o `supabase start` precisa de um `docker` no `PATH` (o `podman` remoto serve) e de `DOCKER_HOST=npipe:////./pipe/podman-machine-default`; as portas publicadas pelo Podman podem não chegar a `127.0.0.1` do Windows (o CLI recusa a conexão com o banco em `127.0.0.1:55432`). Nesse caso encaminhe `55432` e `54321` de `127.0.0.1` para o IP da VM (`wsl -d podman-machine-default -- ip -4 addr show eth0`) com qualquer repassador TCP antes de subir o Supabase. Sem `psql` no Windows, carregue as seeds por `docker exec -i supabase_db_circuitone-local psql ...` com o mesmo conteúdo do job `e2e`.
+
+Para o dev local, criar `.env.local` a partir de `.env.example`: `CIRCUITONE_RUNTIME=development`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` e `APP_ORIGIN`. Não existe modo de demonstração com dados de mentira: sem essas variáveis o app (e `pnpm start`) recusa subir; as telas só mostram o que vem do banco.
 
 ## Storage (W11): imagens e documentos
 

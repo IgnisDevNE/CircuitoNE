@@ -11,7 +11,7 @@ export async function checkEventConcurrency(query, queryAsync) {
     query(`insert into public.events(id,collective_id,name,kind,starts_at,city,state_code,venue,is_free)
       values(${event},${collective},'Concorrência sintética','festa','2099-01-01T21:00Z','Recife','PE','Local sintético',true)`)
     const action = index => scenario === 'retry'
-      ? `select public.create_event(${collective},'{"name":"Retry","kind":"festa","starts_at":"2099-01-01T21:00Z","city":"Recife","state_code":"PE","venue":"Local sintético","is_free":true}', '85000000-0000-4000-8000-000000000001');`
+      ? `select public.create_event(${collective},'{"name":"Retry","kind":"festa","style":"techno","starts_at":"2099-01-01T21:00Z","city":"Recife","state_code":"PE","venue":"Local sintético","is_free":true}', '85000000-0000-4000-8000-000000000001');`
       : index === 2 && scenario !== 'edit'
         ? `select public.${scenario}_event(${event},1);`
         : `select public.update_event(${event},1,'{"name":"Edição ${index}"}');`

@@ -11,7 +11,7 @@ do $$ begin
 end $$;
 with inserted as (
 insert into public.events(id,collective_id,name,kind,other_kind,description,starts_at,ends_at,city,state_code,venue,is_free,ticket_url,
-  state,first_published_at,cancelled_at,rescheduled_at,previous_starts_at,version,created_at,updated_at)
+  state,first_published_at,cancelled_at,rescheduled_at,previous_starts_at,version,created_at,updated_at,style)
 select ('0a000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,
   case when n=7 then '05000000-0000-4000-8000-000000000003'::uuid else '05000000-0000-4000-8000-000000000001'::uuid end,
   'Evento sintético '||n,case when n=8 then 'outros' else 'festa' end,case when n=8 then 'Ensaio de agenda' end,
@@ -21,7 +21,8 @@ select ('0a000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,
   case when n=4 then 'cancelled' when n=5 then 'draft' else 'published' end,
   case when n<>5 then anchor-interval '10 days' end,case when n=4 then anchor end,
   case when n=6 then anchor end,case when n=6 then anchor+interval '2 days' end,
-  case when n in (4,6) then 3 when n=5 then 1 else 2 end,anchor-interval '10 days',anchor
+  case when n in (4,6) then 3 when n=5 then 1 else 2 end,anchor-interval '10 days',anchor,
+  (array['techno','house','techno','house','trance','dubstep','techno','house'])[n]
 from generate_series(1,8) n cross join (select current_setting('circuitone.seed_time')::timestamptz anchor) reference
 on conflict(id) do nothing returning id
 ), details as (

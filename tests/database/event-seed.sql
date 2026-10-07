@@ -1,6 +1,7 @@
 begin;
 do $$ begin
   if (select count(*) from public.events where id::text like '0a000000-%')<>8 then raise exception 'Eventos sintéticos incompletos/duplicados'; end if;
+  if exists(select from public.events where id::text like '0a000000-%' and style is null) or (select count(distinct style) from public.events where id::text like '0a000000-%')<>4 then raise exception 'Vertentes sintéticas incompletas'; end if;
   if (select count(distinct state) from public.events where id::text like '0a000000-%')<>3 then raise exception 'Estados de evento incompletos'; end if;
   if (select count(distinct private.event_period(starts_at,ends_at,'2026-09-26T12:00Z')) from public.events where id::text like '0a000000-%')<>3 then raise exception 'Períodos sintéticos incompletos'; end if;
   if not exists(select from public.events where id::text like '0a000000-%' and rescheduled_at is not null) then raise exception 'Reagendamento ausente'; end if;

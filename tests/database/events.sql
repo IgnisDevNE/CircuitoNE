@@ -11,7 +11,7 @@ create function pg_temp.actor(n integer) returns void language sql as $$
  select set_config('request.jwt.claims',jsonb_build_object('sub','81000000-0000-4000-8000-'||lpad(n::text,12,'0'),'role','authenticated')::text,true)::void
 $$;
 create function pg_temp.payload() returns jsonb language sql as $$
- select '{"name":"Evento sintético","kind":"festa","description":"**Música**","starts_at":"2099-01-01T18:00:00-03:00","ends_at":null,"city":"Recife","state_code":"PE","venue":"Local sintético","is_free":true,"lineup":[{"artist_id":"82000000-0000-4000-8000-000000000001"},{"name":"Convidado livre"},{"artist_id":"82000000-0000-4000-8000-000000000003"}]}'::jsonb
+ select '{"name":"Evento sintético","kind":"festa","style":"techno","description":"**Música**","starts_at":"2099-01-01T18:00:00-03:00","ends_at":null,"city":"Recife","state_code":"PE","venue":"Local sintético","is_free":true,"lineup":[{"artist_id":"82000000-0000-4000-8000-000000000001"},{"name":"Convidado livre"},{"artist_id":"82000000-0000-4000-8000-000000000003"}]}'::jsonb
 $$;
 grant execute on function pg_temp.assert_true(boolean,text),pg_temp.reject(text,text),pg_temp.actor(integer),pg_temp.payload() to anon,authenticated;
 insert into auth.users(id,email,email_confirmed_at,phone,phone_confirmed_at)

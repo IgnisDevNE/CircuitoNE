@@ -65,7 +65,7 @@ Atualizado em 07/10/2026 (W1–W12 concluídas).
 - Contas e e-mail: a conta Free do Supabase pausa o projeto após ~7 dias sem atividade; o e-mail usa SMTP2GO com limites do plano gratuito.
 - Acessibilidade: verificada por testes automatizados de estrutura (títulos, `alt`, foco, erros de campo) e inspeção manual; não houve auditoria com leitor de tela nem com axe/Lighthouse.
 
-**Issues abertas.** #177 e #178 (ver GitHub). As issues de produto #12–#28 foram triadas ao fim da W12 (fechadas ou comentadas com o que falta).
+**Issues abertas.** [#177](https://github.com/IgnisDevNE/CircuitoNE/issues/177) (limpeza de objetos órfãos no Storage) e [#178](https://github.com/IgnisDevNE/CircuitoNE/issues/178) (fotos de artistas não publicados em bucket público). As issues de produto #12–#28 foram triadas ao fim da W12 (fechadas ou comentadas com o que falta).
 
 ## Fora do escopo do PoC
 

@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { FlowResult, RegistrationPage } from '../../src/lib/registration-forms'
 import { NewProfile } from '../../src/pages/app/NewProfile'
 import { RestrictedAccount } from '../../src/pages/app/RestrictedAccount'
+import { CpfInput } from '../../src/pages/auth/CpfInput'
 import { RegisterFlow } from '../../src/pages/auth/RegisterFlow'
 import type { Taxonomia } from '../../src/server/mappers/account-settings'
 
@@ -134,6 +135,89 @@ describe('cadastro: etapas', () => {
       expect(screen.queryByText(/Estilos musicais/)).toBeNull()
     })
 
+    it('gênero opcional: lista com as três opções canônicas e "prefiro não informar" como padrão', () => {
+      flow(page)
+      const genero = screen.getByLabelText(/\$ Gênero/) as HTMLSelectElement
+      expect(genero.value).toBe('')
+      expect([...genero.options].map((option) => [option.value, option.text])).toEqual([
+        ['', 'Prefiro não informar'],
+        ['Masculino', 'Masculino'],
+        ['Feminino', 'Feminino'],
+        ['Não binário', 'Não binário'],
+      ])
+    })
+
+    it('UF primeiro, depois a cidade: a lista de cidades é a do estado escolhido e trocar o estado limpa a cidade', async () => {
+      flow(page)
+      const user = userEvent.setup()
+      const estado = screen.getByLabelText(/\$ Estado/) as HTMLSelectElement
+      const cidade = screen.getByLabelText(/\$ Cidade/) as HTMLSelectElement
+      expect(estado.value).toBe('')
+      expect([...cidade.options].map((option) => option.value)).toEqual([''])
+      await user.selectOptions(estado, 'CE')
+      expect([...cidade.options].map((option) => option.value)).toContain('Juazeiro do Norte')
+      expect([...cidade.options].map((option) => option.value)).not.toContain('Recife')
+      await user.selectOptions(cidade, 'Juazeiro do Norte')
+      expect(cidade.value).toBe('Juazeiro do Norte')
+      await user.selectOptions(estado, 'PE')
+      expect(cidade.value).toBe('')
+      expect([...cidade.options].map((option) => option.value)).toContain('Recife')
+    })
+
+    it('CPF: máscara e erro imediato (dígitos verificadores, todos iguais) antes do envio', async () => {
+      flow(page)
+      const user = userEvent.setup()
+      const cpf = screen.getByLabelText(/\$ CPF/) as HTMLInputElement
+      await user.type(cpf, '52998224725')
+      expect(cpf.value).toBe('529.982.247-25')
+      expect(cpf.getAttribute('aria-invalid')).toBe('false')
+      await user.clear(cpf)
+      await user.type(cpf, '52998224726')
+      expect(cpf.value).toBe('529.982.247-26')
+      expect(cpf.getAttribute('aria-invalid')).toBe('true')
+      expect(screen.getByText('[erro] Informe um CPF válido.')).toBeTruthy()
+      await user.clear(cpf)
+      await user.type(cpf, '11111111111')
+      expect(screen.getByText('[erro] Informe um CPF válido.')).toBeTruthy()
+      // Incompleto: o erro só aparece ao sair do campo.
+      await user.clear(cpf)
+      await user.type(cpf, '5299')
+      expect(cpf.getAttribute('aria-invalid')).toBe('false')
+      await user.tab()
+      expect(cpf.getAttribute('aria-invalid')).toBe('true')
+    })
+
+    it('CPF: o erro do servidor some ao editar e volta a cada nova resposta', async () => {
+      const first = {}
+      const { rerender } = render(<CpfInput defaultValue="529.982.247-25" serverError="Recusado pelo servidor." submission={first} />)
+      expect(screen.getByText('[erro] Recusado pelo servidor.')).toBeTruthy()
+      const cpf = screen.getByLabelText(/\$ CPF/) as HTMLInputElement
+      await userEvent.setup().type(cpf, '{Backspace}5')
+      expect(screen.queryByText('[erro] Recusado pelo servidor.')).toBeNull()
+      rerender(<CpfInput defaultValue="529.982.247-25" serverError="Recusado pelo servidor." submission={{}} />)
+      expect(screen.getByText('[erro] Recusado pelo servidor.')).toBeTruthy()
+    })
+
+    it('estilos: escolher um subestilo marca o principal e desmarcar o principal desmarca os subestilos', async () => {
+      flow(page)
+      const user = userEvent.setup()
+      await user.click(screen.getByRole('radio', { name: /Artista/ }))
+      const house = screen.getByRole('checkbox', { name: 'house' }) as HTMLInputElement
+      const deep = screen.getByRole('checkbox', { name: 'deep house' }) as HTMLInputElement
+      await user.click(deep)
+      expect(deep.checked).toBe(true)
+      expect(house.checked).toBe(true)
+      await user.click(house)
+      expect(house.checked).toBe(false)
+      expect(deep.checked).toBe(false)
+      await user.click(house)
+      expect(deep.checked).toBe(false)
+      await user.click(deep)
+      await user.click(deep)
+      expect(deep.checked).toBe(false)
+      expect(house.checked).toBe(true)
+    })
+
     it('erros devolvem o digitado (inclusive tipo e estilos) e mostram a mensagem do CPF', () => {
       flow(
         page,
@@ -175,6 +259,20 @@ describe('nova atuação', () => {
     expect(container.querySelector('input[name="intent"]')).toBeNull()
     expect(screen.getByRole('link', { name: 'cancelar' }).getAttribute('href')).toBe('/painel/dados')
     expect(screen.getByRole('button', { name: 'criar atuação' })).toBeTruthy()
+  })
+
+  it('UF e cidade começam com os da conta e podem ser trocados; erro e digitado voltam do servidor', async () => {
+    const { unmount } = inRouter(<NewProfile taxonomia={taxonomia} local={{ estado: 'PE', cidade: 'Olinda' }} />)
+    expect((screen.getByLabelText(/\$ Estado/) as HTMLSelectElement).value).toBe('PE')
+    expect((screen.getByLabelText(/\$ Cidade/) as HTMLSelectElement).value).toBe('Olinda')
+    await userEvent.setup().selectOptions(screen.getByLabelText(/\$ Estado/), 'CE')
+    expect((screen.getByLabelText(/\$ Cidade/) as HTMLSelectElement).value).toBe('')
+    unmount()
+    const result = fail('create-profile', { cidade: 'Escolha uma cidade de CE da lista.' }, { values: { tipo: 'servicos', atuacaoNome: 'Som', estado: 'CE', cidade: 'Recife' } })
+    inRouter(<NewProfile taxonomia={taxonomia} local={{ estado: 'PE', cidade: 'Olinda' }} result={result} />)
+    expect((screen.getByLabelText(/\$ Estado/) as HTMLSelectElement).value).toBe('CE')
+    expect((screen.getByLabelText(/\$ Cidade/) as HTMLSelectElement).value).toBe('')
+    expect(screen.getByText('[erro] Escolha uma cidade de CE da lista.')).toBeTruthy()
   })
 
   it('integrante sugere o nome da própria conta', async () => {

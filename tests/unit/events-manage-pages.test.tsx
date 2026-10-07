@@ -77,13 +77,27 @@ describe('CreateEvent', () => {
     expect(values('lineup')).toEqual([])
     expect(field('name').value).toBe('')
     expect(field('kind').value).toBe('festa')
-    expect(field('state_code').value).toBe('PE')
+    expect(field('state_code').value).toBe('')
     expect(field('starts_at').type).toBe('datetime-local')
     expect(screen.getByLabelText(/Início \(Fortaleza\)/)).toBe(field('starts_at'))
     expect(screen.getByText(/UTC−03:00/)).toBeTruthy()
     expect([...field('kind').options].map((o) => o.value)).toEqual(['festa', 'festival', 'evento-cultural', 'feira', 'encontro', 'capacitacao', 'outros'])
     expect(screen.getByText(/nasce como/).textContent).toMatch(/rascunho/)
     expect((screen.getByRole('button', { name: 'salvar rascunho' }) as HTMLButtonElement).type).toBe('submit')
+  })
+
+  it('UF primeiro e cidade da lista do estado (nada de texto livre)', async () => {
+    page()
+    const user = userEvent.setup()
+    const city = field('city') as unknown as HTMLSelectElement
+    expect(city.tagName).toBe('SELECT')
+    expect([...city.options].map((o) => o.value)).toEqual([''])
+    await user.selectOptions(field('state_code') as unknown as HTMLSelectElement, 'CE')
+    expect([...city.options].map((o) => o.value)).toContain('Fortaleza')
+    await user.selectOptions(city, 'Fortaleza')
+    expect(city.value).toBe('Fortaleza')
+    await user.selectOptions(field('state_code') as unknown as HTMLSelectElement, 'PE')
+    expect(city.value).toBe('')
   })
 
   it('vertente principal: seletor com só as vertentes principais, vazio até escolher, e o erro do campo', async () => {

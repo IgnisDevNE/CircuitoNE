@@ -62,7 +62,7 @@ describe('EditData', () => {
   it('mostra os dados editáveis e deixa fixos CPF, nascimento, e-mail e celular', () => {
     inRouter(<EditData conta={conta()} perfis={[meus()]} />)
     expect((screen.getByRole('textbox', { name: /Nome completo/ }) as HTMLInputElement).value).toBe('Pessoa A sintética')
-    expect((screen.getByRole('textbox', { name: /Cidade/ }) as HTMLInputElement).value).toBe('Recife')
+    expect((screen.getByRole('combobox', { name: /Cidade/ }) as HTMLSelectElement).value).toBe('Recife')
     expect((screen.getByRole('combobox', { name: /Estado/ }) as HTMLSelectElement).value).toBe('PE')
     expect(screen.getByText('***.982.247-**')).toBeTruthy()
     expect(screen.getByText('31/01/1990')).toBeTruthy()
@@ -107,7 +107,7 @@ describe('EditData', () => {
       <EditData
         conta={conta()}
         perfis={[]}
-        result={fail('save-account', { nome: 'Informe seu nome completo.', cidade: 'Informe a cidade.' }, { values: { nome: '', cidade: '', estado: 'CE', genero: 'Outro', whatsapp: 'none', whatsappNumero: '' } })}
+        result={fail('save-account', { nome: 'Informe seu nome completo.', cidade: 'Informe a cidade.' }, { values: { nome: '', cidade: '', estado: 'CE', genero: 'Feminino', whatsapp: 'none', whatsappNumero: '' } })}
       />,
     )
     const nome = screen.getByRole('textbox', { name: /Nome completo/ })
@@ -115,7 +115,7 @@ describe('EditData', () => {
     expect(document.getElementById(nome.getAttribute('aria-describedby')!)?.textContent).toContain('Informe seu nome completo.')
     expect(screen.getByText('[erro] Informe a cidade.')).toBeTruthy()
     expect((screen.getByRole('combobox', { name: /Estado/ }) as HTMLSelectElement).value).toBe('CE')
-    expect((screen.getByRole('textbox', { name: /Gênero/ }) as HTMLInputElement).value).toBe('Outro')
+    expect((screen.getByRole('combobox', { name: /Gênero/ }) as HTMLSelectElement).value).toBe('Feminino')
     expect((screen.getByRole('radio', { name: /Não uso WhatsApp/ }) as HTMLInputElement).checked).toBe(true)
     expect(screen.queryByRole('status')).toBeNull()
   })
@@ -151,7 +151,8 @@ describe('EditProfile', () => {
     expect((screen.getByLabelText(/cor predominante/) as HTMLInputElement).value).toBe('#00ff88')
     const checked = (name: string) => (screen.getByRole('checkbox', { name }) as HTMLInputElement).checked
     expect(checked('techno')).toBe(true)
-    expect(checked('house')).toBe(false)
+    // O subestilo marcado (acid house) leva o estilo principal dele (house) junto, mesmo que o dado venha sem ele.
+    expect(checked('house')).toBe(true)
     expect(checked('acid house')).toBe(true)
     expect(checked('deep house')).toBe(false)
     expect(screen.getByRole('link', { name: /ver perfil público/ }).getAttribute('href')).toBe(`/artistas/${ID}`)

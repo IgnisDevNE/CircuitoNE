@@ -9,6 +9,22 @@ export function normalizeCpf(value: string): string | null {
   return check(9) === Number(cpf[9]) && check(10) === Number(cpf[10]) ? cpf : null
 }
 
+/** CPF digitado → só dígitos (no máximo 11) na máscara `000.000.000-00` à medida que se completa. */
+export function formatCpf(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 11)
+  const base = [digits.slice(0, 3), digits.slice(3, 6), digits.slice(6, 9)].filter(Boolean).join('.')
+  return digits.length > 9 ? `${base}-${digits.slice(9)}` : base
+}
+
+/**
+ * Validação imediata do CPF no formulário: a mensagem enquanto o valor não é um CPF válido (11 dígitos, dígitos
+ * verificadores corretos e nem todos iguais) ou `null` quando está válido. Campo vazio não tem erro: a exigência é do envio.
+ */
+export function cpfError(value: string): string | null {
+  if (!value.trim()) return null
+  return normalizeCpf(value) ? null : 'Informe um CPF válido.'
+}
+
 export function validEmail(value: string): boolean {
   const email = value.trim()
   if (email.length > 254) return false

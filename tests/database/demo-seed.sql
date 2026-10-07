@@ -13,7 +13,7 @@ do $$ declare t timestamptz:=current_setting('circuitone.seed_time')::timestampt
     or (select count(*) from public.profiles where id::text like 'd0020000-%' and kind='services')<>3
     or (select count(*) from public.profiles where id::text like 'd0020000-%' and kind='audiovisual')<>2
     or (select count(*) from public.artist_profiles where profile_id::text like 'd0020000-%')<>12
-    or (select count(*) from public.artist_styles where profile_id::text like 'd0020000-%')<>33
+    or (select count(*) from public.artist_styles where profile_id::text like 'd0020000-%')<>57
     or (select count(*) from public.professional_details where profile_id::text like 'd0020000-%')<>17 then
     raise exception 'Atuações demo incompletas/duplicadas'; end if;
   if (select count(distinct state_code) from public.profiles where id::text like 'd0020000-%' and kind='artist')<9 then

@@ -98,6 +98,10 @@ export const ESTADOS = [
   { value: 'TO', label: 'Tocantins' },
 ] as const
 
+/** Gêneros aceitos nos dados da conta (RN-04): o campo é opcional; vazio significa "prefiro não informar". */
+export const GENEROS = ['Masculino', 'Feminino', 'Não binário'] as const
+export type Genero = (typeof GENEROS)[number]
+
 /** Os nove estados do Nordeste, na ordem alfabética das siglas (filtro do hub de artistas). */
 export const UFS_NORDESTE = ['AL', 'BA', 'CE', 'MA', 'PB', 'PE', 'PI', 'RN', 'SE'] as const satisfies readonly Estado[]
 

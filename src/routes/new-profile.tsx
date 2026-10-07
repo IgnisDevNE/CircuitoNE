@@ -18,7 +18,7 @@ export default function NewProfileRoute({ loaderData, actionData }: Route.Compon
   const busy = useNavigation().state === 'submitting'
   // Conta restrita: o layout já mostra o aviso.
   if (shell?.status !== 'active') return null
-  return <NewProfile taxonomia={loaderData.taxonomia} nome={shell.nome} result={actionData} busy={busy} />
+  return <NewProfile taxonomia={loaderData.taxonomia} nome={shell.nome} local={loaderData.local} result={actionData} busy={busy} />
 }
 
 export function ErrorBoundary() {

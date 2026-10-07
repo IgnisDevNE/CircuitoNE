@@ -439,33 +439,48 @@ describe('completeRegistration: dados e primeira atuação', () => {
 
 describe('nova atuação', () => {
   it('lista a taxonomia pública', async () => {
-    expect(await loadNewProfile(fakeClient({ tables: taxonomy }).client)).toEqual({
+    const account = { get_my_account_details: { data: { name: 'Pessoa Teste', city: 'Olinda', state_code: 'PE' }, error: null } }
+    expect(await loadNewProfile(fakeClient({ tables: taxonomy, rpc: account }).client)).toEqual({
       taxonomia: [{ estilo: 'house', subestilos: ['deep house'] }, { estilo: 'techno', subestilos: [] }],
+      // Cidade e UF da conta: ponto de partida do formulário.
+      local: { estado: 'PE', cidade: 'Olinda' },
     })
-    await expect(loadNewProfile(fakeClient({ tables: { ...taxonomy, music_styles: { data: null, error: { message: 'x' } } } }).client)).rejects.toMatchObject({ status: 503 })
+    expect(await loadNewProfile(fakeClient({ tables: taxonomy, rpc: { get_my_account_details: { data: null, error: { message: 'x' } } } }).client)).toMatchObject({
+      local: { estado: '', cidade: '' },
+    })
+    await expect(loadNewProfile(fakeClient({ rpc: account, tables: { ...taxonomy, music_styles: { data: null, error: { message: 'x' } } } }).client)).rejects.toMatchObject({ status: 503 })
   })
+
+  const local = { cidade: 'Olinda', estado: 'PE' }
 
   it('cria a atuação com create_profile e abre a edição dela', async () => {
     const { client, rpc } = fakeClient({ rpc: { create_profile: { data: 'perfil-9', error: null } } })
-    const outcome = await createProfile(client, form({ tipo: 'artista', atuacaoNome: 'Projeto Novo', estilo: ['techno', 'house|deep house'] }))
+    const outcome = await createProfile(client, form({ tipo: 'artista', atuacaoNome: 'Projeto Novo', ...local, estilo: ['techno', 'house|deep house'] }))
     expect(redirected(outcome)).toBe('/painel/perfil/perfil-9')
     expect(rpc).toHaveBeenCalledWith('create_profile', {
-      payload: { kind: 'artist', name: 'Projeto Novo', styles: [{ style: 'techno', substyle: null }, { style: 'house', substyle: 'deep house' }] },
+      payload: {
+        kind: 'artist',
+        name: 'Projeto Novo',
+        styles: [{ style: 'techno', substyle: null }, { style: 'house', substyle: 'deep house' }, { style: 'house', substyle: null }],
+        city: 'Olinda',
+        state_code: 'PE',
+      },
     })
   })
 
   it('integrante sem nome usa o nome da conta', async () => {
     const { client, rpc } = fakeClient({ rpc: { get_my_account_details: { data: { name: 'Pessoa Teste' }, error: null }, create_profile: { data: 'perfil-2', error: null } } })
-    await createProfile(client, form({ tipo: 'integrante', atuacaoNome: '' }))
-    expect(rpc).toHaveBeenCalledWith('create_profile', { payload: { kind: 'member', name: 'Pessoa Teste' } })
+    await createProfile(client, form({ tipo: 'integrante', atuacaoNome: '', ...local }))
+    expect(rpc).toHaveBeenCalledWith('create_profile', { payload: { kind: 'member', name: 'Pessoa Teste', city: 'Olinda', state_code: 'PE' } })
   })
 
   it('validação no servidor e erros do banco (sem texto interno)', async () => {
     const invalid = fakeClient()
-    expect(failed(await createProfile(invalid.client, form({ tipo: 'artista', atuacaoNome: 'x' }))).errors.estilo).toBeDefined()
+    expect(failed(await createProfile(invalid.client, form({ tipo: 'artista', atuacaoNome: 'x', ...local }))).errors.estilo).toBeDefined()
+    expect(failed(await createProfile(invalid.client, form({ tipo: 'servicos', atuacaoNome: 'x', cidade: 'Recife', estado: 'CE' }))).errors.cidade).toBeDefined()
     expect(invalid.rpc).not.toHaveBeenCalled()
     const attempt = async (error: unknown, status?: number) =>
-      failed(await createProfile(fakeClient({ rpc: { create_profile: { data: null, error, status } } }).client, form({ tipo: 'servicos', atuacaoNome: 'Som' })))
+      failed(await createProfile(fakeClient({ rpc: { create_profile: { data: null, error, status } } }).client, form({ tipo: 'servicos', atuacaoNome: 'Som', ...local })))
     expect(await attempt({ code: '42501', message: 'Conta indisponível' })).toMatchObject({ status: 403 })
     expect(await attempt({ code: '22023', message: 'Dados de atuação inválidos' })).toMatchObject({ status: 422, values: { tipo: 'servicos' } })
     expect(await attempt({ code: '42501', message: 'x' }, 401)).toMatchObject({ status: 401 })

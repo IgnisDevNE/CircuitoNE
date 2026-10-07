@@ -1,6 +1,6 @@
-import { ESTADOS } from '../data/types'
 import { normalizeCnpj, normalizeUrl, SOCIAL_FIELDS } from './account-forms'
 import { isPermission, PERMISSIONS, type Permissao } from './collective-access'
+import { checkLocation } from './municipios'
 
 /**
  * Formulários de gestão do coletivo (editar, perfil público, perfis de acesso): leitura e validação do envio, antes de
@@ -10,12 +10,10 @@ import { isPermission, PERMISSIONS, type Permissao } from './collective-access'
 export const NAME_MAX = 200
 export const DESCRIPTION_MAX = 10000
 export const ACTIVITY_MAX = 200
-export const CITY_MAX = 150
 export const ROLE_NAME_MAX = 100
 export const REASON_MAX = 2000
 export const CLOSE_CONFIRMATION = 'ENCERRAR'
 
-const UFS: readonly string[] = ESTADOS.map((estado) => estado.value)
 const length = (value: string) => [...value].length
 /** O navegador envia quebras de linha como CRLF; o banco conta caracteres. */
 const multiline = (value: string) => value.replace(/\r\n/g, '\n').trim()
@@ -50,10 +48,8 @@ export function parseCollectiveForm(form: URLSearchParams, producer: boolean): P
   if (!activity) fields.activity = 'Informe a área de atuação.'
   else if (length(activity) > ACTIVITY_MAX) fields.activity = `Use até ${ACTIVITY_MAX} caracteres.`
   const city = get('city')
-  if (!city) fields.city = 'Informe a cidade.'
-  else if (length(city) > CITY_MAX) fields.city = `Use até ${CITY_MAX} caracteres.`
   const state = get('state_code')
-  if (!UFS.includes(state)) fields.state_code = 'Escolha o estado.'
+  checkLocation(fields, { city: 'city', state: 'state_code' }, city, state)
   const rawCnpj = get('cnpj')
   let cnpj: string | null = null
   if (rawCnpj) {

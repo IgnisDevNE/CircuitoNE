@@ -203,7 +203,7 @@ describe('saveProfile / saveProfessional / removeProfile', () => {
       target: ID,
       payload: {
         name: 'Artista Novo', description: 'bio', city: 'Recife', state_code: 'PE', color: '#00ff88', social_links: { instagram: 'https://instagram.com/x' },
-        published: true, styles: [{ style: 'techno', substyle: null }, { style: 'house', substyle: 'acid house' }],
+        published: true, styles: [{ style: 'techno', substyle: null }, { style: 'house', substyle: 'acid house' }, { style: 'house', substyle: null }],
       },
     })
   })

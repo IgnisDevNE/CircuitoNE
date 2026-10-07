@@ -104,7 +104,7 @@ insert into demo_styles values
 insert into public.artist_styles(id,profile_id,style,substyle)
 select overlay(md5('demo-style-'||s.artist_n||'-'||s.style||'-'||coalesce(s.substyle,''))::text placing 'd0040000' from 1 for 8)::uuid,
   pg_temp.demo_id('d0020000',s.artist_n),s.style,s.substyle
-from demo_styles s
+from (select artist_n, style, substyle from demo_styles union select artist_n, style, null from demo_styles where substyle is not null) s
 where exists(select from public.artist_profiles a where a.profile_id=pg_temp.demo_id('d0020000',s.artist_n))
 on conflict do nothing;
 

@@ -40,6 +40,7 @@ podman pod start circuitone
 ## Banco
 
 - Migrações: `supabase/migrations/`. Seeds sintéticos: `supabase/seeds/` (exigem `circuitone.seed_target` e `circuitone.seed_time`, definidos pelo workflow).
+- Municípios (W14): `public.municipalities` e `src/data/municipios.json` vêm da API de localidades do IBGE (`https://servicodados.ibge.gov.br/api/v1/localidades/municipios`, consultada em 07/10/2026, 5.571 registros). `node scripts/generate-municipios.mjs [arquivo.json]` regenera o JSON e o SQL; migração já aplicada não se reescreve (mudança da lista = nova migração) e `tests/unit/municipios.test.ts` confere que o JSON e a migração têm o mesmo conjunto.
 - CI (`ci.yml`, job `database`) reconstrói o banco local duas vezes e roda os testes SQL de `tests/database/`.
 - Após merge em `main` com mudanças em `supabase/**`, o workflow `db-dev.yml` faz `supabase db push` no `CircuitoNE-dev` e recarrega os seeds (idempotentes). Também pode ser disparado manualmente.
 - Secrets usados: environment GitHub `Homologação` (`SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`).

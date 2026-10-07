@@ -1,5 +1,6 @@
+import { useState, type ChangeEvent } from 'react'
 import { Form, Link } from 'react-router'
-import { ESTADOS, TIPO_LABEL, type AtuacaoTipo } from '../../data/types'
+import { TIPO_LABEL, type AtuacaoTipo } from '../../data/types'
 import {
   AUDIOVISUAL_TYPES,
   CONFIRM_DELETE_PROFILE,
@@ -8,10 +9,12 @@ import {
   SOCIAL_FIELDS,
   type ActionResult,
 } from '../../lib/account-forms'
+import { parentStyle, toggleStyle, withParentStyles } from '../../lib/style-selection'
 import { formatCacheCents } from '../../lib/utils'
 import type { PerfilEdicao, Profissional, Taxonomia } from '../../server/mappers/account-settings'
 import { Badge, Button, Panel } from '../../components/ui/primitives'
 import { Checkbox, Input, Select, Textarea } from '../../components/ui/form'
+import { LocationFields } from '../../components/ui/LocationFields'
 import { AccentScope } from '../../components/ui/AccentScope'
 import { errorsFor, FormFeedback, GeneralFeedback, valueFor, valuesFor } from './account-ui'
 import { DocumentPanel, PhotosPanel } from './ProfileFiles'
@@ -34,8 +37,16 @@ const SOCIAL_LABEL: Record<(typeof SOCIAL_FIELDS)[number], string> = {
   youtube: 'YouTube',
 }
 
+/**
+ * Estilos musicais. Escolher um subestilo marca também o estilo principal dele; desmarcar o principal desmarca os
+ * subestilos (`toggleStyle`). O servidor aplica a mesma regra a quem envia sem JavaScript.
+ */
 export function StylePicker({ taxonomia, selected, error }: { taxonomia: Taxonomia; selected: string[]; error?: string }) {
-  const chosen = new Set(selected)
+  const [values, setValues] = useState(() => withParentStyles(selected))
+  const chosen = new Set(values)
+  // Os subestilos de um estilo começam abertos só quando já há algum marcado; depois quem decide é a pessoa.
+  const [opened] = useState(() => new Set(values.map(parentStyle).filter((style): style is string => style !== null)))
+  const toggle = (value: string) => (event: ChangeEvent<HTMLInputElement>) => setValues(toggleStyle(values, value, event.target.checked))
   return (
     <fieldset className="sm:col-span-2" aria-describedby={error ? 'estilo-erro' : undefined}>
       <legend className="mb-2 font-mono text-xs uppercase tracking-widest text-[var(--color-muted)]">
@@ -43,30 +54,30 @@ export function StylePicker({ taxonomia, selected, error }: { taxonomia: Taxonom
         <span className="text-[var(--accent-text)]"> *<span className="sr-only"> (escolha ao menos um)</span></span>
       </legend>
       <div className="grid max-h-96 gap-2 overflow-y-auto border border-[var(--color-line)] p-3 sm:grid-cols-2">
-        {taxonomia.map(({ estilo, subestilos }) => {
-          const anySub = subestilos.some((sub) => chosen.has(encodeStyle(estilo, sub)))
-          return (
-            <div key={estilo} className="font-mono text-sm">
-              <label className="flex cursor-pointer items-center gap-2">
-                <input type="checkbox" name="estilo" value={estilo} defaultChecked={chosen.has(estilo)} className="accent-[var(--accent)]" />
-                {estilo}
-              </label>
-              {subestilos.length > 0 && (
-                <details open={anySub} className="ml-6 mt-1">
-                  <summary className="cursor-pointer text-xs text-[var(--color-muted)]">subestilos de {estilo}</summary>
-                  <div className="mt-1 space-y-1">
-                    {subestilos.map((sub) => (
+        {taxonomia.map(({ estilo, subestilos }) => (
+          <div key={estilo} className="font-mono text-sm">
+            <label className="flex cursor-pointer items-center gap-2">
+              <input type="checkbox" name="estilo" value={estilo} checked={chosen.has(estilo)} onChange={toggle(estilo)} className="accent-[var(--accent)]" />
+              {estilo}
+            </label>
+            {subestilos.length > 0 && (
+              <details open={opened.has(estilo)} className="ml-6 mt-1">
+                <summary className="cursor-pointer text-xs text-[var(--color-muted)]">subestilos de {estilo}</summary>
+                <div className="mt-1 space-y-1">
+                  {subestilos.map((sub) => {
+                    const value = encodeStyle(estilo, sub)
+                    return (
                       <label key={sub} className="flex cursor-pointer items-center gap-2 text-xs">
-                        <input type="checkbox" name="estilo" value={encodeStyle(estilo, sub)} defaultChecked={chosen.has(encodeStyle(estilo, sub))} className="accent-[var(--accent)]" />
+                        <input type="checkbox" name="estilo" value={value} checked={chosen.has(value)} onChange={toggle(value)} className="accent-[var(--accent)]" />
                         {sub}
                       </label>
-                    ))}
-                  </div>
-                </details>
-              )}
-            </div>
-          )
-        })}
+                    )
+                  })}
+                </div>
+              </details>
+            )}
+          </div>
+        ))}
       </div>
       {error && <p id="estilo-erro" className="mt-1 font-mono text-xs text-[var(--accent-text)]">[erro] {error}</p>}
     </fieldset>
@@ -156,11 +167,17 @@ export function EditProfile({ perfil, taxonomia, result, busy }: EditProfileProp
         <Panel title={artist ? 'perfil de artista' : 'perfil'}>
           <Form method="post" className="grid gap-4 sm:grid-cols-2" noValidate>
             <input type="hidden" name="intent" value="save-profile" />
-            <Input label={artist ? 'Nome artístico' : 'Nome'} name="nome" defaultValue={value('nome', perfil.nome)} error={errors.nome} required />
-            <div className="grid grid-cols-[1fr_8rem] gap-3">
-              <Input label="Cidade" name="cidade" defaultValue={value('cidade', perfil.cidade)} error={errors.cidade} required />
-              <Select label="UF" name="estado" defaultValue={value('estado', perfil.estado)} error={errors.estado} options={ESTADOS.map((s) => ({ value: s.value, label: s.value }))} required />
+            <div className="sm:col-span-2">
+              <Input label={artist ? 'Nome artístico' : 'Nome'} name="nome" defaultValue={value('nome', perfil.nome)} error={errors.nome} required />
             </div>
+            <LocationFields
+              ufName="estado"
+              cityName="cidade"
+              defaultUf={value('estado', perfil.estado)}
+              defaultCity={value('cidade', perfil.cidade)}
+              ufError={errors.estado}
+              cityError={errors.cidade}
+            />
             <div className="sm:col-span-2">
               <Textarea
                 label={artist ? 'Bio' : 'Descrição'}

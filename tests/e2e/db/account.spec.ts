@@ -38,9 +38,10 @@ const artistStyle = (page: Page, style: string) => page.locator(`xpath=//main//*
 
 async function saveAccount(page: Page, fields: { name: string; city: string; state: string; gender: string; whatsapp: 'same' | 'other'; number?: string }) {
   await page.getByRole('textbox', { name: /Nome completo/ }).fill(fields.name)
-  await page.getByRole('textbox', { name: /Gênero/ }).fill(fields.gender)
-  await page.getByRole('textbox', { name: /Cidade/ }).fill(fields.city)
+  await page.getByRole('combobox', { name: /Gênero/ }).selectOption(fields.gender)
+  // UF primeiro: a lista de cidades é a do estado escolhido.
   await page.getByRole('combobox', { name: /Estado/ }).selectOption(fields.state)
+  await page.getByRole('combobox', { name: /Cidade/ }).selectOption(fields.city)
   await page.getByRole('radio', { name: fields.whatsapp === 'same' ? /celular também é WhatsApp/ : /é outro número/ }).check()
   if (fields.number) await page.getByLabel(/Número do WhatsApp/).fill(fields.number)
   await page.getByRole('button', { name: 'salvar dados' }).click()
@@ -60,14 +61,14 @@ test('dados da conta: edita, persiste ao recarregar e atualiza o menu; CPF e nas
   for (const fixed of [/CPF/, /nascimento/i, /E-mail/, /Celular/]) await expect(page.getByRole('textbox', { name: fixed })).toHaveCount(0)
 
   try {
-    await saveAccount(page, { name: 'Pessoa sintética editada', city: 'João Pessoa', state: 'PB', gender: 'Pessoa de teste', whatsapp: 'other', number: '81 98888-7777' })
+    await saveAccount(page, { name: 'Pessoa sintética editada', city: 'João Pessoa', state: 'PB', gender: 'Não binário', whatsapp: 'other', number: '81 98888-7777' })
     await expect(status(page)).toHaveText('Dados atualizados.')
 
     await page.reload()
     await hydrated(page)
     await expect(page.getByRole('textbox', { name: /Nome completo/ })).toHaveValue('Pessoa sintética editada')
-    await expect(page.getByRole('textbox', { name: /Gênero/ })).toHaveValue('Pessoa de teste')
-    await expect(page.getByRole('textbox', { name: /Cidade/ })).toHaveValue('João Pessoa')
+    await expect(page.getByRole('combobox', { name: /Gênero/ })).toHaveValue('Não binário')
+    await expect(page.getByRole('combobox', { name: /Cidade/ })).toHaveValue('João Pessoa')
     await expect(page.getByRole('combobox', { name: /Estado/ })).toHaveValue('PB')
     await expect(page.getByRole('radio', { name: /é outro número/ })).toBeChecked()
     await expect(page.getByLabel(/Número do WhatsApp/)).toHaveValue('+5581988887777')
@@ -87,16 +88,64 @@ test('dados da conta: edita, persiste ao recarregar e atualiza o menu; CPF e nas
 test('dados da conta: erros aparecem junto dos campos, nada é salvo e não há sucesso falso', async ({ page }) => {
   await login(page, accounts.active.email)
   await open(page, '/painel/dados')
-  await page.getByRole('textbox', { name: /Cidade/ }).fill('')
+  await page.getByRole('combobox', { name: /Cidade/ }).selectOption('')
   await page.getByRole('radio', { name: /é outro número/ }).check()
   await page.getByLabel(/Número do WhatsApp/).fill('123')
   await page.getByRole('button', { name: 'salvar dados' }).click()
-  await expect(page.getByText('[erro] Informe a cidade.')).toBeVisible()
+  await expect(page.getByText('[erro] Escolha a cidade.')).toBeVisible()
   await expect(page.getByText(/\[erro\] Informe um número válido/)).toBeVisible()
   await expect(status(page)).toHaveCount(0)
   await page.reload()
-  await expect(page.getByRole('textbox', { name: /Cidade/ })).toHaveValue('Recife')
+  await expect(page.getByRole('combobox', { name: /Cidade/ })).toHaveValue('Recife')
   await expect(page.getByRole('radio', { name: /celular também é WhatsApp/ })).toBeChecked()
+})
+
+test('dados da conta: gênero opcional com as três opções; UF primeiro e depois a cidade da lista (IBGE)', async ({ page }) => {
+  await login(page, accounts.active.email)
+  await open(page, '/painel/dados')
+  const gender = page.getByRole('combobox', { name: /Gênero/ })
+  await expect(gender.locator('option')).toHaveText(['Prefiro não informar', 'Masculino', 'Feminino', 'Não binário'])
+  await expect(gender).toHaveValue('')
+  const state = page.getByRole('combobox', { name: /Estado/ })
+  const city = page.getByRole('combobox', { name: /Cidade/ })
+  await expect(city).toHaveValue('Recife')
+  await expect(city.locator('option[value="Olinda"]')).toHaveCount(1)
+  await expect(city.locator('option[value="Juazeiro do Norte"]')).toHaveCount(0)
+  await state.selectOption('CE')
+  // Trocar a UF limpa a cidade e troca a lista.
+  await expect(city).toHaveValue('')
+  await expect(city.locator('option[value="Juazeiro do Norte"]')).toHaveCount(1)
+  await expect(city.locator('option[value="Olinda"]')).toHaveCount(0)
+  // Nada é salvo sem a cidade; recarregar mantém os dados do banco.
+  await page.getByRole('button', { name: 'salvar dados' }).click()
+  await expect(page.getByText('[erro] Escolha a cidade.')).toBeVisible()
+  await expect(status(page)).toHaveCount(0)
+  await page.reload()
+  await expect(state).toHaveValue('PE')
+  await expect(city).toHaveValue('Recife')
+})
+
+test('sem JavaScript: o servidor recusa cidade de outra UF e a página volta com a lista da UF escolhida', async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false })
+  const page = await context.newPage()
+  try {
+    await login(page, accounts.active.email)
+    await page.goto('/painel/dados')
+    const city = page.getByRole('combobox', { name: /Cidade/ })
+    await expect(city).toHaveValue('Recife')
+    // Sem JavaScript a lista segue a do estado inicial (PE): trocar a UF e enviar é uma ida ao servidor, que recusa o par.
+    await page.getByRole('combobox', { name: /Estado/ }).selectOption('CE')
+    await page.getByRole('button', { name: 'salvar dados' }).click()
+    await expect(page.getByText('[erro] Escolha uma cidade de CE da lista.')).toBeVisible()
+    await expect(page.getByRole('combobox', { name: /Estado/ })).toHaveValue('CE')
+    await expect(city.locator('option[value="Juazeiro do Norte"]')).toHaveCount(1)
+    // Nada foi salvo: a conta continua em Recife/PE.
+    await page.goto('/painel/dados')
+    await expect(page.getByRole('combobox', { name: /Estado/ })).toHaveValue('PE')
+    await expect(city).toHaveValue('Recife')
+  } finally {
+    await context.close()
+  }
 })
 
 test('POST de origem externa é recusado e não altera a conta', async ({ page }) => {
@@ -108,7 +157,7 @@ test('POST de origem externa é recusado e não altera a conta', async ({ page }
   expect([400, 403]).toContain(response.status())
   await open(page, '/painel/dados')
   await expect(page.getByRole('textbox', { name: /Nome completo/ })).toHaveValue(ORIGINAL_NAME)
-  await expect(page.getByRole('textbox', { name: /Cidade/ })).toHaveValue('Recife')
+  await expect(page.getByRole('combobox', { name: /Cidade/ })).toHaveValue('Recife')
 })
 
 test('minhas atuações levam à edição de cada uma', async ({ page }) => {
@@ -134,12 +183,12 @@ test('perfil de artista: a edição aparece na página pública e é desfeita ao
   await expect(page.getByRole('checkbox', { name: /Perfil público/ })).toBeChecked()
 
   const bio = page.getByRole('textbox', { name: /Bio/ })
-  const city = page.getByRole('textbox', { name: /Cidade/ })
+  const city = page.getByRole('combobox', { name: /Cidade/ })
   const house = page.getByRole('checkbox', { name: 'house', exact: true })
   const instagram = page.getByLabel(/Instagram/)
   try {
     await bio.fill('Bio editada pelo e2e')
-    await city.fill('Olinda')
+    await city.selectOption('Olinda')
     await house.check()
     await instagram.fill('https://instagram.com/artista.sintetico')
     await page.getByRole('button', { name: 'salvar perfil' }).click()
@@ -158,7 +207,7 @@ test('perfil de artista: a edição aparece na página pública e é desfeita ao
     await login(page, accounts.active.email)
     await open(page, `/painel/perfil/${activeArtist}`)
     await bio.fill('Fixture, sem dados reais')
-    await city.fill('Recife')
+    await city.selectOption('Recife')
     if (await house.isChecked()) await house.uncheck()
     await instagram.fill('')
     await page.getByRole('button', { name: 'salvar perfil' }).click()

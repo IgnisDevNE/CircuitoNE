@@ -1,5 +1,7 @@
-import { ESTADOS, type AtuacaoTipo } from '../data/types'
+import { GENEROS, type AtuacaoTipo } from '../data/types'
+import { checkLocation } from './municipios'
 import { validEmail } from './registration-validation'
+import { withParentStyles } from './style-selection'
 import { parseCacheCents } from './utils'
 
 /**
@@ -44,7 +46,6 @@ export type ActionResult =
 export const CONFIRM_DELETE_ACCOUNT = 'EXCLUIR MINHA CONTA'
 export const CONFIRM_DELETE_PROFILE = 'EXCLUIR'
 
-const UFS: readonly string[] = ESTADOS.map((estado) => estado.value)
 const text = (form: URLSearchParams, key: string) => (form.get(key) ?? '').trim()
 
 const URL_PATTERN = /^https?:\/\/[^\s/?#@]+([/?#]\S*)?$/
@@ -100,10 +101,8 @@ export function parseAccountForm(form: URLSearchParams, phone: string): Parsed<A
   const number = text(form, 'whatsappNumero')
   if (!name) errors.nome = 'Informe seu nome completo.'
   else if (name.length > 200) errors.nome = 'Use até 200 caracteres.'
-  if (gender.length > 100) errors.genero = 'Use até 100 caracteres.'
-  if (!city) errors.cidade = 'Informe a cidade.'
-  else if (city.length > 150) errors.cidade = 'Use até 150 caracteres.'
-  if (!UFS.includes(state)) errors.estado = 'Escolha o estado.'
+  if (gender && !(GENEROS as readonly string[]).includes(gender)) errors.genero = 'Escolha uma opção da lista ou deixe em branco.'
+  checkLocation(errors, { city: 'cidade', state: 'estado' }, city, state)
   let whatsappNumber: string | null = null
   if (!['same', 'other', 'none'].includes(whatsapp)) errors.whatsapp = 'Escolha uma opção.'
   else if (whatsapp === 'other') {
@@ -158,9 +157,7 @@ export function parseProfileForm(form: URLSearchParams, kind: AtuacaoTipo): Pars
   if (!name) errors.nome = 'Informe o nome da atuação.'
   else if (name.length > 200) errors.nome = 'Use até 200 caracteres.'
   if (description.length > 10000) errors.descricao = 'Use até 10.000 caracteres.'
-  if (!city) errors.cidade = 'Informe a cidade.'
-  else if (city.length > 150) errors.cidade = 'Use até 150 caracteres.'
-  if (!UFS.includes(state)) errors.estado = 'Escolha o estado.'
+  checkLocation(errors, { city: 'cidade', state: 'estado' }, city, state)
   const useColor = form.has('usarCor')
   if (useColor && !/^#[0-9a-fA-F]{6}$/.test(color)) errors.cor = 'Escolha uma cor válida.'
   const social: Record<string, string> = {}
@@ -179,7 +176,8 @@ export function parseProfileForm(form: URLSearchParams, kind: AtuacaoTipo): Pars
     color: useColor ? color.toLowerCase() : null,
     social_links: social,
   }
-  const selected = [...new Set(form.getAll('estilo').map((value) => value.trim()).filter(Boolean))]
+  // Subestilo escolhido implica o estilo principal (a mesma regra do seletor, para quem envia sem JavaScript).
+  const selected = withParentStyles([...new Set(form.getAll('estilo').map((value) => value.trim()).filter(Boolean))])
   if (kind === 'artista') {
     payload.published = form.has('publicado')
     if (selected.length === 0) errors.estilo = 'Escolha ao menos um estilo.'

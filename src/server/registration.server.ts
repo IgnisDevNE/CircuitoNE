@@ -372,14 +372,21 @@ export const registerAction = (request: Request) =>
 
 // -- Nova atuação (/painel/dados/nova-atuacao) --
 
-export type NewProfilePage = { taxonomia: Taxonomia }
+export type NewProfilePage = { taxonomia: Taxonomia; local: { estado: string; cidade: string } }
 
 export async function loadNewProfile(client: SupabaseServerClient): Promise<NewProfilePage> {
-  const [styles, substyles] = await Promise.all([
+  const [styles, substyles, account] = await Promise.all([
     client.from('music_styles').select('name'),
     client.from('music_substyles').select('style,name'),
+    client.rpc('get_my_account_details'),
   ])
-  return { taxonomia: mapTaxonomy(unwrap(styles), unwrap(substyles)) }
+  // A cidade e a UF da conta são só o ponto de partida do formulário; sem elas a pessoa escolhe.
+  const details = (account.error ? null : account.data) as { city?: unknown; state_code?: unknown } | null
+  const local = {
+    estado: typeof details?.state_code === 'string' ? details.state_code : '',
+    cidade: typeof details?.city === 'string' ? details.city : '',
+  }
+  return { taxonomia: mapTaxonomy(unwrap(styles), unwrap(substyles)), local }
 }
 
 export async function createProfile(client: SupabaseServerClient, form: URLSearchParams): Promise<Outcome> {
@@ -397,7 +404,7 @@ export async function createProfile(client: SupabaseServerClient, form: URLSearc
     if (status === 401) return expired('create-profile')
     if (error.code === '42501') return fail('create-profile', {}, { message: 'Esta conta não pode criar atuações.', status: 403 })
     if (error.code === '22023')
-      return fail('create-profile', {}, { message: 'O banco recusou os dados da atuação. Revise os campos e tente de novo.', status: 422, values: profileValues(form) })
+      return fail('create-profile', {}, { message: 'O banco recusou os dados da atuação. Revise os campos e tente de novo.', status: 422, values: profileValues(form, true) })
     return fail('create-profile', {}, { message: UNAVAILABLE, status: 503 })
   }
   return { redirectTo: `/painel/perfil/${id}` }

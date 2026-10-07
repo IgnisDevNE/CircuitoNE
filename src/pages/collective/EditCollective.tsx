@@ -1,11 +1,11 @@
 import { Form, Link } from 'react-router'
-import { ESTADOS } from '../../data/types'
 import type { ActionResult } from '../../lib/action-result'
 import { PERMISSIONS, PERMISSION_LABELS } from '../../lib/collective-access'
 import { CLOSE_CONFIRMATION } from '../../lib/collective-forms'
 import type { ColetivoEdicao, EstadoMfa, MembroElenco, PerfilAcesso } from '../../server/mappers/collective-manage'
 import { Badge, Button, Panel } from '../../components/ui/primitives'
 import { Checkbox, Input, Select, Textarea } from '../../components/ui/form'
+import { LocationFields } from '../../components/ui/LocationFields'
 
 export interface EditCollectiveProps {
   coletivo: ColetivoEdicao
@@ -125,8 +125,7 @@ export function EditCollective({ coletivo, aprovado, perfis, sucessores, mfa, fe
             <p className="px-3 py-2 font-mono text-sm">{coletivo.tipo === 'produtora' ? 'Produtora' : 'Coletivo'}</p>
             <p className="font-mono text-xs text-[var(--color-muted)]">O tipo não muda depois do cadastro.</p>
           </div>
-          <Input label="Cidade" name="city" defaultValue={coletivo.cidade} error={errors.city} maxLength={150} required />
-          <Select label="Estado" name="state_code" defaultValue={coletivo.estado} error={errors.state_code} options={ESTADOS.map((estado) => ({ value: estado.value, label: estado.label }))} />
+          <LocationFields ufName="state_code" cityName="city" defaultUf={coletivo.estado} defaultCity={coletivo.cidade} ufError={errors.state_code} cityError={errors.city} />
           <div className="sm:col-span-2"><Input label="Área de atuação" name="activity" defaultValue={coletivo.atuacao} error={errors.activity} maxLength={200} required /></div>
           <div className="sm:col-span-2"><Textarea label="Descrição" name="description" defaultValue={coletivo.descricao} error={errors.description} rows={5} required /></div>
           <div className="sm:col-span-2">

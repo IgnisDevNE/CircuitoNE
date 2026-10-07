@@ -81,9 +81,18 @@ describe('celular', () => {
 
 describe('atuação', () => {
   it('mapeia o tipo da tela para o do banco; artista leva estilos e subestilos', () => {
+    // O subestilo escolhido leva o estilo principal dele junto (regra do seletor, também no servidor).
     expect(parseProfileFields(form({ tipo: 'artista', atuacaoNome: ' DJ Teste ', estilo: ['techno', 'house|deep house', 'techno'] }))).toEqual({
       ok: true,
-      payload: { kind: 'artist', name: 'DJ Teste', styles: [{ style: 'techno', substyle: null }, { style: 'house', substyle: 'deep house' }] },
+      payload: {
+        kind: 'artist',
+        name: 'DJ Teste',
+        styles: [{ style: 'techno', substyle: null }, { style: 'house', substyle: 'deep house' }, { style: 'house', substyle: null }],
+      },
+    })
+    expect(parseProfileFields(form({ tipo: 'artista', atuacaoNome: 'DJ', estilo: ['house|deep house', 'house'] }))).toMatchObject({
+      ok: true,
+      payload: { styles: [{ style: 'house', substyle: 'deep house' }, { style: 'house', substyle: null }] },
     })
     expect(parseProfileFields(form({ tipo: 'servicos', atuacaoNome: 'Som & Luz', estilo: 'techno' }))).toEqual({ ok: true, payload: { kind: 'services', name: 'Som & Luz' } })
     expect(parseProfileFields(form({ tipo: 'audiovisual', atuacaoNome: 'Estúdio' }))).toMatchObject({ ok: true, payload: { kind: 'audiovisual' } })
@@ -97,7 +106,21 @@ describe('atuação', () => {
   it('integrante sem nome usa o nome da pessoa', () => {
     expect(parseProfileFields(form({ tipo: 'integrante' }), 'Pessoa Teste')).toEqual({ ok: true, payload: { kind: 'member', name: 'Pessoa Teste' } })
     expect(parseProfileFields(form({ tipo: 'integrante' }))).toMatchObject({ ok: false, errors: { atuacaoNome: expect.any(String) } })
-    expect(parseNewProfileForm(form({ tipo: 'integrante' }), 'Fulana')).toMatchObject({ ok: true, payload: { name: 'Fulana' } })
+    expect(parseNewProfileForm(form({ tipo: 'integrante', cidade: 'Recife', estado: 'PE' }), 'Fulana')).toMatchObject({ ok: true, payload: { name: 'Fulana' } })
+  })
+  it('nova atuação leva a cidade e a UF próprias, e a cidade precisa ser da UF', () => {
+    expect(parseNewProfileForm(form({ tipo: 'servicos', atuacaoNome: 'Som', cidade: 'Juazeiro do Norte', estado: 'CE' }))).toEqual({
+      ok: true,
+      payload: { kind: 'services', name: 'Som', city: 'Juazeiro do Norte', state_code: 'CE' },
+    })
+    expect(parseNewProfileForm(form({ tipo: 'servicos', atuacaoNome: 'Som', cidade: 'Recife', estado: 'CE' }))).toMatchObject({
+      ok: false,
+      errors: { cidade: 'Escolha uma cidade de CE da lista.' },
+      values: { cidade: 'Recife', estado: 'CE' },
+    })
+    expect(parseNewProfileForm(form({ tipo: 'servicos', atuacaoNome: 'Som' }))).toMatchObject({ ok: false, errors: { estado: expect.any(String), cidade: expect.any(String) } })
+    // No cadastro a atuação herda a cidade da conta: nada é enviado nem exigido.
+    expect(parseProfileFields(form({ tipo: 'servicos', atuacaoNome: 'Som' }))).toMatchObject({ ok: true })
   })
   it('devolve o que foi digitado quando há erro', () => {
     expect(parseProfileFields(form({ tipo: 'artista', atuacaoNome: 'DJ', estilo: ['techno'], nada: 'x' }))).toMatchObject({ ok: true })
@@ -133,8 +156,15 @@ describe('dados do cadastro', () => {
   })
   it('RN-04: nome, cidade, UF; gênero é opcional', () => {
     expect(parse({ nome: '', cidade: '', estado: 'XX' })).toMatchObject({ ok: false, errors: { nome: expect.any(String), cidade: expect.any(String), estado: expect.any(String) } })
-    expect(parse({ genero: 'Pessoa não binária' })).toMatchObject({ ok: true, payload: { account: { gender: 'Pessoa não binária' } } })
+    for (const genero of ['Masculino', 'Feminino', 'Não binário']) expect(parse({ genero })).toMatchObject({ ok: true, payload: { account: { gender: genero } } })
+    expect(parse({ genero: 'Pessoa não binária' })).toMatchObject({ ok: false, errors: { genero: expect.any(String) } })
     expect(parse({ genero: 'x'.repeat(101) })).toMatchObject({ ok: false, errors: { genero: expect.any(String) } })
+  })
+  it('UF primeiro, depois a cidade: a cidade precisa ser uma cidade oficial da UF', () => {
+    expect(parse({ cidade: 'Juazeiro do Norte', estado: 'CE' })).toMatchObject({ ok: true, payload: { account: { city: 'Juazeiro do Norte', state_code: 'CE' } } })
+    expect(parse({ cidade: 'Recife', estado: 'CE' })).toMatchObject({ ok: false, errors: { cidade: 'Escolha uma cidade de CE da lista.' } })
+    expect(parse({ cidade: 'Recife', estado: '' })).toMatchObject({ ok: false, errors: { estado: 'Escolha o estado.', cidade: expect.stringContaining('primeiro o estado') } })
+    expect(parse({ cidade: 'Cidade Inventada', estado: 'PE' })).toMatchObject({ ok: false, errors: { cidade: expect.any(String) } })
   })
   it('RN-36: WhatsApp igual ao celular, outro número válido, ou nenhum', () => {
     expect(parse({ whatsapp: 'none' })).toMatchObject({ ok: true, payload: { account: { phone_is_whatsapp: false, whatsapp_number: null } } })

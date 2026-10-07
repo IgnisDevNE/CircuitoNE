@@ -102,12 +102,13 @@ describe('parseEventForm', () => {
   it('campos obrigatórios e limites de tamanho do banco', () => {
     expect(fieldsOf(body({ name: '  ', city: '', venue: '', state_code: 'XX' }))).toEqual({
       name: 'Informe o nome do evento.',
-      city: 'Informe a cidade.',
+      city: 'Escolha a cidade.',
       venue: 'Informe o local.',
       state_code: 'Escolha o estado.',
     })
     expect(fieldsOf(body({ name: 'n'.repeat(201) })).name).toMatch(/até 200/)
-    expect(fieldsOf(body({ city: 'c'.repeat(151) })).city).toMatch(/até 150/)
+    expect(fieldsOf(body({ city: 'c'.repeat(151) })).city).toBe('Escolha uma cidade de PE da lista.')
+    expect(fieldsOf(body({ city: 'Fortaleza', state_code: 'PE' })).city).toBe('Escolha uma cidade de PE da lista.')
     expect(fieldsOf(body({ venue: 'v'.repeat(501) })).venue).toMatch(/até 500/)
     expect(fieldsOf(body({ description: 'd'.repeat(20001) })).description).toMatch(/até 20\.000/)
     expect(payloadOf(body({ description: 'd'.repeat(20000) })).description).toHaveLength(20000)

@@ -1,7 +1,9 @@
-import { ESTADOS, type AtuacaoTipo } from '../data/types'
+import { GENEROS, type AtuacaoTipo } from '../data/types'
 import { normalizePhone, PASSWORD_MAX, PASSWORD_MIN, type FieldErrors, type FormValues, type Parsed } from './account-forms'
 import type { Taxonomia } from '../server/mappers/account-settings'
+import { checkLocation } from './municipios'
 import { birthdateStatus, normalizeCpf, validEmail } from './registration-validation'
+import { withParentStyles } from './style-selection'
 
 /**
  * Cadastro (e-mail, celular, dados e primeira atuação) e nova atuação. Validação no servidor, antes de qualquer chamada
@@ -25,7 +27,6 @@ export type FlowResult =
 
 export type { FieldErrors, FormValues, Parsed }
 
-const UFS: readonly string[] = ESTADOS.map((estado) => estado.value)
 const text = (form: URLSearchParams, key: string) => (form.get(key) ?? '').trim()
 const echo = (form: URLSearchParams, keys: string[]): FormValues => Object.fromEntries(keys.map((key) => [key, text(form, key)]))
 const failure = (errors: FieldErrors, values: FormValues): Parsed<never> | null =>
@@ -105,11 +106,19 @@ export const PROFILE_KINDS = [
   { value: 'integrante', db: 'member', label: 'Integrante de coletivo', desc: 'coletivo ou produtora' },
 ] as const satisfies readonly { value: AtuacaoTipo; db: string; label: string; desc: string }[]
 
-export type NewProfilePayload = { kind: string; name: string; styles?: { style: string; substyle: string | null }[] }
+export type NewProfilePayload = {
+  kind: string
+  name: string
+  styles?: { style: string; substyle: string | null }[]
+  /** Só em "nova atuação": cidade e UF próprias da atuação (sem elas, o banco usa as da conta). */
+  city?: string
+  state_code?: string
+}
 
 /** Estilos vêm como `estilo` ou `estilo|subestilo` (nenhum nome da taxonomia contém "|"). */
 function parseStyles(form: URLSearchParams, errors: FieldErrors): { style: string; substyle: string | null }[] {
-  const selected = [...new Set(form.getAll('estilo').map((value) => value.trim()).filter(Boolean))]
+  // Subestilo escolhido implica o estilo principal (a mesma regra do seletor, para quem envia sem JavaScript).
+  const selected = withParentStyles([...new Set(form.getAll('estilo').map((value) => value.trim()).filter(Boolean))])
   if (selected.length === 0) errors.estilo = 'Escolha ao menos um estilo.'
   else if (selected.length > 50) errors.estilo = 'Escolha no máximo 50 estilos.'
   return selected.map((value) => {
@@ -119,10 +128,11 @@ function parseStyles(form: URLSearchParams, errors: FieldErrors): { style: strin
 }
 
 /**
- * Tipo, nome e (para artistas) estilos. Cidade e estado da atuação vêm da conta, no banco. `fallbackName` completa o
- * nome de integrante de coletivo, que por padrão usa o nome da própria pessoa.
+ * Tipo, nome e (para artistas) estilos. Cidade e estado da atuação vêm da conta, no banco, a menos que `withLocation`
+ * (nova atuação) peça a UF e a cidade próprias da atuação. `fallbackName` completa o nome de integrante de coletivo,
+ * que por padrão usa o nome da própria pessoa.
  */
-export function parseProfileFields(form: URLSearchParams, fallbackName = ''): Parsed<NewProfilePayload> {
+export function parseProfileFields(form: URLSearchParams, fallbackName = '', withLocation = false): Parsed<NewProfilePayload> {
   const errors: FieldErrors = {}
   const kind = PROFILE_KINDS.find((item) => item.value === text(form, 'tipo'))
   let name = text(form, 'atuacaoNome')
@@ -131,16 +141,22 @@ export function parseProfileFields(form: URLSearchParams, fallbackName = ''): Pa
   if (!name) errors.atuacaoNome = 'Informe o nome da atuação.'
   else if (name.length > 200) errors.atuacaoNome = 'Use até 200 caracteres.'
   const styles = kind?.value === 'artista' ? parseStyles(form, errors) : []
-  const failed = failure(errors, profileValues(form))
+  const city = text(form, 'cidade')
+  const state = text(form, 'estado')
+  if (withLocation) checkLocation(errors, { city: 'cidade', state: 'estado' }, city, state)
+  const failed = failure(errors, profileValues(form, withLocation))
   if (failed) return failed
-  return { ok: true, payload: { kind: kind!.db, name, ...(kind!.value === 'artista' ? { styles } : {}) } }
+  return {
+    ok: true,
+    payload: { kind: kind!.db, name, ...(kind!.value === 'artista' ? { styles } : {}), ...(withLocation ? { city, state_code: state } : {}) },
+  }
 }
 
-export const parseNewProfileForm = (form: URLSearchParams, fallbackName = '') => parseProfileFields(form, fallbackName)
+export const parseNewProfileForm = (form: URLSearchParams, fallbackName = '') => parseProfileFields(form, fallbackName, true)
 
 /** Valores digitados do formulário de atuação, devolvidos junto com um erro (nunca senhas nem códigos). */
-export const profileValues = (form: URLSearchParams): FormValues => ({
-  ...echo(form, ['tipo', 'atuacaoNome']),
+export const profileValues = (form: URLSearchParams, withLocation = false): FormValues => ({
+  ...echo(form, withLocation ? ['tipo', 'atuacaoNome', 'cidade', 'estado'] : ['tipo', 'atuacaoNome']),
   estilo: [...new Set(form.getAll('estilo').map((value) => value.trim()).filter(Boolean))],
 })
 
@@ -200,10 +216,8 @@ export function parseRegistrationForm(form: URLSearchParams, phone: string, toda
   if (!birth) errors.nascimento = 'Informe a data de nascimento.'
   else if (status === 'invalid') errors.nascimento = 'Informe uma data de nascimento válida.'
   else if (status === 'underage') errors.nascimento = 'É necessário ter 18 anos completos.'
-  if (gender.length > 100) errors.genero = 'Use até 100 caracteres.'
-  if (!city) errors.cidade = 'Informe a cidade.'
-  else if (city.length > 150) errors.cidade = 'Use até 150 caracteres.'
-  if (!UFS.includes(state)) errors.estado = 'Escolha o estado.'
+  if (gender && !(GENEROS as readonly string[]).includes(gender)) errors.genero = 'Escolha uma opção da lista ou deixe em branco.'
+  checkLocation(errors, { city: 'cidade', state: 'estado' }, city, state)
   let whatsappNumber: string | null = null
   if (!['same', 'other', 'none'].includes(whatsapp)) errors.whatsapp = 'Escolha uma opção.'
   else if (whatsapp === 'other') {

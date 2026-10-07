@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Form, Link } from 'react-router'
-import { ESTADOS } from '../../data/types'
 import { formatBrazilianPhone, type FlowResult, type RegistrationNotice, type RegistrationPage } from '../../lib/registration-forms'
 import { Button, Panel } from '../../components/ui/primitives'
-import { Input, Select } from '../../components/ui/form'
+import { GenderSelect, Input } from '../../components/ui/form'
+import { LocationFields } from '../../components/ui/LocationFields'
 import { Stepper } from '../../components/ui/Stepper'
+import { CpfInput } from './CpfInput'
 import { Feedback, GeneralFeedback, ResendButton, errorsOf, useCooldown, valueOf, valuesOf } from './flow-ui'
 import { ProfileFields } from './ProfileFields'
 
@@ -178,11 +179,10 @@ function DataStep({ page, result, busy }: { page: Extract<FlowPage, { step: 'dat
         <legend className="mb-3 font-display text-xl">Seus dados</legend>
         <div className="grid gap-4 sm:grid-cols-2">
           <Input label="Nome completo" name="nome" defaultValue={value('nome')} error={errors.nome} maxLength={200} autoComplete="name" required />
-          <Input label="Gênero (opcional)" name="genero" defaultValue={value('genero')} error={errors.genero} maxLength={100} hint="deixe em branco para não informar" />
+          <GenderSelect defaultValue={value('genero')} error={errors.genero} />
           <Input label="Data de nascimento" name="nascimento" type="date" defaultValue={value('nascimento')} error={errors.nascimento} autoComplete="bday" hint="é preciso ter 18 anos completos" required />
-          <Input label="CPF" name="cpf" defaultValue={value('cpf')} error={errors.cpf} inputMode="numeric" maxLength={14} placeholder="000.000.000-00" hint="não é público; não pode ser alterado depois" required />
-          <Input label="Cidade" name="cidade" defaultValue={value('cidade')} error={errors.cidade} maxLength={150} autoComplete="address-level2" required />
-          <Select label="Estado" name="estado" defaultValue={value('estado', 'PE')} error={errors.estado} options={ESTADOS.map((s) => ({ value: s.value, label: s.label }))} required />
+          <CpfInput defaultValue={value('cpf')} serverError={errors.cpf} />
+          <LocationFields ufName="estado" cityName="cidade" defaultUf={value('estado')} defaultCity={value('cidade')} ufError={errors.estado} cityError={errors.cidade} />
         </div>
         <fieldset aria-describedby={errors.whatsapp ? 'whatsapp-erro' : undefined}>
           <legend className="mb-2 font-mono text-xs uppercase tracking-widest text-[var(--color-muted)]">

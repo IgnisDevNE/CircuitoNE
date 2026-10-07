@@ -3,11 +3,12 @@ import { PROFILE_KINDS, type FieldErrors } from '../../lib/registration-forms'
 import type { AtuacaoTipo } from '../../data/types'
 import type { Taxonomia } from '../../server/mappers/account-settings'
 import { Input } from '../../components/ui/form'
+import { LocationFields } from '../../components/ui/LocationFields'
 import { StylePicker } from '../app/EditProfile'
 
 /**
  * Tipo, nome e (artistas) estilos da atuação: usados na primeira atuação do cadastro e em "nova atuação".
- * Cidade e estado da atuação vêm da conta (o banco os copia).
+ * Cidade e estado da atuação vêm da conta (o banco os copia), salvo em "nova atuação", que pode informar os próprios.
  */
 export function ProfileFields({
   taxonomia,
@@ -16,6 +17,7 @@ export function ProfileFields({
   nome,
   estilos,
   memberHint,
+  location,
 }: {
   taxonomia: Taxonomia
   errors: FieldErrors
@@ -24,6 +26,8 @@ export function ProfileFields({
   estilos: string[]
   /** Sugestão de nome para integrante de coletivo (o nome da própria pessoa). */
   memberHint?: string
+  /** Só em "nova atuação": UF e cidade próprias da atuação (iniciam com as da conta). No cadastro valem as da conta. */
+  location?: { estado: string; cidade: string }
 }) {
   const [kind, setKind] = useState<AtuacaoTipo | ''>(PROFILE_KINDS.find((item) => item.value === tipo)?.value ?? '')
   return (
@@ -66,6 +70,18 @@ export function ProfileFields({
         required={kind !== 'integrante'}
         hint={kind === 'artista' ? 'nome artístico ou do projeto; cada projeto pode ter um perfil próprio' : kind === 'integrante' ? `deixe em branco para usar ${memberHint ? `"${memberHint}"` : 'o seu nome'}` : undefined}
       />
+      {location && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <LocationFields
+            ufName="estado"
+            cityName="cidade"
+            defaultUf={location.estado}
+            defaultCity={location.cidade}
+            ufError={errors.estado}
+            cityError={errors.cidade}
+          />
+        </div>
+      )}
       {kind === 'artista' && <StylePicker taxonomia={taxonomia} selected={estilos} error={errors.estilo} />}
     </div>
   )

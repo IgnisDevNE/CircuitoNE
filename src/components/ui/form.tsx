@@ -1,4 +1,5 @@
 import { useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
+import { GENEROS } from '../../data/types'
 import { cx } from '../../lib/utils'
 
 const fieldBase =
@@ -93,6 +94,19 @@ export function Select({
       </select>
       <Hint id={dsc} error={error} hint={hint} />
     </div>
+  )
+}
+
+/** Gênero (RN-04): opcional; a opção vazia é "prefiro não informar". Só os valores canônicos são enviados. */
+export function GenderSelect({ defaultValue = '', error }: { defaultValue?: string; error?: string }) {
+  return (
+    <Select
+      label="Gênero (opcional)"
+      name="genero"
+      defaultValue={defaultValue}
+      error={error}
+      options={[{ value: '', label: 'Prefiro não informar' }, ...GENEROS.map((genero) => ({ value: genero, label: genero }))]}
+    />
   )
 }
 

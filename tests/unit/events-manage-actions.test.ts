@@ -256,7 +256,7 @@ describe('eventManageAction', () => {
     expect(await manage({ version: '1' })).toMatchObject({ ok: false, status: 400 })
     for (const version of ['', '0', '-1', '1.5', 'abc', '99999999999']) expect(await manage({ intent: 'publish', version }), version).toMatchObject({ ok: false, status: 400 })
     expect(await manage({ intent: 'publish' })).toMatchObject({ ok: false, status: 400 })
-    expect(await manage({ ...eventFields({ city: '' }), intent: 'update', version: '1' })).toMatchObject({ ok: false, status: 422, fields: { city: 'Informe a cidade.' } })
+    expect(await manage({ ...eventFields({ city: '' }), intent: 'update', version: '1' })).toMatchObject({ ok: false, status: 422, fields: { city: 'Escolha a cidade.' } })
     expect(sent).toEqual([])
   })
 

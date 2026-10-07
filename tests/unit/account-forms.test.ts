@@ -14,6 +14,7 @@ import {
   parseProfessionalForm,
   parseProfileForm,
 } from '../../src/lib/account-forms'
+import { GENEROS } from '../../src/data/types'
 import { formatCacheCents } from '../../src/lib/utils'
 
 const form = (fields: Record<string, string | string[]>) => {
@@ -63,9 +64,9 @@ describe('parseAccountForm', () => {
   })
 
   it('RN-36: outro número vira E.164; sem WhatsApp zera o número', () => {
-    expect(parseAccountForm(form({ ...valid, whatsapp: 'other', whatsappNumero: '81 98888-7777', genero: 'Mulher' }), PHONE)).toEqual({
+    expect(parseAccountForm(form({ ...valid, whatsapp: 'other', whatsappNumero: '81 98888-7777', genero: 'Feminino' }), PHONE)).toEqual({
       ok: true,
-      payload: { name: 'Pessoa Teste', gender: 'Mulher', city: 'Olinda', state_code: 'PE', phone_is_whatsapp: false, whatsapp_number: '+5581988887777' },
+      payload: { name: 'Pessoa Teste', gender: 'Feminino', city: 'Olinda', state_code: 'PE', phone_is_whatsapp: false, whatsapp_number: '+5581988887777' },
     })
     expect(parseAccountForm(form({ ...valid, whatsapp: 'none', whatsappNumero: '81 98888-7777' }), PHONE)).toMatchObject({
       ok: true,
@@ -79,8 +80,8 @@ describe('parseAccountForm', () => {
       ok: false,
       errors: {
         nome: 'Informe seu nome completo.',
-        genero: 'Use até 100 caracteres.',
-        cidade: 'Informe a cidade.',
+        genero: 'Escolha uma opção da lista ou deixe em branco.',
+        cidade: 'Escolha a cidade.',
         estado: 'Escolha o estado.',
         whatsapp: 'Escolha uma opção.',
       },
@@ -88,8 +89,18 @@ describe('parseAccountForm', () => {
     })
     expect(parseAccountForm(form({ ...valid, nome: 'x'.repeat(201), cidade: 'y'.repeat(151) }), PHONE)).toMatchObject({
       ok: false,
-      errors: { nome: 'Use até 200 caracteres.', cidade: 'Use até 150 caracteres.' },
+      errors: { nome: 'Use até 200 caracteres.', cidade: 'Escolha uma cidade de PE da lista.' },
     })
+  })
+
+  it('RN-04: gênero só aceita os valores canônicos (ou vazio); cidade precisa pertencer à UF', () => {
+    for (const genero of GENEROS) expect(parseAccountForm(form({ ...valid, genero }), PHONE)).toMatchObject({ ok: true, payload: { gender: genero } })
+    for (const genero of ['masculino', 'Pessoa não binária', 'Outro']) {
+      expect(parseAccountForm(form({ ...valid, genero }), PHONE)).toMatchObject({ ok: false, errors: { genero: expect.any(String) } })
+    }
+    expect(parseAccountForm(form({ ...valid, cidade: 'Fortaleza', estado: 'PE' }), PHONE)).toMatchObject({ ok: false, errors: { cidade: 'Escolha uma cidade de PE da lista.' } })
+    expect(parseAccountForm(form({ ...valid, cidade: 'Fortaleza', estado: 'CE' }), PHONE)).toMatchObject({ ok: true, payload: { city: 'Fortaleza', state_code: 'CE' } })
+    expect(parseAccountForm(form({ ...valid, cidade: 'recife' }), PHONE)).toMatchObject({ ok: false, errors: { cidade: expect.any(String) } })
   })
 
   it('outro número exige número válido e diferente do celular', () => {
@@ -122,7 +133,8 @@ describe('parseProfileForm', () => {
         color: '#00ff88',
         social_links: { instagram: 'https://instagram.com/x', website: 'https://example.invalid' },
         published: true,
-        styles: [{ style: 'techno', substyle: null }, { style: 'house', substyle: 'acid house' }],
+        // O subestilo escolhido leva o estilo principal dele junto.
+        styles: [{ style: 'techno', substyle: null }, { style: 'house', substyle: 'acid house' }, { style: 'house', substyle: null }],
       },
     })
     expect(parseProfileForm(form({ ...base, estilo: 'techno' }), 'artista')).toMatchObject({ ok: true, payload: { published: false } })
@@ -146,7 +158,7 @@ describe('parseProfileForm', () => {
       errors: {
         nome: 'Informe o nome da atuação.',
         descricao: 'Use até 10.000 caracteres.',
-        cidade: 'Informe a cidade.',
+        cidade: 'Escolha a cidade.',
         estado: 'Escolha o estado.',
         cor: 'Escolha uma cor válida.',
         instagram: 'Informe o endereço completo, começando por https://',

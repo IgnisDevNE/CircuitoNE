@@ -1,4 +1,5 @@
-import { ESTADOS, EVENTO_TIPO_LABEL, type Estado, type EventoTipo } from '../data/types'
+import { EVENTO_TIPO_LABEL, type Estado, type EventoTipo } from '../data/types'
+import { checkLocation } from './municipios'
 import { parseFortalezaDateTime } from './utils'
 
 /**
@@ -9,13 +10,11 @@ import { parseFortalezaDateTime } from './utils'
 export const LINEUP_MAX = 100
 export const NAME_MAX = 200
 export const DESCRIPTION_MAX = 20000
-export const CITY_MAX = 150
 export const VENUE_MAX = 500
 export const URL_MAX = 2048
 export const STYLE_MAX = 100
 
 const TIPOS = Object.keys(EVENTO_TIPO_LABEL) as EventoTipo[]
-const UFS = ESTADOS.map((estado) => estado.value) as Estado[]
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 // Mesma regra de `private.valid_web_url`.
 const WEB_URL = /^https?:\/\/[^\s/?#@]+([/?#]\S*)?$/
@@ -81,10 +80,8 @@ export function parseEventForm(form: URLSearchParams): ParsedEventForm {
   else if (startsAt && endsAt && Date.parse(endsAt) <= Date.parse(startsAt)) fields.ends_at = 'O fim deve ser posterior ao início.'
 
   const stateCode = get('state_code')
-  if (!(UFS as string[]).includes(stateCode)) fields.state_code = 'Escolha o estado.'
   const city = get('city')
-  if (!city) fields.city = 'Informe a cidade.'
-  else if (length(city) > CITY_MAX) fields.city = `A cidade pode ter até ${CITY_MAX} caracteres.`
+  checkLocation(fields, { city: 'city', state: 'state_code' }, city, stateCode)
   const venue = get('venue')
   if (!venue) fields.venue = 'Informe o local.'
   else if (length(venue) > VENUE_MAX) fields.venue = `O local pode ter até ${VENUE_MAX} caracteres.`

@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { Form, Link } from 'react-router'
-import { ESTADOS, TIPO_LABEL } from '../../data/types'
+import { TIPO_LABEL } from '../../data/types'
 import type { ActionResult } from '../../lib/account-forms'
 import type { ContaDados, WhatsappEscolha } from '../../server/mappers/account-settings'
 import type { MeuPerfil } from '../../server/mappers/account'
 import { Badge, Button, LinkButton, Panel } from '../../components/ui/primitives'
-import { Input, Select } from '../../components/ui/form'
+import { GenderSelect, Input } from '../../components/ui/form'
+import { LocationFields } from '../../components/ui/LocationFields'
 import { errorsFor, FormFeedback, GeneralFeedback, valueFor } from './account-ui'
 
 const SUPPORT_EMAIL = 'ignisdev@magalz.space'
@@ -45,15 +46,14 @@ export function EditData({ conta, perfis, result, busy }: EditDataProps) {
         <Form method="post" className="grid gap-4 sm:grid-cols-2" noValidate>
           <input type="hidden" name="intent" value="save-account" />
           <Input label="Nome completo" name="nome" defaultValue={value('nome', conta.nome)} error={errors.nome} required autoComplete="name" />
-          <Input label="Gênero (opcional)" name="genero" defaultValue={value('genero', conta.genero ?? '')} error={errors.genero} hint="deixe em branco para não informar" />
-          <Input label="Cidade" name="cidade" defaultValue={value('cidade', conta.cidade)} error={errors.cidade} required autoComplete="address-level2" />
-          <Select
-            label="Estado"
-            name="estado"
-            defaultValue={value('estado', conta.estado)}
-            error={errors.estado}
-            options={ESTADOS.map((s) => ({ value: s.value, label: s.label }))}
-            required
+          <GenderSelect defaultValue={value('genero', conta.genero ?? '')} error={errors.genero} />
+          <LocationFields
+            ufName="estado"
+            cityName="cidade"
+            defaultUf={value('estado', conta.estado)}
+            defaultCity={value('cidade', conta.cidade)}
+            ufError={errors.estado}
+            cityError={errors.cidade}
           />
 
           <fieldset className="sm:col-span-2" aria-describedby={errors.whatsapp ? 'whatsapp-erro' : undefined}>

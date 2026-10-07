@@ -1,11 +1,12 @@
 import { useId, useState } from 'react'
 import { Form } from 'react-router'
-import { ESTADOS, EVENTO_TIPO_LABEL, type Estado, type EventoTipo } from '../../data/types'
+import { EVENTO_TIPO_LABEL, type Estado, type EventoTipo } from '../../data/types'
 import { encodeLineupEntry, LINEUP_MAX, type LineupEntry } from '../../lib/event-form'
 import { toFortalezaInput } from '../../lib/utils'
 import type { ArtistaOpcao, EventoGerido } from '../../server/mappers/events-manage'
 import { Badge, Button, Panel } from '../../components/ui/primitives'
 import { Checkbox, Input, Select } from '../../components/ui/form'
+import { LocationFields } from '../../components/ui/LocationFields'
 import { FileField } from '../../components/ui/FileField'
 import { IMAGE_MAX_BYTES } from '../../lib/uploads'
 import { Markdown, MarkdownEditor } from '../../components/ui/Markdown'
@@ -20,7 +21,7 @@ export type EventFormValues = {
   descricao: string
   inicio: string
   fim: string
-  estado: Estado
+  estado: Estado | ''
   cidade: string
   local: string
   gratuito: boolean
@@ -37,7 +38,7 @@ export const EMPTY_EVENT_VALUES: EventFormValues = {
   descricao: '',
   inicio: '',
   fim: '',
-  estado: 'PE',
+  estado: '',
   cidade: '',
   local: '',
   gratuito: false,
@@ -142,8 +143,7 @@ export function EventForm({ initial, artistas, estilos, errors = {}, busy = fals
           </div>
           <p className="font-mono text-xs text-[var(--color-muted)]">Horários no fuso de Fortaleza (UTC−03:00), qualquer que seja o seu fuso.</p>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Select label="Estado" name="state_code" value={form.estado} onChange={(e) => set('estado', e.target.value as Estado)} error={errors.state_code} options={ESTADOS.map((s) => ({ value: s.value, label: s.label }))} />
-            <Input label="Cidade" name="city" value={form.cidade} onChange={(e) => set('cidade', e.target.value)} required maxLength={150} error={errors.city} />
+            <LocationFields ufName="state_code" cityName="city" defaultUf={form.estado} defaultCity={form.cidade} ufError={errors.state_code} cityError={errors.city} />
             <Input label="Local" name="venue" value={form.local} onChange={(e) => set('local', e.target.value)} required maxLength={500} error={errors.venue} />
           </div>
           <Input

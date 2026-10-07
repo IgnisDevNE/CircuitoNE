@@ -340,8 +340,8 @@ function ExpandedWindow({ win, dock, chat }: { win: ChatWindowState; dock: ChatD
       </header>
 
       {fullHref && (
-        <p className="shrink-0 border-b border-[var(--color-line)] px-3 py-1.5 font-mono text-[0.7rem]">
-          <Link to={fullHref} className="text-[var(--accent-text)] underline">abrir conversa completa</Link>
+        <p className="shrink-0 border-b border-[var(--color-line)] px-3 font-mono text-xs">
+          <Link to={fullHref} className="inline-flex min-h-8 items-center text-[var(--accent-text)] underline">abrir conversa completa</Link>
         </p>
       )}
 

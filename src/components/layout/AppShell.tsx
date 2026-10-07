@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link, NavLink } from 'react-router'
 import { TIPO_LABEL } from '../../data/types'
 import { cx, navClass } from '../../lib/utils'
@@ -24,6 +24,14 @@ export interface AppShellProps {
 
 export function AppShell({ nome, perfis, coletivos, naoLidas, children }: AppShellProps) {
   const [open, setOpen] = useState(false)
+
+  // Esc fecha o menu recolhido (celular).
+  useEffect(() => {
+    if (!open) return
+    const onKey = (event: KeyboardEvent) => event.key === 'Escape' && setOpen(false)
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open])
 
   // Menus SOMAM conforme as atuações e coletivos da conta
   const sections = useMemo(() => {
@@ -121,7 +129,7 @@ export function AppShell({ nome, perfis, coletivos, naoLidas, children }: AppShe
         <aside id="painel-nav" className={cx('w-64 shrink-0 border-r border-[var(--color-line)] lg:sticky lg:top-0 lg:block lg:h-screen', open ? 'block' : 'hidden')}>
           {sidebar}
         </aside>
-        <main id="painel-conteudo" className="min-w-0 flex-1 px-4 py-8 sm:px-6">
+        <main id="painel-conteudo" tabIndex={-1} className="min-w-0 flex-1 px-4 py-8 outline-none sm:px-6">
           {children}
         </main>
       </div>

@@ -184,7 +184,7 @@ describe('módulos de rota', () => {
     })
     expect(await screen.findByRole('heading', { name: 'Evento sintético 2' })).toBeTruthy()
     expect(screen.getByRole('navigation', { name: 'Principal' })).toBeTruthy()
-    expect(screen.getByText(/Hub cultural independente · 2026/)).toBeTruthy()
+    expect(screen.getByRole('contentinfo').textContent).toContain(`Hub cultural independente · ${new Date().getFullYear()}`)
   })
 
   it('404 do loader mostra o estado "não encontrado" dentro do layout, com caminho de volta', async () => {

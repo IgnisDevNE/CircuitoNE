@@ -1,5 +1,4 @@
-import { Form } from 'react-router'
-import { Link } from 'react-router'
+import { Form, Link } from 'react-router'
 import type { FlowResult } from '../../lib/registration-forms'
 import type { Taxonomia } from '../../server/mappers/account-settings'
 import { Button, Panel } from '../../components/ui/primitives'

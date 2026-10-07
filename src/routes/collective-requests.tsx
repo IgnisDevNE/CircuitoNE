@@ -18,5 +18,5 @@ export default function CollectiveRequestsRoute({ loaderData, actionData }: Rout
 }
 
 export function ErrorBoundary() {
-  return <LoadError notFound="Coletivo não encontrado." backTo="/painel/coletivos" backLabel="voltar para meus coletivos" />
+  return <LoadError level="h2" notFound="Coletivo não encontrado." backTo="/painel/coletivos" backLabel="voltar para meus coletivos" />
 }

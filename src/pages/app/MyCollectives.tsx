@@ -1,5 +1,4 @@
-import { Form } from 'react-router'
-import { Link } from 'react-router'
+import { Form, Link } from 'react-router'
 import { TIPO_LABEL } from '../../data/types'
 import type { ActionResult } from '../../lib/action-result'
 import { fmtData } from '../../lib/utils'

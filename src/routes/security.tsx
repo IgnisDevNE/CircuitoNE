@@ -1,4 +1,5 @@
 import { useNavigation, useRouteLoaderData } from 'react-router'
+import { LoadError } from '../components/ui/LoadError'
 import { Empty } from '../components/ui/primitives'
 import { Security } from '../pages/app/Security'
 import { loadSecurity, securityAction } from '../server/account-settings.server'
@@ -19,4 +20,8 @@ export default function SecurityRoute({ loaderData, actionData }: Route.Componen
   if (shell?.status !== 'active') return null
   if (!loaderData.seguranca) return <Empty>Não foi possível carregar os dados de segurança.</Empty>
   return <Security seguranca={loaderData.seguranca} result={actionData} busy={busy} />
+}
+
+export function ErrorBoundary() {
+  return <LoadError notFound="Página não encontrada." backTo="/painel" backLabel="voltar ao dashboard" />
 }

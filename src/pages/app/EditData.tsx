@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { Form } from 'react-router'
-import { Link } from 'react-router'
+import { Form, Link } from 'react-router'
 import { ESTADOS, TIPO_LABEL } from '../../data/types'
 import type { ActionResult } from '../../lib/account-forms'
 import type { ContaDados, WhatsappEscolha } from '../../server/mappers/account-settings'

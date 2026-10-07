@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link, NavLink } from 'react-router'
 import { navClass } from '../../lib/utils'
 import { Cursor } from '../ui/anim'
@@ -14,6 +14,14 @@ const NAV = [
 /** `signedIn` vem da sessão validada no servidor (layout público); `name` só enriquece o rótulo do link. */
 export function PublicLayout({ children, signedIn, name }: { children: ReactNode; signedIn: boolean; name?: string | null }) {
   const [open, setOpen] = useState(false)
+
+  // Esc fecha o menu recolhido (celular).
+  useEffect(() => {
+    if (!open) return
+    const onKey = (event: KeyboardEvent) => event.key === 'Escape' && setOpen(false)
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open])
 
   return (
     <div className="crt-flicker flex min-h-screen flex-col">

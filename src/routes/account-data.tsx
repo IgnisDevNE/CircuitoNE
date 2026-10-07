@@ -1,4 +1,5 @@
 import { useNavigation, useRouteLoaderData } from 'react-router'
+import { LoadError } from '../components/ui/LoadError'
 import { Empty } from '../components/ui/primitives'
 import { EditData } from '../pages/app/EditData'
 import { accountDataAction, loadAccountData } from '../server/account-settings.server'
@@ -20,4 +21,8 @@ export default function AccountDataRoute({ loaderData, actionData }: Route.Compo
   if (shell?.status !== 'active') return null
   if (!loaderData.conta) return <Empty>Não foi possível carregar os dados da conta.</Empty>
   return <EditData conta={loaderData.conta} perfis={shell.perfis} result={actionData} busy={busy} />
+}
+
+export function ErrorBoundary() {
+  return <LoadError notFound="Página não encontrada." backTo="/painel" backLabel="voltar ao dashboard" />
 }

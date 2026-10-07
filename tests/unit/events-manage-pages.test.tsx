@@ -187,6 +187,13 @@ describe('CreateEvent', () => {
     expect(screen.getByText('[erro] Cada artista aparece uma única vez no lineup.')).toBeTruthy()
   })
 
+  it('o erro da descrição fica ligado ao editor (aria-invalid e aria-describedby)', () => {
+    page({ feedback: { ok: false, error: 'Corrija os campos destacados.', fields: { description: 'A descrição é longa demais.' } } })
+    const editor = screen.getByLabelText('$ descrição')
+    expect(editor.getAttribute('aria-invalid')).toBe('true')
+    expect(document.getElementById(editor.getAttribute('aria-describedby')!)?.textContent).toBe('[erro] A descrição é longa demais.')
+  })
+
   it('durante o envio o botão fica desativado', () => {
     page({ busy: true })
     expect((screen.getByRole('button', { name: 'salvar rascunho' }) as HTMLButtonElement).disabled).toBe(true)

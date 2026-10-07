@@ -25,7 +25,7 @@ export function Markdown({ source, className }: { source: string; className?: st
 }
 
 /** Markdown editor with style buttons (WCAG: labelled toolbar buttons). */
-export function MarkdownEditor({ value, onChange, id, name }: { value: string; onChange: (v: string) => void; id?: string; name?: string }) {
+export function MarkdownEditor({ value, onChange, id, name, invalid, describedBy }: { value: string; onChange: (v: string) => void; id?: string; name?: string; invalid?: boolean; describedBy?: string }) {
   const ref = useRef<HTMLTextAreaElement>(null)
 
   const wrap = (before: string, after = before) => {
@@ -81,6 +81,8 @@ export function MarkdownEditor({ value, onChange, id, name }: { value: string; o
         name={name}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        aria-invalid={invalid ? true : undefined}
+        aria-describedby={describedBy}
         className="min-h-40 w-full resize-y bg-[var(--color-bg-elev)] p-3 font-mono text-sm outline-none focus:ring-1 focus:ring-[var(--accent)]"
         placeholder="Descreva o evento… use os botões acima para formatar (markdown)"
       />

@@ -171,8 +171,15 @@ export function EventForm({ initial, artistas, errors = {}, busy = false, hidden
           <label htmlFor={descId} className="mb-1 block font-mono text-xs uppercase tracking-widest text-[var(--color-muted)]">
             <span aria-hidden className="text-[var(--accent-text)]">$ </span>descrição
           </label>
-          <MarkdownEditor id={descId} name="description" value={form.descricao} onChange={(v) => set('descricao', v)} />
-          {errors.description && <p className="mt-1 font-mono text-xs text-[var(--accent-text)]">[erro] {errors.description}</p>}
+          <MarkdownEditor
+            id={descId}
+            name="description"
+            value={form.descricao}
+            onChange={(v) => set('descricao', v)}
+            invalid={!!errors.description}
+            describedBy={errors.description ? `${descId}-erro` : undefined}
+          />
+          {errors.description && <p id={`${descId}-erro`} className="mt-1 font-mono text-xs text-[var(--accent-text)]">[erro] {errors.description}</p>}
           <div className="mt-4 border-t border-[var(--color-line)] pt-3" aria-label="Pré-visualização da descrição">
             <p className="mb-2 font-mono text-xs uppercase tracking-widest text-[var(--color-muted)]">pré-visualização (como na página pública)</p>
             {form.descricao.trim() ? <Markdown source={form.descricao} /> : <p className="font-mono text-xs text-[var(--color-muted)]">Nada para mostrar ainda.</p>}

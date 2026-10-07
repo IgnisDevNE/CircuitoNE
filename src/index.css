@@ -80,6 +80,12 @@ textarea:focus-visible,
   outline-offset: 2px;
 }
 
+/* Foco movido por código ao mudar de página (RouteA11y): sem contorno em títulos e áreas de conteúdo. */
+h1[tabindex='-1']:focus-visible,
+main[tabindex='-1']:focus-visible {
+  outline: none;
+}
+
 ::selection {
   background: var(--accent);
   color: #000;

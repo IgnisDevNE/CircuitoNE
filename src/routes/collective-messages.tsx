@@ -23,5 +23,5 @@ export default function CollectiveMessagesRoute({ loaderData, actionData, params
 
 export function ErrorBoundary() {
   const { id } = useParams()
-  return <LoadError notFound="Conversa não encontrada." backTo={`/coletivo/${id}/painel`} backLabel="voltar ao dashboard do coletivo" />
+  return <LoadError level="h2" notFound="Conversa não encontrada." backTo={`/coletivo/${id}/painel`} backLabel="voltar ao dashboard do coletivo" />
 }

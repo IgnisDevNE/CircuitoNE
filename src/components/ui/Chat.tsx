@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Form, useFetcher } from 'react-router'
-import { Link } from 'react-router'
+import { Form, Link, useFetcher } from 'react-router'
 import type { ActionResult } from '../../lib/action-result'
 import { MAX_MESSAGE_LENGTH, MESSAGE_SENT, partyKey, routeKey } from '../../lib/messages'
 import { cx, fmtDataHora } from '../../lib/utils'

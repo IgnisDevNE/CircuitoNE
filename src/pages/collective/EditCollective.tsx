@@ -1,5 +1,4 @@
-import { Form } from 'react-router'
-import { Link } from 'react-router'
+import { Form, Link } from 'react-router'
 import { ESTADOS } from '../../data/types'
 import type { ActionResult } from '../../lib/action-result'
 import { PERMISSIONS, PERMISSION_LABELS } from '../../lib/collective-access'

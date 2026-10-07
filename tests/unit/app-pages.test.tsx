@@ -82,6 +82,17 @@ describe('AppShell com dados reais por props (sem StoreProvider)', () => {
     ])
   })
 
+  it('o menu recolhido abre pelo botão e fecha com Esc', async () => {
+    shell()
+    const user = userEvent.setup()
+    const toggle = screen.getByRole('button', { name: 'Menu do painel' })
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    await user.click(toggle)
+    expect(toggle.getAttribute('aria-expanded')).toBe('true')
+    await user.keyboard('{Escape}')
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+  })
+
   it('"Sair" é o formulário real POST /sair', () => {
     shell()
     const button = screen.getByRole('button', { name: '[→] Sair da sessão' })
@@ -239,6 +250,18 @@ describe('cabeçalho público conforme a sessão do servidor', () => {
     const nav = await principal()
     expect(nav.getByRole('link', { name: 'Entrar' }).getAttribute('href')).toBe('/entrar')
     expect(nav.queryByRole('link', { name: 'Painel' })).toBeNull()
+  })
+
+  it('o menu móvel lista links reais e fecha com Esc', async () => {
+    header({ signedIn: false, name: null })
+    const user = userEvent.setup()
+    const toggle = await screen.findByRole('button', { name: 'Abrir menu' })
+    await user.click(toggle)
+    const mobile = within(screen.getByRole('navigation', { name: 'Principal (móvel)' }))
+    expect(mobile.getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual(['/artistas', '/coletivos', '/eventos', '/entrar'])
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('navigation', { name: 'Principal (móvel)' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Abrir menu' }).getAttribute('aria-expanded')).toBe('false')
   })
 
   it('sem loader de sessão (testes de componente) também é visitante', async () => {

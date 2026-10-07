@@ -18,7 +18,7 @@ const OLD = (id: string, name: string, ext = 'png') => `${id}/${name}.${ext}`
 
 const PNG = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3, 4])
 const PDF = Uint8Array.from([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37, 10, 11])
-const upload = (bytes: Uint8Array, name = 'arquivo.png', type = 'image/png') => new File([bytes], name, { type })
+const upload = (bytes: Uint8Array<ArrayBuffer>, name = 'arquivo.png', type = 'image/png') => new File([bytes], name, { type })
 
 // ---- Requisições multipart ----
 
@@ -145,7 +145,10 @@ describe('storeUpload / removeStored', () => {
   it('erros do Storage viram mensagens em pt-BR (tamanho, formato, sessão, permissão) ou indisponibilidade', async () => {
     const reason = async (status: number | undefined) => {
       const { client } = storageClient({ uploadError: { status, message: 'detalhe interno do Storage' } })
-      return storeUpload(client, 'image', P, prepared).catch((error: Error & { status: number }) => error)
+      return storeUpload(client, 'image', P, prepared).then(
+        () => new Error('esperava falha') as Error & { status: number },
+        (error: Error & { status: number }) => error,
+      )
     }
     expect(await reason(413)).toMatchObject({ status: 422, message: expect.stringContaining('5 MB') })
     expect(await reason(415)).toMatchObject({ status: 422, message: expect.stringContaining('Formato não aceito') })

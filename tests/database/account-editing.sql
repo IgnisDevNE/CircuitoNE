@@ -172,9 +172,12 @@ select pg_temp.assert_true((select p->>'name'='Artista renomeado' and p->'styles
 -- Dados profissionais por tipo.
 select public.update_my_professional_details(current_setting('test.artist1')::uuid,
   '{"booking_email":"booking@example.invalid","contact_email":"contato@example.invalid","contact_phone":"+5581977776666","fee_cents":150000,"cnpj":"12abc34501de35","presskit_url":"https://example.invalid/presskit"}');
-select pg_temp.assert_true((select p->'professional'='{"booking_email":"booking@example.invalid","contact_email":"contato@example.invalid","contact_phone":"+5581977776666","fee_cents":150000,
+select pg_temp.assert_true((select p->'professional' @> '{"booking_email":"booking@example.invalid","contact_email":"contato@example.invalid","contact_phone":"+5581977776666","fee_cents":150000,
   "cnpj":"12ABC34501DE35","service_type":null,"service_other":null,"audiovisual_type":null,"presskit_url":"https://example.invalid/presskit","portfolio_url":null}'::jsonb
   from (select public.get_my_profile(current_setting('test.artist1')::uuid) p) x),'Dados profissionais do artista não persistiram');
+-- W11: a projeção também traz o estado dos documentos privados e as imagens (vazios aqui).
+select pg_temp.assert_true((select p->'professional'->'presskit_path'='null'::jsonb and p->'professional'->'presskit_bytes'='null'::jsonb and p->'professional'->'services_pdf_path'='null'::jsonb
+  and p->'images'='[]'::jsonb from (select public.get_my_profile(current_setting('test.artist1')::uuid) p) x),'Projeção sem os campos de arquivo');
 -- Só as chaves enviadas mudam; vazio vira nulo; cachê pode ser zerado.
 select public.update_my_professional_details(current_setting('test.artist1')::uuid,'{"booking_email":"","fee_cents":null}');
 select pg_temp.assert_true((select p->'professional'->'booking_email'='null'::jsonb and p->'professional'->'fee_cents'='null'::jsonb and p->'professional'->>'contact_email'='contato@example.invalid'

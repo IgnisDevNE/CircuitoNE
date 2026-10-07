@@ -86,7 +86,7 @@ export function checkUpload(kind: UploadKind, bytes: Uint8Array, declaredType: s
 }
 
 /** Caminho no Storage: `<id da entidade>/<nome aleatório>.<extensão>`, o formato que as constraints e políticas exigem. */
-export const objectPath = (entityId: string, extension: UploadExtension, name = crypto.randomUUID()) =>
+export const objectPath = (entityId: string, extension: UploadExtension, name: string = crypto.randomUUID()) =>
   `${entityId}/${name}.${extension}`
 
 /** Tamanho legível em MB (1.000.000 de bytes), com vírgula decimal. */

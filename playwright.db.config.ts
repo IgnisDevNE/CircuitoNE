@@ -12,7 +12,8 @@ const MESSAGES_SPEC = /messages\.spec\.ts/
 const REGISTER_SPEC = /register\.spec\.ts/
 const MANAGE_SPEC = /collective-manage\.spec\.ts/
 const EXPLORE_SPEC = /explore\.spec\.ts/
-const WRITE_SPECS = [ACCOUNT_SPEC, MESSAGES_SPEC, REGISTER_SPEC, MANAGE_SPEC, EXPLORE_SPEC]
+const UPLOADS_SPEC = /uploads\.spec\.ts/
+const WRITE_SPECS = [ACCOUNT_SPEC, MESSAGES_SPEC, REGISTER_SPEC, MANAGE_SPEC, EXPLORE_SPEC, UPLOADS_SPEC]
 const port = '5183'
 const origin = `http://127.0.0.1:${port}`
 
@@ -69,12 +70,21 @@ export default defineConfig({
       dependencies: ['collective-manage'],
       use: { browserName: 'chromium', viewport: { width: 1366, height: 900 } },
     },
+    // uploads.spec.ts envia e remove arquivos no Storage local (fotos, galeria, PDFs privados, imagem do coletivo e capa de
+    // evento) usando a fixture-active e o coletivo 1; cada teste apaga o que enviou. Roda depois de explore, que mexe na MFA
+    // da mesma conta, e antes de register.
+    {
+      name: 'uploads',
+      testMatch: UPLOADS_SPEC,
+      dependencies: ['explore'],
+      use: { browserName: 'chromium', viewport: { width: 1366, height: 900 } },
+    },
     // register.spec.ts cria contas novas (e-mail e CPF únicos por execução) e consome os celulares de teste de
     // supabase/config.toml [auth.sms.test_otp]; roda por último e uma tela só.
     {
       name: 'register',
       testMatch: REGISTER_SPEC,
-      dependencies: ['explore'],
+      dependencies: ['uploads'],
       use: { browserName: 'chromium', viewport: { width: 1366, height: 900 } },
     },
   ],

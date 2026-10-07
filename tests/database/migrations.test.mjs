@@ -10,6 +10,7 @@ import { checkCollectiveConcurrency } from './collective-concurrency.mjs'
 import { checkEventConcurrency } from './event-concurrency.mjs'
 import { checkMessageConcurrency } from './message-concurrency.mjs'
 import { checkLifecycleConcurrency } from './lifecycle-concurrency.mjs'
+import { checkStorageConcurrency } from './storage-concurrency.mjs'
 
 const reservePort = async (port) => {
   const server = createServer()
@@ -177,6 +178,7 @@ test(
     await checkEventConcurrency(query, sql => promisify(execFile)('docker', [...psqlArgs, '--command', sql], { timeout: 30_000 }))
     await checkMessageConcurrency(query, sql => promisify(execFile)('docker', [...psqlArgs, '--command', sql], { timeout: 30_000 }))
     await checkLifecycleConcurrency(query, sql => promisify(execFile)('docker', [...psqlArgs, '--command', sql], { timeout: 30_000 }))
+    await checkStorageConcurrency(query, sql => promisify(execFile)('docker', [...psqlArgs, '--command', sql], { timeout: 30_000 }))
     run(
       "db",
       "query",

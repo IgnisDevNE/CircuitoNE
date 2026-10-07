@@ -21,7 +21,7 @@ const missing = (headers: Headers) => new Response('Documento não encontrado.',
  */
 export async function openDocument(request: Request, profileId: string, slug: string): Promise<Response> {
   const headers = privateHeaders()
-  if (!UUID.test(profileId) || !Object.hasOwn(DOCUMENT_KINDS, slug)) return missing(headers)
+  if (!UUID.test(profileId) || !Object.prototype.hasOwnProperty.call(DOCUMENT_KINDS, slug)) return missing(headers)
   try {
     const client = createSupabaseServerClient(request, headers)
     const session = await readAccountSession(client, request, headers)

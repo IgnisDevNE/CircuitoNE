@@ -51,17 +51,17 @@ export function MarkdownEditor({ value, onChange, id, name, invalid, describedBy
   }
 
   const btns: { label: string; title: string; action: () => void }[] = [
-    { label: 'H1', title: 'Título', action: () => prefix('# ') },
-    { label: 'H2', title: 'Subtítulo', action: () => prefix('## ') },
-    { label: 'B', title: 'Negrito', action: () => wrap('**') },
-    { label: 'I', title: 'Itálico', action: () => wrap('*') },
+    { label: 'H1', title: 'H1 (título)', action: () => prefix('# ') },
+    { label: 'H2', title: 'H2 (subtítulo)', action: () => prefix('## ') },
+    { label: 'B', title: 'B (negrito)', action: () => wrap('**') },
+    { label: 'I', title: 'I (itálico)', action: () => wrap('*') },
     { label: '•', title: 'Lista', action: () => prefix('- ') },
     { label: '🔗', title: 'Link', action: () => wrap('[', '](https://)') },
   ]
 
   return (
-    <div className="border border-[var(--color-line)]">
-      <div role="toolbar" aria-label="Formatação" className="flex flex-wrap gap-1 border-b border-[var(--color-line)] bg-[var(--color-bg-elev)] p-1">
+    <div className="border border-[var(--color-control)]">
+      <div role="group" aria-label="Formatação" className="flex flex-wrap gap-1 border-b border-[var(--color-line)] bg-[var(--color-bg-elev)] p-1">
         {btns.map((b) => (
           <button
             key={b.label}
@@ -84,7 +84,7 @@ export function MarkdownEditor({ value, onChange, id, name, invalid, describedBy
         aria-invalid={invalid ? true : undefined}
         aria-describedby={describedBy}
         className="min-h-40 w-full resize-y bg-[var(--color-bg-elev)] p-3 font-mono text-sm outline-none focus:ring-1 focus:ring-[var(--accent)]"
-        placeholder="Descreva o evento… use os botões acima para formatar (markdown)"
+        placeholder="Descreva o evento… use a barra de formatação para aplicar markdown"
       />
     </div>
   )

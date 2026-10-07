@@ -22,9 +22,9 @@ function MemberRow({ membro, perfis, podeAtribuir, busy }: { membro: MembroElenc
       <div className="flex flex-wrap items-center gap-3">
         <Avatar alt={membro.nome} size={36} />
         <span className="min-w-0 flex-1">
-          <span className="block truncate font-mono text-sm">{membro.nome}</span>
+          <span className="block break-words font-mono text-sm">{membro.nome}</span>
           {membro.artista && (
-            <Link to={`/artistas/${membro.artista.id}`} className="block truncate font-mono text-xs text-[var(--accent-text)] underline">{membro.artista.nome}</Link>
+            <Link to={`/artistas/${membro.artista.id}`} className="block break-words font-mono text-xs text-[var(--accent-text)] underline">{membro.artista.nome}</Link>
           )}
           <span className="block font-mono text-xs text-[var(--color-muted)]">
             {membro.ultimaAtividade ? `visto ${fmtDataHora(membro.ultimaAtividade)}` : 'sem atividade registrada'}
@@ -45,7 +45,7 @@ function MemberRow({ membro, perfis, podeAtribuir, busy }: { membro: MembroElenc
                   name="role"
                   defaultValue={membro.cargoId}
                   aria-label={`Perfil de acesso de ${membro.nome}`}
-                  className="border border-[var(--color-line)] bg-[var(--color-bg-elev)] px-2 py-1.5 font-mono text-xs outline-none focus:border-[var(--accent)]"
+                  className="border border-[var(--color-control)] bg-[var(--color-bg-elev)] px-2 py-1.5 font-mono text-xs outline-none focus:border-[var(--accent)]"
                 >
                   {perfis.map((perfil) => (
                     <option key={perfil.id} value={perfil.id}>{perfil.nome}</option>

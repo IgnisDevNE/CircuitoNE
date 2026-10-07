@@ -20,7 +20,7 @@ export interface ChatProps {
 const party = (lado: Lado) => ({ kind: lado.kind, id: lado.id ?? '' })
 
 const fieldClass =
-  'w-full bg-[var(--color-bg-elev)] border border-[var(--color-line)] px-3 py-2 font-mono text-sm outline-none focus:border-[var(--accent)]'
+  'w-full bg-[var(--color-bg-elev)] border border-[var(--color-control)] px-3 py-2 font-mono text-sm outline-none focus:border-[var(--accent)]'
 
 /** Balão de uma mensagem; `reportable` (padrão) oferece "denunciar" (um formulário da página, que o chat flutuante não usa). */
 export function Bubble({ mensagem, minha, autor, reportable = true }: { mensagem: Mensagem; minha: boolean; autor: boolean; reportable?: boolean }) {
@@ -112,7 +112,7 @@ function Composer({ aberta, feedback, busy }: Pick<ChatProps, 'aberta' | 'feedba
 /** Histórico e envio de uma conversa. O texto das mensagens é sempre renderizado como texto puro. */
 export function Chat({ basePath, aberta, podeEnviar, feedback, busy = false }: ChatProps) {
   const { conversa, mensagens, maisAnteriores, paginas } = aberta
-  const logRef = useRef<HTMLUListElement>(null)
+  const logRef = useRef<HTMLDivElement>(null)
   const last = mensagens[mensagens.length - 1]?.id
   useMarkRead(aberta)
   useEffect(() => {
@@ -148,11 +148,14 @@ export function Chat({ basePath, aberta, podeEnviar, feedback, busy = false }: C
           carregar anteriores
         </Link>
       )}
-      <ul ref={logRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto p-1" role="log" aria-label={`Conversa: ${conversa.titulo}`} aria-live="polite">
-        {mensagens.map((mensagem) => (
-          <Bubble key={mensagem.id} mensagem={mensagem} minha={isMine(mensagem.autor)} autor={!isMine(mensagem.autor) || conversa.meus.length > 1} />
-        ))}
-      </ul>
+      {/* O log é o contêiner (o `li` precisa de um `ul` de verdade); rolável, então entra na ordem do teclado (WCAG 2.1.1). */}
+      <div ref={logRef} className="min-h-0 flex-1 overflow-y-auto p-1" role="log" aria-label={`Conversa: ${conversa.titulo}`} aria-live="polite" tabIndex={0}>
+        <ul className="space-y-3">
+          {mensagens.map((mensagem) => (
+            <Bubble key={mensagem.id} mensagem={mensagem} minha={isMine(mensagem.autor)} autor={!isMine(mensagem.autor) || conversa.meus.length > 1} />
+          ))}
+        </ul>
+      </div>
 
       {feedback && (
         <p role={feedback.ok ? 'status' : 'alert'} className={cx('mt-2 font-mono text-sm', feedback.ok ? 'text-[var(--color-ok)]' : 'text-[var(--accent-text)]')}>

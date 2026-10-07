@@ -11,7 +11,7 @@ export interface NewMessageProps extends NewMessageData {
 }
 
 const fieldClass =
-  'w-full bg-[var(--color-bg-elev)] border border-[var(--color-line)] px-3 py-2 font-mono text-sm outline-none focus:border-[var(--accent)]'
+  'w-full bg-[var(--color-bg-elev)] border border-[var(--color-control)] px-3 py-2 font-mono text-sm outline-none focus:border-[var(--accent)]'
 
 /** Primeira mensagem para um artista ou coletivo; o envio cria (ou retoma) a conversa. */
 export function NewMessage({ destinatario, remetentes, feedback, busy = false }: NewMessageProps) {

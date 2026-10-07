@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
-import { SectionHeading, Empty, Badge } from '../../components/ui/primitives'
+import { SectionHeading, Empty, Badge, PRESSED_BADGE as pressed } from '../../components/ui/primitives'
 import { Input } from '../../components/ui/form'
 import { DuotoneImage } from '../../components/ui/DuotoneImage'
 import { estiloLabels } from '../../lib/artist'
@@ -36,26 +36,28 @@ export function ArtistsHub({ artistas }: { artistas: ArtistaResumo[] }) {
 
       <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Filtrar por estilo">
         <button onClick={() => setEstilo(null)} className="cursor-pointer" aria-pressed={estilo === null}>
-          <Badge tone={estilo === null ? 'accent' : 'neutral'}>todos</Badge>
+          <Badge tone={estilo === null ? 'accent' : 'neutral'} className={estilo === null ? pressed : undefined}>todos</Badge>
         </button>
         {estilos.map((s) => (
           <button key={s} onClick={() => setEstilo(s === estilo ? null : s)} className="cursor-pointer" aria-pressed={estilo === s}>
-            <Badge tone={estilo === s ? 'accent' : 'neutral'}>{s}</Badge>
+            <Badge tone={estilo === s ? 'accent' : 'neutral'} className={estilo === s ? pressed : undefined}>{s}</Badge>
           </button>
         ))}
       </div>
 
       <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Filtrar por estado">
         <button onClick={() => setUf(null)} className="cursor-pointer" aria-pressed={uf === null}>
-          <Badge tone={uf === null ? 'accent' : 'neutral'}>todos</Badge>
+          <Badge tone={uf === null ? 'accent' : 'neutral'} className={uf === null ? pressed : undefined}>todos</Badge>
         </button>
         {UFS_NORDESTE.map((s) => (
           <button key={s} onClick={() => setUf(s === uf ? null : s)} className="cursor-pointer" aria-pressed={uf === s}>
-            <Badge tone={uf === s ? 'accent' : 'neutral'}>{s}</Badge>
+            <Badge tone={uf === s ? 'accent' : 'neutral'} className={uf === s ? pressed : undefined}>{s}</Badge>
           </button>
         ))}
       </div>
 
+      {/* Os cartões são h3: o h2 oculto mantém a ordem dos títulos (h1, h2, h3) para quem navega por eles. */}
+      <h2 className="sr-only">Artistas</h2>
       {filtrados.length === 0 ? (
         <Empty>{artistas.length === 0 ? 'Nenhum artista publicado ainda.' : 'Nenhum artista encontrado para os filtros atuais.'}</Empty>
       ) : (
@@ -75,7 +77,7 @@ export function ArtistsHub({ artistas }: { artistas: ArtistaResumo[] }) {
                       {estiloLabels(a.estilos).map((s) => <span key={s}>#{s.toLowerCase().replace(/\s/g, '')}</span>)}
                     </p>
                   </div>
-                  <p className="line-clamp-2 text-sm text-[var(--color-muted)]">{a.bio}</p>
+                  <p data-teaser className="line-clamp-2 text-sm text-[var(--color-muted)]">{a.bio}</p>
                   <p className="font-mono text-xs text-[var(--color-muted)]">{a.cidade}/{a.estado}</p>
                 </div>
               </article>

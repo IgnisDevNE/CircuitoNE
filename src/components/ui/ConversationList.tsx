@@ -29,7 +29,7 @@ export function ConversationList({ basePath, conversas, abertaId, limitada = fal
               )}
             >
               <span className="flex items-center justify-between gap-2">
-                <span className="min-w-0 truncate">{c.titulo}</span>
+                <span className="min-w-0 break-words">{c.titulo}</span>
                 <span className="flex shrink-0 items-center gap-1">
                   {c.bloqueada && <Badge tone="warn">bloqueada</Badge>}
                   {c.arquivada && <Badge>arquivada</Badge>}
@@ -42,7 +42,7 @@ export function ConversationList({ basePath, conversas, abertaId, limitada = fal
                 </span>
               </span>
               {c.ultima && (
-                <span className="mt-0.5 block truncate text-xs text-[var(--color-muted)]">
+                <span data-teaser className="mt-0.5 block truncate text-xs text-[var(--color-muted)]">
                   {c.ultima.minha ? 'Você: ' : c.meus.length > 1 ? `${c.ultima.autor.nome}: ` : ''}
                   {c.ultima.texto}
                 </span>

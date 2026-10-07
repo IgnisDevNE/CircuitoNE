@@ -91,19 +91,29 @@ export function EventForm({ initial, artistas, estilos, errors = {}, busy = fals
   const [form, setForm] = useState(initial)
   const [busca, setBusca] = useState('')
   const [nomeLivre, setNomeLivre] = useState('')
+  // Aviso falado (WCAG 4.1.3) das mudanças na lista do lineup, que não mudam o foco nem têm mensagem própria.
+  const [aviso, setAviso] = useState('')
   const descId = useId()
   const set = <K extends keyof EventFormValues>(key: K, value: EventFormValues[K]) => setForm((current) => ({ ...current, [key]: value }))
 
   const filtered = artistas.filter((a) => !form.lineup.some((l) => l.artistaId === a.id) && normalize(a.nome).includes(normalize(busca.trim())))
   const addArtist = (id: string) => {
     const artist = artistas.find((a) => a.id === id)
-    if (artist && form.lineup.length < LINEUP_MAX) set('lineup', [...form.lineup, { artistaId: artist.id, nome: artist.nome }])
+    if (artist && form.lineup.length < LINEUP_MAX) {
+      set('lineup', [...form.lineup, { artistaId: artist.id, nome: artist.nome }])
+      setAviso(`${artist.nome} adicionado ao lineup. ${form.lineup.length + 1} no total.`)
+    }
   }
   const addFree = () => {
     const nome = nomeLivre.trim()
     if (!nome || form.lineup.length >= LINEUP_MAX) return
     set('lineup', [...form.lineup, { nome }])
     setNomeLivre('')
+    setAviso(`${nome} adicionado ao lineup. ${form.lineup.length + 1} no total.`)
+  }
+  const removeEntry = (index: number) => {
+    setAviso(`${form.lineup[index].nome} removido do lineup. ${form.lineup.length - 1} no total.`)
+    set('lineup', form.lineup.filter((_, i) => i !== index))
   }
 
   return (
@@ -196,7 +206,7 @@ export function EventForm({ initial, artistas, estilos, errors = {}, busy = fals
             describedBy={errors.description ? `${descId}-erro` : undefined}
           />
           {errors.description && <p id={`${descId}-erro`} className="mt-1 font-mono text-xs text-[var(--accent-text)]">[erro] {errors.description}</p>}
-          <div className="mt-4 border-t border-[var(--color-line)] pt-3" aria-label="Pré-visualização da descrição">
+          <div className="mt-4 border-t border-[var(--color-line)] pt-3" role="group" aria-label="Pré-visualização da descrição">
             <p className="mb-2 font-mono text-xs uppercase tracking-widest text-[var(--color-muted)]">pré-visualização (como na página pública)</p>
             {form.descricao.trim() ? <Markdown source={form.descricao} /> : <p className="font-mono text-xs text-[var(--color-muted)]">Nada para mostrar ainda.</p>}
           </div>
@@ -248,7 +258,7 @@ export function EventForm({ initial, artistas, estilos, errors = {}, busy = fals
                   <input type="hidden" name="lineup" value={encodeLineupEntry(entry)} />
                   <button
                     type="button"
-                    onClick={() => set('lineup', form.lineup.filter((_, index) => index !== i))}
+                    onClick={() => removeEntry(i)}
                     className="inline-flex items-center gap-2 border border-[var(--color-line)] px-2 py-1 font-mono text-xs hover:border-[var(--accent)]"
                   >
                     {entry.nome} {entry.artistaId && <Badge tone="accent">hub</Badge>} <span aria-hidden>✕</span>
@@ -260,7 +270,8 @@ export function EventForm({ initial, artistas, estilos, errors = {}, busy = fals
           ) : (
             <p className="mt-3 font-mono text-xs text-[var(--color-muted)]">Lineup vazio. Só artistas públicos têm link na página do evento.</p>
           )}
-          {errors.lineup && <p className="mt-2 font-mono text-xs text-[var(--accent-text)]">[erro] {errors.lineup}</p>}
+          <p aria-live="polite" className="sr-only">{aviso}</p>
+          {errors.lineup && <p aria-live="assertive" className="mt-2 font-mono text-xs text-[var(--accent-text)]">[erro] {errors.lineup}</p>}
         </Panel>
 
         <Panel title="ingresso">

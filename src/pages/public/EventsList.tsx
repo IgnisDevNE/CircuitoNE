@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { Badge, Empty, SectionHeading } from '../../components/ui/primitives'
+import { Badge, Empty, PRESSED_BADGE as pressed, SectionHeading } from '../../components/ui/primitives'
 import { DuotoneImage } from '../../components/ui/DuotoneImage'
 import { fmtDataHora, tipoEventoLabel } from '../../lib/utils'
 import type { Evento } from '../../data/types'
@@ -20,15 +20,17 @@ export function EventsList({ ongoing, future }: { ongoing: Evento[]; future: Eve
 
       <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Filtrar por estado">
         <button onClick={() => setEstado(null)} aria-pressed={estado === null} className="cursor-pointer">
-          <Badge tone={estado === null ? 'accent' : 'neutral'}>todos os estados</Badge>
+          <Badge tone={estado === null ? 'accent' : 'neutral'} className={estado === null ? pressed : undefined}>todos os estados</Badge>
         </button>
         {estados.map((s) => (
           <button key={s} onClick={() => setEstado(s === estado ? null : s)} aria-pressed={estado === s} className="cursor-pointer">
-            <Badge tone={estado === s ? 'accent' : 'neutral'}>{s}</Badge>
+            <Badge tone={estado === s ? 'accent' : 'neutral'} className={estado === s ? pressed : undefined}>{s}</Badge>
           </button>
         ))}
       </div>
 
+      {/* Os cartões são h3: o h2 oculto mantém a ordem dos títulos (h1, h2, h3) para quem navega por eles. */}
+      <h2 className="sr-only">Eventos</h2>
       {visiveis.length === 0 ? (
         <Empty>Nenhum evento futuro cadastrado.</Empty>
       ) : (

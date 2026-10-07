@@ -38,6 +38,7 @@ const external = 'text-[var(--accent-text)] underline break-all'
 
 function Restricted({ dados, perfilId }: { dados: DadosRestritos; perfilId: string }) {
   const empty = Object.keys(dados).length === 0
+  if (empty) return <p className="mt-3 border-t border-[var(--color-line)] pt-3 font-mono text-xs text-[var(--color-muted)]">Sem dados profissionais cadastrados.</p>
   return (
     <dl aria-label="Dados restritos" className="mt-3 space-y-2 border-t border-[var(--color-line)] pt-3 font-mono text-sm">
       {dados.tipo && <Info label="tipo">{dados.tipo}</Info>}
@@ -66,7 +67,6 @@ function Restricted({ dados, perfilId }: { dados: DadosRestritos; perfilId: stri
           <a href={dados.portfolio} target="_blank" rel="noopener noreferrer" className={external}>{dados.portfolio} ↗</a>
         </Info>
       )}
-      {empty && <p className="text-xs text-[var(--color-muted)]">Sem dados profissionais cadastrados.</p>}
     </dl>
   )
 }
@@ -81,7 +81,7 @@ function ProfileCard({ perfil, kind }: { perfil: PerfilExplorar; kind: ExplorePe
         {perfil.minha && <Badge tone="ok">sua atuação</Badge>}
         {estiloLabels(perfil.estilos).map((estilo) => <Badge key={estilo} tone="accent">{estilo}</Badge>)}
       </div>
-      {perfil.descricao && <p className="line-clamp-3 text-sm text-[var(--color-muted)]">{perfil.descricao}</p>}
+      {perfil.descricao && <p data-teaser className="line-clamp-3 text-sm text-[var(--color-muted)]">{perfil.descricao}</p>}
       {perfil.restrito && <Restricted dados={perfil.restrito} perfilId={perfil.id} />}
       <div className="mt-4 flex flex-wrap items-center gap-3">
         {publico && <Link to={`/artistas/${perfil.id}`} className="font-mono text-xs text-[var(--accent-text)] underline">ver perfil público →</Link>}
@@ -157,7 +157,7 @@ function CollectiveCard({ coletivo }: { coletivo: ColetivoPublico }) {
           <Badge>{coletivo.cidade}/{coletivo.estado}</Badge>
           {coletivo.atuacao.map((item) => <Badge key={item}>{item}</Badge>)}
         </div>
-        {coletivo.bio && <p className="line-clamp-3 text-sm text-[var(--color-muted)]">{coletivo.bio}</p>}
+        {coletivo.bio && <p data-teaser className="line-clamp-3 text-sm text-[var(--color-muted)]">{coletivo.bio}</p>}
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <Link to={`/coletivos/${coletivo.id}`} className="font-mono text-xs text-[var(--accent-text)] underline">ver perfil público →</Link>
           <ChatLink para={`collective:${coletivo.id}`} />

@@ -10,7 +10,7 @@ import { Button } from '../ui/primitives'
 import { useChatDock, type ChatDockApi } from './ChatDockProvider'
 
 const fieldClass =
-  'w-full bg-[var(--color-bg-elev)] border border-[var(--color-line)] px-3 py-2 font-mono text-sm outline-none focus:border-[var(--accent)]'
+  'w-full bg-[var(--color-bg-elev)] border border-[var(--color-control)] px-3 py-2 font-mono text-sm outline-none focus:border-[var(--accent)]'
 const iconButton =
   'inline-flex min-h-8 min-w-8 shrink-0 items-center justify-center px-1 font-mono text-sm text-[var(--color-muted)] hover:text-[var(--foreground)]'
 
@@ -232,13 +232,13 @@ function MinimizedBar({ win, dock }: { win: ChatWindowState; dock: ChatDockApi }
         aria-expanded={false}
         aria-label={`Abrir conversa com ${title}`}
         onClick={() => dock.expand(win.para)}
-        className="min-h-10 min-w-0 flex-1 truncate px-3 py-2 text-left font-mono text-xs uppercase tracking-[0.15em] hover:text-[var(--accent-text)]"
+        className="min-h-10 min-w-0 flex-1 break-words px-3 py-2 text-left font-mono text-xs uppercase tracking-[0.15em] hover:text-[var(--accent-text)]"
       >
         <span aria-hidden className="mr-2 text-[var(--accent-text)]">▸</span>
         {title}
       </button>
       <button type="button" onClick={() => dock.close(win.para)} aria-label={`Fechar conversa com ${title}`} className={iconButton}>
-        <span aria-hidden>[x]</span>
+        <span aria-hidden>[✕]</span>
       </button>
     </div>
   )
@@ -319,7 +319,7 @@ function ExpandedWindow({ win, dock, chat }: { win: ChatWindowState; dock: ChatD
       onKeyDown={onKeyDown}
       className="pointer-events-auto neon-border animate-fade-up flex h-[28rem] max-h-[80dvh] w-80 flex-col bg-[var(--color-surface)] outline-none max-sm:h-[75dvh] max-sm:w-full max-sm:border-x-0 max-sm:border-b-0"
     >
-      <header className="flex shrink-0 items-center gap-1 border-b border-[var(--color-line)] pl-3 pr-1">
+      <div className="flex shrink-0 items-center gap-1 border-b border-[var(--color-line)] pl-3 pr-1">
         <span aria-hidden className="mr-1 flex gap-1">
           <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
           <span className="h-2 w-2 rounded-full bg-[var(--color-warn)]" />
@@ -330,14 +330,14 @@ function ExpandedWindow({ win, dock, chat }: { win: ChatWindowState; dock: ChatD
           aria-expanded
           aria-label={`Minimizar conversa com ${title}`}
           onClick={() => dock.minimize(win.para, { focus: 'bar' })}
-          className="min-h-10 min-w-0 flex-1 truncate py-2 text-left font-mono text-xs uppercase tracking-[0.15em] hover:text-[var(--accent-text)]"
+          className="min-h-10 min-w-0 flex-1 break-words py-2 text-left font-mono text-xs uppercase tracking-[0.15em] hover:text-[var(--accent-text)]"
         >
           {title}
         </button>
         <button type="button" onClick={() => dock.close(win.para)} aria-label={`Fechar conversa com ${title}`} className={iconButton}>
-          <span aria-hidden>[x]</span>
+          <span aria-hidden>[✕]</span>
         </button>
-      </header>
+      </div>
 
       {fullHref && (
         <p className="shrink-0 border-b border-[var(--color-line)] px-3 font-mono text-xs">

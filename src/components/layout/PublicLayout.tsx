@@ -69,7 +69,7 @@ export function PublicLayout({ children, signedIn, name }: { children: ReactNode
             aria-label={open ? 'Fechar menu' : 'Abrir menu'}
             onClick={() => setOpen((o) => !o)}
           >
-            {open ? '[x]' : '[≡]'}
+            {open ? '[✕]' : '[≡]'}
           </button>
         </div>
 
@@ -97,7 +97,7 @@ export function PublicLayout({ children, signedIn, name }: { children: ReactNode
 
       <footer className="border-t border-[var(--color-line)] px-4 py-8">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 font-mono text-xs text-[var(--color-muted)] sm:flex-row sm:items-center sm:justify-between">
-          <span>
+          <span aria-hidden>
             <span className="text-[var(--accent-text)]">$</span> circuito_ne --scene=eletronica --regiao=nordeste
           </span>
           {/* O ano vem do relógio de quem renderiza: com o navegador em outra data o texto do servidor é mantido, sem erro de hidratação. */}

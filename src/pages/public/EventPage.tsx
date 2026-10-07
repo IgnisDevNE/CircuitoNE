@@ -29,7 +29,7 @@ export function EventPage({ evento: ev, coletivo: col, periodo, situacao }: Even
           <h1 className="mt-3 font-display text-4xl font-bold text-glow sm:text-5xl">{ev.nome}</h1>
           {col && (
             <p className="mt-2 font-mono text-sm text-[var(--color-muted)]">
-              por <Link to={`/coletivos/${col.id}`} className="text-[var(--accent-text)] hover:underline">{col.nome}</Link>
+              por <Link to={`/coletivos/${col.id}`} className="text-[var(--accent-text)] underline">{col.nome}</Link>
             </p>
           )}
         </header>
@@ -76,7 +76,7 @@ export function EventPage({ evento: ev, coletivo: col, periodo, situacao }: Even
                   <li key={i} className="flex items-center gap-2 font-mono text-sm">
                     <span aria-hidden className="text-[var(--accent-text)]">▸</span>
                     {l.artistaId ? (
-                      <Link to={`/artistas/${l.artistaId}`} className="hover:text-[var(--accent-text)] hover:underline">{l.nome}</Link>
+                      <Link to={`/artistas/${l.artistaId}`} className="underline underline-offset-2 hover:text-[var(--accent-text)]">{l.nome}</Link>
                     ) : (
                       <span>{l.nome}</span>
                     )}

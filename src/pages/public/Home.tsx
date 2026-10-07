@@ -33,6 +33,10 @@ export function Home({ proximos, artistas, coletivos, totais }: HomeData) {
               <LinkButton to="/cadastro" variant="ghost">Cadastrar-se →</LinkButton>
             </div>
           </div>
+          {/* O registro animado é decorativo (oculto do leitor de tela); os totais ficam aqui em texto. */}
+          <p className="sr-only">
+            {totais.artistas} artistas, {totais.coletivos} coletivos e produtoras, {totais.eventos} eventos programados, na região Nordeste.
+          </p>
           <BootLog
             className="border border-[var(--color-line)] bg-black/40 p-4"
             lines={[
@@ -59,7 +63,7 @@ export function Home({ proximos, artistas, coletivos, totais }: HomeData) {
                 <DuotoneImage src={a.foto} alt={`Foto de ${a.nome}`} className="aspect-[3/4] w-full" />
                 <div className="p-3">
                   <h3 className="font-display text-sm font-bold group-hover:text-[var(--accent-text)]">{a.nome}</h3>
-                  <p className="mt-1 line-clamp-1 font-mono text-xs text-[var(--color-muted)]">{estiloLabels(a.estilos).join(' · ')}</p>
+                  <p data-teaser className="mt-1 line-clamp-1 font-mono text-xs text-[var(--color-muted)]">{estiloLabels(a.estilos).join(' · ')}</p>
                   <p className="mt-1 font-mono text-xs text-[var(--color-muted)]">{a.cidade}/{a.estado}</p>
                 </div>
               </Link>

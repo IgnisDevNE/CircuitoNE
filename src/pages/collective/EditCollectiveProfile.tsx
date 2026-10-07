@@ -65,7 +65,7 @@ export function EditCollectiveProfile({ coletivo, feedback, busy = false }: Edit
               type="color"
               defaultValue={coletivo.cor ?? DEFAULT_COLOR}
               aria-invalid={!!errors.color}
-              className="h-10 w-16 cursor-pointer border border-[var(--color-line)] bg-transparent"
+              className="h-10 w-16 cursor-pointer border border-[var(--color-control)] bg-transparent"
             />
             <Checkbox name="use_color" defaultChecked={coletivo.cor !== null} label="usar esta cor no perfil" />
             {errors.color && <p className="font-mono text-xs text-[var(--accent-text)]">[erro] {errors.color}</p>}

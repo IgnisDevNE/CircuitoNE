@@ -43,6 +43,7 @@ export default [
     route('eventos/:id', './routes/event.tsx'),
     route('coletivos', './routes/collectives.tsx'),
     route('coletivos/:id', './routes/collective.tsx'),
+    route('manifesto', './routes/manifesto.tsx'),
   ]),
   route('*', './routes/not-found.tsx'),
 ] satisfies RouteConfig

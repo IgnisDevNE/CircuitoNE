@@ -15,6 +15,8 @@ export type EventFormValues = {
   nome: string
   tipo: EventoTipo
   tipoOutro: string
+  /** Vertente principal (nome em `music_styles`); vazio até escolher. */
+  estilo: string
   descricao: string
   inicio: string
   fim: string
@@ -31,6 +33,7 @@ export const EMPTY_EVENT_VALUES: EventFormValues = {
   nome: '',
   tipo: 'festa',
   tipoOutro: '',
+  estilo: '',
   descricao: '',
   inicio: '',
   fim: '',
@@ -47,6 +50,7 @@ export const eventToFormValues = (evento: EventoGerido): EventFormValues => ({
   nome: evento.nome,
   tipo: evento.tipo,
   tipoOutro: evento.tipoOutro,
+  estilo: evento.estilo,
   descricao: evento.descricao,
   inicio: toFortalezaInput(evento.inicio),
   fim: evento.fim ? toFortalezaInput(evento.fim) : '',
@@ -64,6 +68,8 @@ const normalize = (value: string) => value.normalize('NFD').replace(/[̀-ͯ]/g, 
 export interface EventFormProps {
   initial: EventFormValues
   artistas: ArtistaOpcao[]
+  /** Vertentes principais (sem subestilos) oferecidas no seletor. */
+  estilos: string[]
   /** Mensagem de cada campo recusado na última tentativa (chave = nome do campo). */
   errors?: Record<string, string>
   busy?: boolean
@@ -80,7 +86,7 @@ export interface EventFormProps {
 }
 
 /** Formulário de evento compartilhado por "criar" e "editar": o envio é um POST para a ação da rota. */
-export function EventForm({ initial, artistas, errors = {}, busy = false, hidden, submitLabel, note, upload }: EventFormProps) {
+export function EventForm({ initial, artistas, estilos, errors = {}, busy = false, hidden, submitLabel, note, upload }: EventFormProps) {
   const [form, setForm] = useState(initial)
   const [busca, setBusca] = useState('')
   const [nomeLivre, setNomeLivre] = useState('')
@@ -120,6 +126,16 @@ export function EventForm({ initial, artistas, errors = {}, busy = false, hidden
               <Input label="Qual tipo?" name="other_kind" value={form.tipoOutro} onChange={(e) => set('tipoOutro', e.target.value)} required maxLength={200} error={errors.other_kind} />
             )}
           </div>
+          <Select
+            label="Vertente principal"
+            name="style"
+            required
+            value={form.estilo}
+            onChange={(e) => set('estilo', e.target.value)}
+            error={errors.style}
+            hint="o estilo musical que define o evento"
+            options={[{ value: '', label: '— escolher vertente —' }, ...estilos.map((estilo) => ({ value: estilo, label: estilo }))]}
+          />
           <div className="grid gap-4 sm:grid-cols-2">
             <Input label="Início (Fortaleza)" name="starts_at" type="datetime-local" value={form.inicio} onChange={(e) => set('inicio', e.target.value)} required error={errors.starts_at} />
             <Input label="Fim (Fortaleza)" name="ends_at" type="datetime-local" value={form.fim} onChange={(e) => set('fim', e.target.value)} hint="opcional; depois do início" error={errors.ends_at} />

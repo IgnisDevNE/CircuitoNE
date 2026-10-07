@@ -57,7 +57,8 @@ test('perfil mostra nome, cidade, estilo e eventos do artista, sem dados de cont
   await expect(page).toHaveTitle(`${publicArtist} · CIRCUITO NE`)
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(publicArtist)
   await expect(page.getByText('Recife/PE', { exact: true })).toBeVisible()
-  await expect(page.getByText('techno', { exact: true })).toBeVisible()
+  // O estilo do artista vem primeiro; os eventos listados também têm a vertente "techno" (W13).
+  await expect(page.getByText('techno', { exact: true }).first()).toBeVisible()
   await expect(page.getByText('Fixture, sem dados reais', { exact: true })).toBeVisible()
 
   const proximos = page.getByRole('heading', { name: 'próximos eventos' }).locator('xpath=ancestor::section[1]')

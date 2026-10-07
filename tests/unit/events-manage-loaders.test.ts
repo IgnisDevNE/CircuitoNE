@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest'
-import { loadArtistOptions, loadEventCreate, loadEventManage } from '../../src/server/events-manage.server'
-import { mapArtistOptions, mapManagedEvent } from '../../src/server/mappers/events-manage'
+import { loadArtistOptions, loadEventCreate, loadEventManage, loadStyleOptions } from '../../src/server/events-manage.server'
+import { mapArtistOptions, mapManagedEvent, mapStyleOptions } from '../../src/server/mappers/events-manage'
 import { HttpError, type SupabaseServerClient } from '../../src/server/supabase.server'
 
 const C = '05000000-0000-4000-8000-000000000001'
@@ -21,6 +21,7 @@ const eventRow = (extra: Record<string, unknown> = {}) => ({
   name: 'Evento sintético 5',
   kind: 'festa',
   other_kind: null,
+  style: 'techno',
   description: '# Olá',
   starts_at: '2030-05-10T23:00:00+00:00',
   ends_at: null,
@@ -39,8 +40,10 @@ const eventRow = (extra: Record<string, unknown> = {}) => ({
   ...extra,
 })
 
-/** Cliente fake: RPCs por nome; `profiles` devolve a lista de artistas (e registra a consulta). */
-function fakeClient(rpcs: Record<string, Result | ((args: Record<string, unknown>) => Result)>, artists: Result = ok([])) {
+const styleRows = [{ name: 'techno' }, { name: 'ambient' }, { name: 'música brasileira' }]
+
+/** Cliente fake: RPCs por nome; `profiles` devolve a lista de artistas e `music_styles` as vertentes (registrando a consulta). */
+function fakeClient(rpcs: Record<string, Result | ((args: Record<string, unknown>) => Result)>, artists: Result = ok([]), styles: Result = ok(styleRows)) {
   const rpc = vi.fn(async (name: string, args: Record<string, unknown> = {}) => {
     const entry = rpcs[name]
     if (!entry) throw new Error(`rpc inesperado: ${name}`)
@@ -48,9 +51,10 @@ function fakeClient(rpcs: Record<string, Result | ((args: Record<string, unknown
   })
   const calls: { method: string; args: unknown[] }[] = []
   const from = vi.fn((table: string) => {
-    if (table !== 'profiles') throw new Error(`tabela inesperada: ${table}`)
+    if (table !== 'profiles' && table !== 'music_styles') throw new Error(`tabela inesperada: ${table}`)
+    const result = table === 'profiles' ? artists : styles
     const builder: Record<string, unknown> = {
-      then: (resolve: (value: Result) => unknown, reject: (reason: unknown) => unknown) => Promise.resolve(artists).then(resolve, reject),
+      then: (resolve: (value: Result) => unknown, reject: (reason: unknown) => unknown) => Promise.resolve(result).then(resolve, reject),
     }
     for (const method of ['select', 'eq', 'order', 'limit']) {
       builder[method] = (...args: unknown[]) => {
@@ -92,16 +96,37 @@ describe('loadArtistOptions', () => {
   })
 })
 
+describe('loadStyleOptions', () => {
+  it('lê só music_styles (vertentes principais, sem subestilos), em ordem alfabética pt-BR', async () => {
+    const { client, from, calls } = fakeClient({})
+    expect(await loadStyleOptions(client)).toEqual(['ambient', 'música brasileira', 'techno'])
+    expect(from).toHaveBeenCalledTimes(1)
+    expect(from).toHaveBeenCalledWith('music_styles')
+    expect(calls).toEqual([
+      { method: 'select', args: ['name'] },
+      { method: 'order', args: ['name'] },
+    ])
+  })
+
+  it('erro do banco vira 503; linhas malformadas falham', async () => {
+    expect((await rejects(loadStyleOptions(fakeClient({}, ok([]), failure).client))).status).toBe(503)
+    expect(() => mapStyleOptions(null)).toThrow()
+    expect(() => mapStyleOptions([{ name: '' }])).toThrow()
+    expect(mapStyleOptions([])).toEqual([])
+  })
+})
+
 describe('loadEventCreate', () => {
   it('com "criar eventos": novo identificador de solicitação e artistas públicos (consulta anônima)', async () => {
     const user = fakeClient({ get_collective_access: ok(access(['create_events'])) })
     const anonymous = fakeClient({}, ok(artistRows))
     const data = await loadEventCreate(user.client, anonymous.client, C, () => REQUEST_ID)
-    expect(data).toEqual({ requestId: REQUEST_ID, artistas: [{ id: ARTIST, nome: 'Artista sintético público' }] })
+    expect(data).toEqual({ requestId: REQUEST_ID, artistas: [{ id: ARTIST, nome: 'Artista sintético público' }], estilos: ['ambient', 'música brasileira', 'techno'] })
     expect(user.rpc).toHaveBeenCalledWith('get_collective_access', { target: C })
     // A lista pública nunca vem do cliente do titular (RLS mostraria atuações não publicadas).
     expect(user.from).not.toHaveBeenCalled()
     expect(anonymous.from).toHaveBeenCalledWith('profiles')
+    expect(anonymous.from).toHaveBeenCalledWith('music_styles')
   })
 
   it('gera um identificador diferente a cada carregamento', async () => {
@@ -155,6 +180,12 @@ describe('loadEventManage', () => {
       lineup: [{ artistaId: ARTIST, nome: 'Artista sintético público' }, { nome: 'Convidada livre' }],
     })
     expect(data.artistas).toEqual([{ id: ARTIST, nome: 'Artista sintético público' }])
+    expect(data.evento.estilo).toBe('techno')
+    expect(data.estilos).toEqual(['ambient', 'música brasileira', 'techno'])
+  })
+
+  it('evento anterior à coluna (style nulo) abre com vertente vazia', async () => {
+    expect((await manage(['edit_events'], ok(eventRow({ style: null }))).run()).evento.estilo).toBe('')
   })
 
   it('rascunho: editar exige "editar eventos"; publicar, "publicar eventos"; cancelar, "cancelar eventos"', async () => {
@@ -184,7 +215,7 @@ describe('loadEventManage', () => {
 
   it('só consulta os artistas quando a pessoa pode editar', async () => {
     const readOnly = manage(['cancel_events'])
-    expect((await readOnly.run()).artistas).toEqual([])
+    expect(await readOnly.run()).toMatchObject({ artistas: [], estilos: [] })
     expect(readOnly.anonymous.from).not.toHaveBeenCalled()
   })
 

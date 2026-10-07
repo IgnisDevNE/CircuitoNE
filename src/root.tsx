@@ -8,6 +8,14 @@ export function meta() {
   ]
 }
 
+/** Marca "◢◤" na cor de destaque; o .ico atende quem pede /favicon.ico sem ler o HTML. */
+export function links() {
+  return [
+    { rel: 'icon', href: '/favicon.ico', sizes: '32x32' },
+    { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
+  ]
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">

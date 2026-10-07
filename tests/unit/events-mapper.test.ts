@@ -71,6 +71,13 @@ describe('mapEventListRow', () => {
     expect(evento.fim).toBe('2026-10-08T03:00:00.000Z')
   })
 
+  it('vertente principal: texto do banco; ausente (evento anterior à coluna) fica indefinida', () => {
+    expect(mapEventListRow({ ...listRow, style: 'techno' }).estilo).toBe('techno')
+    expect(mapEventListRow({ ...listRow, style: null }).estilo).toBeUndefined()
+    expect(mapEventListRow(listRow).estilo).toBeUndefined()
+    expect(() => mapEventListRow({ ...listRow, style: 7 })).toThrow('Resposta inválida')
+  })
+
   describe('capa enviada (Storage)', () => {
     const path = `${listRow.id}/capa.webp`
     beforeEach(() => vi.stubEnv('SUPABASE_URL', 'https://synthetic.supabase.test'))

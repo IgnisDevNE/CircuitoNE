@@ -3,7 +3,7 @@ import { parseEventForm } from '../lib/event-form'
 import { IMAGE_MAX_BYTES } from '../lib/uploads'
 import type { Json } from '../types/database.generated'
 import { noPermission, requireAccess } from './collective-area.server'
-import { mapArtistOptions, mapManagedEvent, type ArtistaOpcao, type EventActions, type EventoGerido } from './mappers/events-manage'
+import { mapArtistOptions, mapManagedEvent, mapStyleOptions, type ArtistaOpcao, type EventActions, type EventoGerido } from './mappers/events-manage'
 import type { UploadedFiles } from './auth.server'
 import { ActionFailure, UNAVAILABLE_MESSAGE, callRpc, formId, runMutation } from './mutation.server'
 import { readUpload, removeStored, returnedPath, storeUpload } from './storage.server'
@@ -32,7 +32,12 @@ export async function loadArtistOptions(anonymous: SupabaseServerClient): Promis
   )
 }
 
-export type EventCreateData = { requestId: string; artistas: ArtistaOpcao[] }
+/** Vertentes principais (`public.music_styles`, sem subestilos) para o seletor do formulário, em ordem alfabética (pt-BR). */
+export async function loadStyleOptions(anonymous: SupabaseServerClient): Promise<string[]> {
+  return mapStyleOptions(unwrap(await anonymous.from('music_styles').select('name').order('name')))
+}
+
+export type EventCreateData = { requestId: string; artistas: ArtistaOpcao[]; estilos: string[] }
 
 /**
  * `/coletivo/:id/eventos/novo`: exige "criar eventos" (RN-23). O identificador da solicitação nasce aqui, uma vez por
@@ -46,10 +51,11 @@ export async function loadEventCreate(
 ): Promise<EventCreateData> {
   const access = await requireAccess(client, id)
   if (!can(access, 'create_events')) throw noPermission('criar eventos')
-  return { requestId: newRequestId(), artistas: await loadArtistOptions(anonymous) }
+  const [artistas, estilos] = await Promise.all([loadArtistOptions(anonymous), loadStyleOptions(anonymous)])
+  return { requestId: newRequestId(), artistas, estilos }
 }
 
-export type EventManageData = { evento: EventoGerido; acoes: EventActions; artistas: ArtistaOpcao[] }
+export type EventManageData = { evento: EventoGerido; acoes: EventActions; artistas: ArtistaOpcao[]; estilos: string[] }
 
 /**
  * `/coletivo/:id/eventos/:eventId`: qualquer permissão de eventos abre a página; cada ação exige a sua. Editar rascunho
@@ -74,7 +80,9 @@ export async function loadEventManage(
     publicar: evento.situacao === 'draft' && can(access, 'publish_events'),
     cancelar: evento.situacao !== 'cancelled' && can(access, 'cancel_events'),
   }
-  return { evento, acoes, artistas: acoes.editar ? await loadArtistOptions(anonymous) : [] }
+  if (!acoes.editar) return { evento, acoes, artistas: [], estilos: [] }
+  const [artistas, estilos] = await Promise.all([loadArtistOptions(anonymous), loadStyleOptions(anonymous)])
+  return { evento, acoes, artistas, estilos }
 }
 
 /** Criar rascunho (`create_event`) e seguir para a página de gestão do evento criado. */

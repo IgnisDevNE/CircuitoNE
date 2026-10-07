@@ -40,6 +40,7 @@ export function EventsList({ ongoing, future }: { ongoing: Evento[]; future: Eve
                 <div className="flex flex-col justify-center p-5">
                   <div className="mb-2 flex flex-wrap items-center gap-2">
                     <Badge tone="accent">{tipoEventoLabel(e)}</Badge>
+                    {e.estilo && <Badge tone="neutral">{e.estilo}</Badge>}
                     {e.gratuito ? <Badge tone="ok">Gratuito</Badge> : <Badge tone="neutral">Ingresso</Badge>}
                     {emAndamento.has(e.id) && <Badge tone="warn">Em andamento</Badge>}
                   </div>

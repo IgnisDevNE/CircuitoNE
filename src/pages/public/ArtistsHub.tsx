@@ -4,14 +4,16 @@ import { SectionHeading, Empty, Badge } from '../../components/ui/primitives'
 import { Input } from '../../components/ui/form'
 import { DuotoneImage } from '../../components/ui/DuotoneImage'
 import { estiloLabels } from '../../lib/artist'
-import type { ArtistaResumo } from '../../data/types'
+import { UFS_NORDESTE, type ArtistaResumo, type Estado } from '../../data/types'
 
-/** Hub: a lista vem do banco (ordem alfabética); busca e filtro de estilo são feitos no cliente. */
+/** Hub: a lista vem do banco (ordem alfabética); busca e filtros de estilo e de UF são feitos no cliente, e se combinam. */
 export function ArtistsHub({ artistas }: { artistas: ArtistaResumo[] }) {
   const [q, setQ] = useState('')
   const [estilo, setEstilo] = useState<string | null>(null)
+  const [uf, setUf] = useState<Estado | null>(null)
 
-  // Filtro por estilo principal da taxonomia: inclui os subestilos do artista.
+  // Só estilos principais (`music_styles`): cada par estilo/subestilo do artista conta para o estilo principal dele,
+  // então escolher "techno" também traz quem tem só "melodic techno".
   const estilos = useMemo(
     () => [...new Set(artistas.flatMap((a) => a.estilos.map((e) => e.estilo)))].sort((a, b) => a.localeCompare(b, 'pt-BR')),
     [artistas],
@@ -20,12 +22,13 @@ export function ArtistsHub({ artistas }: { artistas: ArtistaResumo[] }) {
   const filtrados = artistas.filter((a) => {
     const matchQ = !q || a.nome.toLowerCase().includes(q.toLowerCase()) || a.bio.toLowerCase().includes(q.toLowerCase())
     const matchE = !estilo || a.estilos.some((e) => e.estilo === estilo)
-    return matchQ && matchE
+    const matchU = !uf || a.estado === uf
+    return matchQ && matchE && matchU
   })
 
   return (
     <div>
-      <SectionHeading prompt="ls -la" sub="Grade de artistas cadastrados no circuito. Filtre por nome ou estilo.">artistas/</SectionHeading>
+      <SectionHeading prompt="ls -la" sub="Grade de artistas cadastrados no circuito. Filtre por nome, estilo ou estado.">artistas/</SectionHeading>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
         <Input label="Buscar" placeholder="nome, projeto, bio…" value={q} onChange={(e) => setQ(e.target.value)} type="search" />
@@ -38,6 +41,17 @@ export function ArtistsHub({ artistas }: { artistas: ArtistaResumo[] }) {
         {estilos.map((s) => (
           <button key={s} onClick={() => setEstilo(s === estilo ? null : s)} className="cursor-pointer" aria-pressed={estilo === s}>
             <Badge tone={estilo === s ? 'accent' : 'neutral'}>{s}</Badge>
+          </button>
+        ))}
+      </div>
+
+      <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Filtrar por estado">
+        <button onClick={() => setUf(null)} className="cursor-pointer" aria-pressed={uf === null}>
+          <Badge tone={uf === null ? 'accent' : 'neutral'}>todos</Badge>
+        </button>
+        {UFS_NORDESTE.map((s) => (
+          <button key={s} onClick={() => setUf(s === uf ? null : s)} className="cursor-pointer" aria-pressed={uf === s}>
+            <Badge tone={uf === s ? 'accent' : 'neutral'}>{s}</Badge>
           </button>
         ))}
       </div>

@@ -93,6 +93,8 @@ const KNOWN_FAILURES: Record<string, ActionFailure> = {
   'Dados de evento/lineup inválidos': new ActionFailure(422, 'O banco recusou os dados do evento. Revise os campos e tente de novo.'),
   'Dados de evento inválidos': new ActionFailure(422, 'O banco recusou os dados do evento. Revise os campos e tente de novo.'),
   'Data exige instante ISO com fuso': new ActionFailure(422, 'Informe datas válidas para o início e o fim.'),
+  'Vertente principal obrigatória': new ActionFailure(422, 'Corrija os campos destacados.', { style: 'Escolha a vertente principal do evento.' }),
+  'Vertente principal inválida': new ActionFailure(422, 'Corrija os campos destacados.', { style: 'Escolha uma das vertentes da lista.' }),
   'Lineup inválido': new ActionFailure(422, 'O lineup é inválido.'),
   'Participação inválida': new ActionFailure(422, 'Uma participação do lineup é inválida.'),
   'Crédito exige texto': new ActionFailure(422, 'Uma participação do lineup é inválida.'),

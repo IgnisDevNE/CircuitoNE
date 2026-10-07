@@ -16,7 +16,10 @@ function EventLinks({ eventos }: { eventos: Evento[] }) {
         <li key={e.id}>
           <Link to={`/eventos/${e.id}`} className="flex items-center justify-between gap-4 border border-[var(--color-line)] p-3 transition-colors hover:border-[var(--accent)]">
             <span>
-              <span className="block font-display font-bold">{e.nome}</span>
+              <span className="flex flex-wrap items-center gap-2">
+                <span className="block font-display font-bold">{e.nome}</span>
+                {e.estilo && <Badge tone="neutral">{e.estilo}</Badge>}
+              </span>
               <span className="font-mono text-xs text-[var(--color-muted)]">{fmtDataHora(e.inicio)} · {e.cidade}/{e.estado}</span>
             </span>
             <span aria-hidden className="text-[var(--accent-text)]">→</span>

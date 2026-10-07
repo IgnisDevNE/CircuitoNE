@@ -53,6 +53,8 @@ export interface Evento {
   nome: string
   tipo: EventoTipo
   tipoOutro?: string
+  /** Vertente principal (`public.music_styles`); ausente em eventos anteriores à coluna. */
+  estilo?: string
   descricao: string // markdown
   inicio: string // ISO
   fim: string | null // ISO; ausente não implica horário fictício
@@ -95,6 +97,9 @@ export const ESTADOS = [
   { value: 'SE', label: 'Sergipe' },
   { value: 'TO', label: 'Tocantins' },
 ] as const
+
+/** Os nove estados do Nordeste, na ordem alfabética das siglas (filtro do hub de artistas). */
+export const UFS_NORDESTE = ['AL', 'BA', 'CE', 'MA', 'PB', 'PE', 'PI', 'RN', 'SE'] as const satisfies readonly Estado[]
 
 // Lista de estilos musicais do hub (parcial — para testes).
 export const ESTILOS_MUSICAIS = ['Techno', 'House', 'Dub'] as const

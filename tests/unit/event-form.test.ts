@@ -10,6 +10,7 @@ const body = (fields: Record<string, string | string[]> = {}) => {
   const values: Record<string, string | string[]> = {
     name: 'Festa sintética',
     kind: 'festa',
+    style: 'techno',
     description: '',
     starts_at: '2030-05-10T20:00',
     ends_at: '',
@@ -39,6 +40,7 @@ describe('parseEventForm', () => {
     expect(payloadOf(body())).toEqual({
       name: 'Festa sintética',
       kind: 'festa',
+      style: 'techno',
       other_kind: null,
       description: '',
       starts_at: '2030-05-10T23:00:00.000Z',
@@ -71,6 +73,16 @@ describe('parseEventForm', () => {
     expect(payloadOf(body({ kind: 'outros', other_kind: '  Sarau  ' }))).toMatchObject({ kind: 'outros', other_kind: 'Sarau' })
     expect(payloadOf(body({ kind: 'festival', other_kind: 'resto' })).other_kind).toBeNull()
     expect(fieldsOf(body({ kind: 'balada' })).kind).toBe('Escolha o tipo do evento.')
+  })
+
+  it('vertente principal é obrigatória e aparece no payload (o banco confere a taxonomia)', () => {
+    expect(fieldsOf(body({ style: '' })).style).toBe('Escolha a vertente principal do evento.')
+    expect(fieldsOf(body({ style: '   ' })).style).toBe('Escolha a vertente principal do evento.')
+    const sem = body()
+    sem.delete('style')
+    expect(fieldsOf(sem).style).toBe('Escolha a vertente principal do evento.')
+    expect(fieldsOf(body({ style: 'x'.repeat(101) })).style).toBe('Escolha a vertente principal do evento.')
+    expect(payloadOf(body({ style: ' drum and bass ' })).style).toBe('drum and bass')
   })
 
   it('gratuito ou link de ingresso, nunca os dois', () => {
@@ -123,7 +135,7 @@ describe('parseEventForm', () => {
   })
 
   it('reúne todos os erros de uma vez', () => {
-    expect(Object.keys(fieldsOf(new URLSearchParams()))).toEqual(['name', 'kind', 'starts_at', 'state_code', 'city', 'venue', 'ticket_url'])
+    expect(Object.keys(fieldsOf(new URLSearchParams()))).toEqual(['name', 'kind', 'style', 'starts_at', 'state_code', 'city', 'venue', 'ticket_url'])
   })
 })
 

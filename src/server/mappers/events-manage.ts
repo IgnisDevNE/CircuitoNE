@@ -14,6 +14,8 @@ export type EventoGerido = {
   nome: string
   tipo: EventoTipo
   tipoOutro: string
+  /** Vertente principal; vazio em evento anterior à coluna (a edição exige escolher uma). */
+  estilo: string
   descricao: string
   inicio: string
   fim: string | null
@@ -55,6 +57,7 @@ export function mapManagedEvent(row: unknown): EventoGerido {
     nome: evento.nome,
     tipo: evento.tipo,
     tipoOutro: evento.tipoOutro ?? '',
+    estilo: evento.estilo ?? '',
     descricao: evento.descricao,
     inicio: evento.inicio,
     fim: evento.fim,
@@ -68,6 +71,17 @@ export function mapManagedEvent(row: unknown): EventoGerido {
     lineup: evento.lineup.map((item) => (item.artistaId ? { artistaId: item.artistaId, nome: item.nome } : { nome: item.nome })),
     reagendadoEm: rescheduled ? new Date(rescheduled).toISOString() : null,
   }
+}
+
+/** Linhas de `music_styles` (name): só vertentes principais, em ordem alfabética (pt-BR). */
+export function mapStyleOptions(rows: unknown): string[] {
+  if (!Array.isArray(rows)) throw invalid()
+  return rows
+    .map((row: unknown) => {
+      if (!isRow(row)) throw invalid()
+      return text(row, 'name')
+    })
+    .sort((a, b) => a.localeCompare(b, 'pt-BR'))
 }
 
 /** Linhas de `profiles` (id, name) dos artistas publicados, para o seletor do lineup. */

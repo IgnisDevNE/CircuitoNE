@@ -33,6 +33,8 @@ const open = async (page: Page, path: string) => {
   return response
 }
 const status = (page: Page) => page.getByRole('status')
+// Selos de estilo do próprio artista: os eventos listados na página (links) também mostram a vertente do evento (W13).
+const artistStyle = (page: Page, style: string) => page.locator(`xpath=//main//*[text()='${style}'][not(ancestor::a)]`)
 
 async function saveAccount(page: Page, fields: { name: string; city: string; state: string; gender: string; whatsapp: 'same' | 'other'; number?: string }) {
   await page.getByRole('textbox', { name: /Nome completo/ }).fill(fields.name)
@@ -149,8 +151,8 @@ test('perfil de artista: a edição aparece na página pública e é desfeita ao
     await expect(page.getByRole('heading', { level: 1, name: 'Artista sintético público' })).toBeVisible()
     await expect(page.getByText('Bio editada pelo e2e')).toBeVisible()
     await expect(page.getByText('Olinda/PE', { exact: true })).toBeVisible()
-    await expect(page.getByText('techno', { exact: true })).toBeVisible()
-    await expect(page.getByText('house', { exact: true })).toBeVisible()
+    await expect(artistStyle(page, 'techno')).toBeVisible()
+    await expect(artistStyle(page, 'house')).toBeVisible()
     await expect(page.getByRole('link', { name: /instagram/i })).toHaveAttribute('href', 'https://instagram.com/artista.sintetico')
   } finally {
     await login(page, accounts.active.email)
@@ -166,7 +168,7 @@ test('perfil de artista: a edição aparece na página pública e é desfeita ao
   await page.goto(`/artistas/${activeArtist}`)
   await expect(page.getByText('Fixture, sem dados reais', { exact: true })).toBeVisible()
   await expect(page.getByText('Recife/PE', { exact: true })).toBeVisible()
-  await expect(page.getByText('house', { exact: true })).toHaveCount(0)
+  await expect(artistStyle(page, 'house')).toHaveCount(0)
 })
 
 test('perfil de artista: despublicar tira da página pública; estilos e nome inválidos não salvam', async ({ page, context }) => {

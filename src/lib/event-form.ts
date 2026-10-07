@@ -12,6 +12,7 @@ export const DESCRIPTION_MAX = 20000
 export const CITY_MAX = 150
 export const VENUE_MAX = 500
 export const URL_MAX = 2048
+export const STYLE_MAX = 100
 
 const TIPOS = Object.keys(EVENTO_TIPO_LABEL) as EventoTipo[]
 const UFS = ESTADOS.map((estado) => estado.value) as Estado[]
@@ -28,6 +29,8 @@ export type EventPayload = {
   name: string
   kind: EventoTipo
   other_kind: string | null
+  /** Vertente principal: nome em `public.music_styles` (o banco confere a taxonomia). */
+  style: string
   description: string
   starts_at: string
   ends_at: string | null
@@ -61,6 +64,9 @@ export function parseEventForm(form: URLSearchParams): ParsedEventForm {
     if (!otherKind) fields.other_kind = 'Descreva o tipo do evento.'
     else if (length(otherKind) > NAME_MAX) fields.other_kind = `A descrição do tipo pode ter até ${NAME_MAX} caracteres.`
   }
+
+  const style = get('style')
+  if (!style || length(style) > STYLE_MAX) fields.style = 'Escolha a vertente principal do evento.'
 
   // O navegador envia quebras de linha como CRLF; o banco conta caracteres.
   const description = (form.get('description') ?? '').replace(/\r\n/g, '\n').trim()
@@ -115,6 +121,7 @@ export function parseEventForm(form: URLSearchParams): ParsedEventForm {
       name,
       kind: kind as EventoTipo,
       other_kind: kind === 'outros' ? otherKind : null,
+      style,
       description,
       starts_at: startsAt,
       ends_at: endsAt,

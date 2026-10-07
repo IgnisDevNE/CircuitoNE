@@ -15,7 +15,7 @@ const notFound = () => new HttpError(404, 'Coletivo não encontrado.')
 /** Colunas de `public.collectives` liberadas ao anon (as demais, como `state`, não são legíveis). */
 export const COLLECTIVE_COLUMNS ='id,kind,name,description,activity,city,state_code,social_links,color,image_path'
 export const EVENT_COLUMNS =
-  'id,collective_id,name,kind,other_kind,starts_at,ends_at,state_code,city,venue,is_free,ticket_url,cover_url,cover_path'
+  'id,collective_id,name,kind,other_kind,starts_at,ends_at,state_code,city,venue,is_free,ticket_url,cover_url,cover_path,style'
 
 /** Quantos eventos do coletivo a página considera, dos mais recentes para trás, e quantos encerrados mostra. */
 const EVENT_WINDOW = 100

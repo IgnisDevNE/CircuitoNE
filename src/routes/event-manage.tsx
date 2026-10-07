@@ -17,7 +17,7 @@ export const meta = ({ loaderData }: Route.MetaArgs) => [{ title: `${loaderData?
 
 export default function EventManageRoute({ loaderData, actionData }: Route.ComponentProps) {
   const busy = useNavigation().state !== 'idle'
-  return <ManageEvent evento={loaderData.evento} acoes={loaderData.acoes} artistas={loaderData.artistas} feedback={actionData ?? null} busy={busy} />
+  return <ManageEvent evento={loaderData.evento} acoes={loaderData.acoes} artistas={loaderData.artistas} estilos={loaderData.estilos} feedback={actionData ?? null} busy={busy} />
 }
 
 export function ErrorBoundary() {

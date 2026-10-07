@@ -25,6 +25,7 @@ export function mapEventListRow(row: unknown): Evento {
     nome: text(row, 'name'),
     tipo: oneOf(text(row, 'kind'), TIPOS),
     tipoOutro: optionalText(row, 'other_kind'),
+    estilo: optionalText(row, 'style'),
     descricao: typeof row.description === 'string' ? row.description : '',
     inicio: instant(text(row, 'starts_at')),
     fim: fim ? instant(fim) : null,

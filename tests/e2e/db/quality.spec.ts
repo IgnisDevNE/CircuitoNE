@@ -9,7 +9,7 @@ const artist = '02000000-0000-4000-8000-000000000001'
 const event = '0a000000-0000-4000-8000-000000000001'
 const conversation = '0d000000-0000-4000-8000-000000000001'
 
-const publicPaths = ['/', '/artistas', `/artistas/${artist}`, '/eventos', `/eventos/${event}`, '/coletivos', `/coletivos/${collective}`, '/entrar', '/cadastro']
+const publicPaths = ['/', '/artistas', `/artistas/${artist}`, '/eventos', `/eventos/${event}`, '/coletivos', `/coletivos/${collective}`, '/manifesto', '/entrar', '/cadastro']
 const panelPaths = [
   '/painel',
   '/painel/dados',

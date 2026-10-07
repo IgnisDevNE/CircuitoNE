@@ -20,25 +20,32 @@ async function visit(page: import('@playwright/test').Page, path: string) {
   await expectNoViolations(page, path)
 }
 
-test('páginas públicas: sem violações WCAG 2.2 A/AA (axe)', async ({ page }) => {
-  for (const path of publicPaths) await visit(page, path)
-})
+// Um teste por rota: cada página roda o axe em paralelo e cabe no limite de tempo por teste, também no runner do CI.
+for (const path of publicPaths)
+  test(`pública ${path}: sem violações WCAG 2.2 A/AA (axe)`, async ({ page }) => {
+    await visit(page, path)
+  })
 
-test('páginas do painel e do coletivo: sem violações WCAG 2.2 A/AA (axe)', async ({ page }) => {
-  await login(page, accounts.active.email)
-  for (const path of panelPaths) await visit(page, path)
-})
+for (const path of panelPaths)
+  test(`painel ${path}: sem violações WCAG 2.2 A/AA (axe)`, async ({ page }) => {
+    await login(page, accounts.active.email)
+    await visit(page, path)
+  })
 
-test('páginas públicas em outros estados (evento cancelado, adiado, encerrado; coletivo produtor; não encontrado): sem violações', async ({ page }) => {
-  for (const path of publicStatePaths) await visit(page, path)
-})
+for (const path of publicStatePaths)
+  test(`pública em outro estado ${path}: sem violações`, async ({ page }) => {
+    await visit(page, path)
+  })
 
-test('painel em outros estados (atuações de serviços e audiovisual, coletivos pendente, suspenso, recusado e encerrado, eventos em rascunho e cancelado): sem violações', async ({ page }) => {
-  await login(page, accounts.active.email)
-  for (const path of panelStatePaths) await visit(page, path)
-})
+for (const path of panelStatePaths)
+  test(`painel em outro estado ${path}: sem violações`, async ({ page }) => {
+    await login(page, accounts.active.email)
+    await visit(page, path)
+  })
 
 test('outras contas e papéis: integrante com permissões, candidato, conta suspensa, em exclusão e sem cadastro concluído', async ({ page }) => {
+  // Várias contas e páginas em sequência: precisa de mais tempo que o padrão de 30 s no runner do CI.
+  test.setTimeout(180_000)
   await login(page, accounts.member.email)
   for (const path of ['/painel', '/painel/coletivos', '/painel/mensagens', `/coletivo/${collective}/painel`, `/coletivo/${collective}/mensagens`, '/painel/explorar/coletivos']) await visit(page, path)
   await page.context().clearCookies()

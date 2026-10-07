@@ -5,6 +5,9 @@ import { controlBorderFailures, textContrastFailures } from './a11y-checks'
 import { clippedElements, focusWalk, reflowFailures, TEXT_SPACING_CSS } from './a11y-layout'
 import { accounts, login } from './session'
 
+// Cada teste percorre várias páginas ou estados com o axe: o padrão de 30 s não basta no runner do CI.
+test.describe.configure({ timeout: 180_000 })
+
 // Verificações complementares ao axe (W16), nos dois tamanhos de tela dos projetos de leitura: contraste calculado sobre o
 // estado renderizado (inclusive o que o axe deixa "incompleto"), contornos de campos, reflow, espaçamento de texto e movimento.
 // Só lê dados: nenhuma fixture é alterada.

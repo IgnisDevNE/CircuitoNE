@@ -4,6 +4,9 @@ import { controlBorderFailures, textContrastFailures } from './a11y-checks'
 import { focusWalk, reflowFailures } from './a11y-layout'
 import { accounts, login, openPanelMenu, openPublicMenu, publicNav, submitLogin } from './session'
 
+// Cada teste percorre várias páginas ou estados com o axe: o padrão de 30 s não basta no runner do CI.
+test.describe.configure({ timeout: 180_000 })
+
 // Estados da interface (W16), nos dois tamanhos de tela dos projetos de leitura: formulários com erro de validação, menus
 // recolhidos abertos, listas vazias, trechos expansíveis abertos, editor de markdown, lineup e o chat flutuante aberto e
 // minimizado. Nada aqui grava dados: os envios são sempre inválidos (a validação do servidor os recusa) e abrir a janela do

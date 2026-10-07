@@ -19,5 +19,5 @@ export default function EventCreateRoute({ loaderData, actionData }: Route.Compo
 }
 
 export function ErrorBoundary() {
-  return <LoadError notFound="Coletivo não encontrado." backTo="/painel/coletivos" backLabel="voltar para meus coletivos" />
+  return <LoadError level="h2" notFound="Coletivo não encontrado." backTo="/painel/coletivos" backLabel="voltar para meus coletivos" />
 }

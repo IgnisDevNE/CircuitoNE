@@ -327,11 +327,11 @@ describe('loaders das rotas', () => {
     }
   })
 
-  it('hub: falha do PostgREST e runtime sem Supabase respondem 503', async () => {
+  it('hub: falha do PostgREST e runtime sem configuração do Supabase respondem 503', async () => {
     const { loader } = await import('../../src/routes/artists')
     stubFetch(() => Response.json({ message: 'down' }, { status: 500 }))
     expect((await thrown(loader({ request: new Request(origin + '/artistas') } as never) as Promise<unknown>))?.init.status).toBe(503)
-    vi.stubEnv('CIRCUITONE_RUNTIME', 'preview')
+    vi.stubEnv('CIRCUITONE_RUNTIME', '')
     calls = []
     expect((await thrown(loader({ request: new Request(origin + '/artistas') } as never) as Promise<unknown>))?.init.status).toBe(503)
     expect(calls).toEqual([])

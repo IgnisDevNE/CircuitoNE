@@ -1,14 +1,22 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
-test('o build SSR publica cliente e servidor sem metadados do Figma', () => {
+const files = (dir) =>
+  readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
+    entry.isDirectory() ? files(join(dir, entry.name)) : entry.name.endsWith('.js') ? [join(dir, entry.name)] : [],
+  )
+
+test('o build SSR publica cliente e servidor sem metadados do Figma nem dados do protótipo', () => {
   execFileSync(process.execPath, ['node_modules/@react-router/dev/bin.cjs', 'build'], { stdio: 'pipe' })
   const server = join('build', 'server', 'index.js')
   assert.ok(existsSync(server))
   assert.doesNotMatch(readFileSync(server, 'utf8'), /Figma Make App|Streamline document management/i)
+  // Nenhum dado de mentira do protótipo (mock.ts, StoreContext) pode voltar ao bundle do servidor ou do cliente.
+  for (const file of [...files(join('build', 'server')), ...files(join('build', 'client'))])
+    assert.doesNotMatch(readFileSync(file, 'utf8'), /Ana Ribeiro|ANERIE|LITORAL SUL|\[demo\] entrar|useStore must be/, file)
   assert.equal(readFileSync(join('build', 'client', 'robots.txt'), 'utf8'), 'User-agent: *\nDisallow: /\n')
 })
 

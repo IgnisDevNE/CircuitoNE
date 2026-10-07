@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ESTADOS } from '../../src/data/types'
 import { birthdateStatus, normalizeCpf, validEmail } from '../../src/lib/registration-validation'
-import { maskCPF } from '../../src/lib/utils'
 
 describe('validação de cadastro', () => {
   it('normaliza CPF válido e rejeita dígitos inválidos ou texto estranho', () => {
@@ -9,8 +8,6 @@ describe('validação de cadastro', () => {
     expect(normalizeCpf('12345678900')).toBeNull()
     expect(normalizeCpf('11111111111')).toBeNull()
     expect(normalizeCpf('abc12345678909')).toBeNull()
-    expect(maskCPF('abc12345678909')).toBe('abc12345678909')
-    expect(maskCPF('123456789099')).toBe('123456789099')
   })
 
   it('rejeita e-mail sem domínio e data inexistente; aceita 18 anos completos', () => {

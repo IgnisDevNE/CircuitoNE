@@ -53,7 +53,6 @@ export function registrationStep(user: FlowUser | null | undefined): Registratio
 /** Aviso trazido pelo callback de confirmação (`/cadastro?confirmacao=...`). */
 export type RegistrationNotice = 'invalida' | 'indisponivel'
 export type RegistrationPage =
-  | { preview: true }
   | { step: 'account'; notice: RegistrationNotice | null }
   | { step: 'email'; email: string; notice: RegistrationNotice | null }
   | { step: 'phone'; email: string }

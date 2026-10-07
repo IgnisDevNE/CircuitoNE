@@ -2,7 +2,7 @@
 
 Hub da cena eletrônica do Nordeste. React Router 8 (Framework, SSR) + React 19 + Vite 8 + Tailwind CSS v4, com Supabase (Postgres, Auth, RLS, RPCs). A aplicação fica em `src/`.
 
-**Fase atual: PoC.** O ambiente dev (`circuitone-dev.magalz.space` → Supabase `CircuitoNE-dev`) roda com dados sintéticos e deve ter todas as telas ligadas ao banco. Produção serve só a página de espera. O plano e o status das tarefas estão em [`docs/plan.md`](docs/plan.md).
+**Fase atual: PoC concluída (W1–W12).** O ambiente dev (`circuitone-dev.magalz.space` → Supabase `CircuitoNE-dev`) roda com dados sintéticos e todas as telas estão ligadas ao banco; não há mais protótipo nem dados de mentira no código. Produção serve só a página de espera. O plano e o status das tarefas estão em [`docs/plan.md`](docs/plan.md).
 
 ## Fluxo de trabalho
 
@@ -27,30 +27,30 @@ pnpm install --frozen-lockfile
 pnpm dev               # servidor de desenvolvimento (já costuma estar rodando em $PORT)
 pnpm check             # testes de infra + unidade, typecheck, build
 pnpm test:unit         # Vitest
-pnpm test:e2e          # Playwright (preview, protótipo)
-pnpm test:e2e:db       # Playwright contra Supabase local com seeds (roda no CI, job e2e)
+pnpm test:e2e:db       # Playwright contra Supabase local com seeds: a suíte de ponta a ponta (roda no CI, job e2e)
 pnpm test:database     # Supabase local via Docker (roda no CI)
 ./deploy/dev.ps1       # rebuild e recria o pod dev no PC (Podman)
 ```
 
 ## Estrutura
 
-- `src/root.tsx` — documento, loader raiz, error boundary, CSS global
-- `src/routes.ts` — rotas do framework; `src/routes/*` — módulos de rota
-- `src/routes/identity.tsx` + `src/routes/legacy.tsx` — adaptador temporário que ainda renderiza o protótipo (`src/App.tsx`, `src/router.tsx`, `src/data/mock.ts`, `src/context/StoreContext.tsx`) para rotas não ligadas ao banco
-- `src/server/supabase.server.ts` — cliente Supabase SSR por requisição, `supabaseLoader`/`supabaseRouteHeaders` (padrão de loader); `auth.server.ts` — login/logout; `*.server.ts` — leitura por domínio; `mappers/` — linhas do banco para tipos de UI
-- `src/routes/layouts/` — rotas de layout; um módulo de rota por página ligada ao banco (`events.tsx`, `event.tsx`)
+- `src/root.tsx` — documento (`lang="pt-BR"`, `noindex`), error boundary, `RouteA11y` (foco ao trocar de página e ao falhar a validação de um formulário), CSS global
+- `src/routes.ts` — rotas do framework; `src/routes/*` — um módulo de rota fino por página (`login.tsx` e `logout.tsx` são o Auth)
+- `src/routes/layouts/` — rotas de layout (`public`, `app`, `collective`)
+- `src/server/supabase.server.ts` — cliente Supabase SSR por requisição, `supabaseLoader`/`supabaseRouteHeaders` (padrão de loader); `auth.server.ts` — sessão, login/logout e leitura de corpos; `*.server.ts` — leitura e escrita por domínio; `mappers/` — linhas do banco para tipos de UI
+- `src/data/types.ts` — tipos de UI e constantes compartilhadas (UF, rótulos de tipos)
+- `src/lib/` — validação de formulários e utilitários puros (sem acesso a rede)
 - `src/pages/**`, `src/components/**` — telas e componentes
 - `src/types/database.generated.ts` — tipos gerados do schema
 - `supabase/migrations/`, `supabase/seeds/`, `supabase/config.toml` — banco
-- `tests/unit`, `tests/e2e` (preview) e `tests/e2e/db` (Supabase local), `tests/database`, `tests/assets`, `tests/*.test.mjs`
+- `tests/unit` (Vitest), `tests/e2e/db` (Playwright com Supabase local), `tests/database` (SQL), `tests/assets` (build SSR), `tests/*.test.mjs`
 - `scripts/start-runtime.mjs` — validação de ambiente e start do servidor
 - `deploy/` — Caddy, página de espera, script do pod
 - `docs/` — regras de negócio (`business-rules/mvp.md`), arquitetura, ADRs, ambiente, plano
 
 ## Ambiente
 
-Ver [`docs/engineering/environment.md`](docs/engineering/environment.md). Variáveis do app: `CIRCUITONE_RUNTIME` (`preview` = protótipo com mocks, `development` = Supabase real), `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `APP_ORIGIN`.
+Ver [`docs/engineering/environment.md`](docs/engineering/environment.md). Variáveis do app (todas obrigatórias; sem Supabase o app não sobe): `CIRCUITONE_RUNTIME=development`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` (só a chave publicável) e `APP_ORIGIN` (origem pública, conferida nas ações de escrita). Modelo em `.env.example`.
 
 ## Estilo
 

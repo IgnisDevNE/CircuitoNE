@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { cx } from '../../lib/utils'
 
 function usePrefersReducedMotion() {
@@ -95,23 +95,6 @@ export function BootLog({ lines, className }: { lines: string[]; className?: str
   )
 }
 
-export function AsciiSpinner({ label = 'carregando' }: { label?: string }) {
-  const frames = ['|', '/', '-', '\\']
-  const [i, setI] = useState(0)
-  const reduced = usePrefersReducedMotion()
-  useEffect(() => {
-    if (reduced) return
-    const id = setInterval(() => setI((v) => (v + 1) % frames.length), 120)
-    return () => clearInterval(id)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reduced])
-  return (
-    <span role="status" className="font-mono text-[var(--accent-text)]">
-      <span aria-hidden>[{frames[i]}]</span> <span>{label}…</span>
-    </span>
-  )
-}
-
 /** Decorative moving scanline overlay for hero sections. */
 export function ScanBeam() {
   const reduced = usePrefersReducedMotion()
@@ -125,14 +108,5 @@ export function ScanBeam() {
         animation: 'scan 7s linear infinite',
       }}
     />
-  )
-}
-
-export function Reveal({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
-  const ref = useRef<HTMLDivElement>(null)
-  return (
-    <div ref={ref} className="animate-fade-up" style={{ animationDelay: `${delay}ms` }}>
-      {children}
-    </div>
   )
 }

@@ -7,14 +7,17 @@ const bodyMessage = (data: unknown) =>
 
 /**
  * ErrorBoundary body for data-backed routes: 404 shows the not-found state, 403 the reason access is denied,
- * anything else a retryable error.
+ * anything else a retryable error. The title is visually hidden (the message is the visible text); `level="h2"`
+ * is for routes that render under a layout which already has the page `h1` (the collective area).
  */
-export function LoadError({ notFound, backTo, backLabel }: { notFound: string; backTo: string; backLabel: string }) {
+export function LoadError({ notFound, backTo, backLabel, level = 'h1' }: { notFound: string; backTo: string; backLabel: string; level?: 'h1' | 'h2' }) {
+  const Heading = level
   const error = useRouteError()
   const missing = isRouteErrorResponse(error) && error.status === 404
   const forbidden = isRouteErrorResponse(error) && error.status === 403
   return (
     <div role={missing || forbidden ? undefined : 'alert'}>
+      <Heading className="sr-only">{missing ? 'Não encontrado' : forbidden ? 'Acesso negado' : 'Erro ao carregar a página'}</Heading>
       <Empty>
         {missing
           ? notFound

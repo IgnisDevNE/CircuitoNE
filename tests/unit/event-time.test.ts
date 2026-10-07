@@ -1,13 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import { eventoNaoEncerrado, fmtData, fmtDataHora, parseFortalezaDateTime, porProximidade } from '../../src/lib/utils'
+import { eventoNaoEncerrado, fmtData, fmtDataHora, parseFortalezaDateTime } from '../../src/lib/utils'
 import type { Evento } from '../../src/data/types'
-import { eventos } from '../../src/data/mock'
 
 describe('horários de eventos em Fortaleza', () => {
-  it('mantém intervalos válidos nas fixtures de eventos', () => {
-    expect(eventos.every((evento) => !evento.fim || evento.fim > evento.inicio)).toBe(true)
-  })
-
   it('converte a hora informada em Fortaleza para um instante absoluto', () => {
     expect(parseFortalezaDateTime('2026-09-23T19:30')).toBe('2026-09-23T22:30:00.000Z')
     expect(parseFortalezaDateTime('2026-02-30T19:30')).toBeNull()
@@ -30,8 +25,6 @@ describe('horários de eventos em Fortaleza', () => {
 
       evento.fim = '2026-09-24T04:00:00.000Z'
       expect(eventoNaoEncerrado(evento)).toBe(true)
-      const futuro = { id: 'futuro', inicio: '2026-09-24T05:00:00.000Z', fim: null } as Evento
-      expect([futuro, evento].sort(porProximidade)[0]).toBe(evento)
       vi.setSystemTime(new Date('2026-09-24T04:00:00.000Z'))
       expect(eventoNaoEncerrado(evento)).toBe(false)
     } finally {

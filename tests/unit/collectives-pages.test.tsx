@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react'
 import { render, screen, within } from '@testing-library/react'
-import { createMemoryRouter, data, MemoryRouter, Outlet, RouterProvider, useLoaderData } from 'react-router'
+import { createMemoryRouter, data, MemoryRouter, RouterProvider, useLoaderData } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { CollectiveProfile } from '../../src/pages/public/CollectiveProfile'
 import { CollectivesHub } from '../../src/pages/public/CollectivesHub'
@@ -157,8 +157,7 @@ describe('módulos de rota', () => {
     render(
       <RouterProvider
         router={createMemoryRouter(
-          [{ id: 'root', path: '/', loader: () => ({ renderedAt: Date.parse('2026-10-06T12:00:00Z') }), Component: Outlet,
-             children: [{ Component: PublicRoute, children: [child] }] }],
+          [{ path: '/', Component: PublicRoute, children: [child] }],
           { initialEntries: [path] },
         )}
       />,

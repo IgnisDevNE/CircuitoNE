@@ -1,14 +1,12 @@
 import { Link } from 'react-router'
-import { Badge, Button, Panel, btnClass } from '../../components/ui/primitives'
+import { Badge, Panel, btnClass } from '../../components/ui/primitives'
 import { DuotoneImage } from '../../components/ui/DuotoneImage'
 import { AccentScope } from '../../components/ui/AccentScope'
 import { Markdown } from '../../components/ui/Markdown'
-import { useToast } from '../../context/ToastContext'
 import { fmtDataHora, tipoEventoLabel } from '../../lib/utils'
 import type { EventPageData } from '../../server/mappers/events'
 
 export function EventPage({ evento: ev, coletivo: col, periodo, situacao }: EventPageData) {
-  const toast = useToast()
   const cancelado = situacao === 'cancelled'
 
   return (
@@ -59,9 +57,9 @@ export function EventPage({ evento: ev, coletivo: col, periodo, situacao }: Even
               {!cancelado && (
                 <div className="mt-4">
                   {ev.gratuito ? (
-                    <Button variant="solid" className="w-full" onClick={() => toast('Entrada gratuita — é só chegar!', 'ok')}>
-                      Entrada gratuita
-                    </Button>
+                    <p className="border border-[var(--color-ok)] px-3 py-2 text-center font-mono text-sm text-[var(--color-ok)]">
+                      Entrada gratuita — é só chegar!
+                    </p>
                   ) : (
                     <a href={ev.ingressoLink} target="_blank" rel="noopener noreferrer" className={btnClass('solid', 'md', 'w-full')}>
                       Comprar ingresso ↗

@@ -1,10 +1,6 @@
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteError } from 'react-router'
-import { fixtureNow } from './data/mock'
+import { RouteA11y } from './components/layout/RouteA11y'
 import './index.css'
-
-export function loader() {
-  return { renderedAt: process.env.CIRCUITONE_RUNTIME === 'preview' ? fixtureNow : Date.now() }
-}
 
 export function meta() {
   return [
@@ -32,11 +28,23 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function Root() {
-  return <Outlet />
+  return (
+    <>
+      <RouteA11y />
+      <Outlet />
+    </>
+  )
 }
 
 export function ErrorBoundary() {
   const error = useRouteError()
   const notFound = isRouteErrorResponse(error) && error.status === 404
-  return <main><h1>{notFound ? '404 — página não encontrada.' : 'Não foi possível abrir esta página.'}</h1><a href="/">voltar ao início</a></main>
+  const title = notFound ? '404 — página não encontrada.' : 'Não foi possível abrir esta página.'
+  return (
+    <main id="conteudo" className="mx-auto max-w-xl px-4 py-12">
+      <title>{`${notFound ? 'Página não encontrada' : 'Erro'} · CIRCUITO NE`}</title>
+      <h1 className="font-display text-2xl">{title}</h1>
+      <a href="/" className="mt-4 inline-block text-[var(--accent-text)] underline">voltar ao início</a>
+    </main>
+  )
 }

@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
-import { Link, NavLink } from '../../router'
+import { Link, NavLink } from 'react-router'
 import { collectiveSections, type Permissao } from '../../lib/collective-access'
 import type { ColetivoArea } from '../../server/mappers/collective-area'
+import { navClass } from '../../lib/utils'
 import { Badge } from '../ui/primitives'
 import { AccentScope } from '../ui/AccentScope'
 
@@ -36,8 +37,7 @@ export function CollectiveLayout({ coletivo, permissoes, pendentes, children }: 
             <NavLink
               key={section.key}
               to={section.to}
-              className="-mb-px border-b-2 border-transparent px-3 py-2 font-mono text-xs uppercase tracking-widest text-[var(--color-muted)] hover:text-[var(--foreground)]"
-              activeClassName="!border-[var(--accent)] !text-[var(--foreground)]"
+              className={navClass('-mb-px border-b-2 border-transparent px-3 py-2 font-mono text-xs uppercase tracking-widest text-[var(--color-muted)] hover:text-[var(--foreground)]', '!border-[var(--accent)] !text-[var(--foreground)]')}
             >
               {section.label}
             </NavLink>

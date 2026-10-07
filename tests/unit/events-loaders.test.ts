@@ -171,9 +171,9 @@ describe('loaders das rotas', () => {
     expect(error?.init.status).toBe(503)
   })
 
-  it('agenda: runtime de preview (sem Supabase) responde 503', async () => {
+  it('agenda: runtime sem configuração do Supabase responde 503', async () => {
     const { loader } = await import('../../src/routes/events')
-    vi.stubEnv('CIRCUITONE_RUNTIME', 'preview')
+    vi.stubEnv('CIRCUITONE_RUNTIME', '')
     stubFetch(() => Response.json([]))
     const error = await thrown(loader({ request: new Request(origin + '/eventos') } as never) as Promise<unknown>)
     expect(error?.init.status).toBe(503)

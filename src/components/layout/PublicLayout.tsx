@@ -1,8 +1,9 @@
-import { useState, type ReactNode } from 'react'
-import { Link, NavLink, useNavigate } from '../../router'
-import { useStore } from '../../context/StoreContext'
-import { cx } from '../../lib/utils'
+import { useEffect, useState, type ReactNode } from 'react'
+import { Link, NavLink } from 'react-router'
+import { navClass } from '../../lib/utils'
 import { Cursor } from '../ui/anim'
+
+const mobileLink = 'block w-full py-2 text-left font-mono text-sm uppercase tracking-widest text-[var(--color-muted)] hover:text-[var(--foreground)]'
 
 const NAV = [
   { to: '/artistas', label: 'Artistas' },
@@ -10,11 +11,17 @@ const NAV = [
   { to: '/eventos', label: 'Eventos' },
 ]
 
-/** `signedIn` vem da sessão validada no servidor (layout público) ou do protótipo; `name` só enriquece o rótulo do link. */
+/** `signedIn` vem da sessão validada no servidor (layout público); `name` só enriquece o rótulo do link. */
 export function PublicLayout({ children, signedIn, name }: { children: ReactNode; signedIn: boolean; name?: string | null }) {
-  const { now } = useStore()
-  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
+
+  // Esc fecha o menu recolhido (celular).
+  useEffect(() => {
+    if (!open) return
+    const onKey = (event: KeyboardEvent) => event.key === 'Escape' && setOpen(false)
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open])
 
   return (
     <div className="crt-flicker flex min-h-screen flex-col">
@@ -38,8 +45,7 @@ export function PublicLayout({ children, signedIn, name }: { children: ReactNode
               <NavLink
                 key={n.to}
                 to={n.to}
-                className="px-3 py-2 font-mono text-sm uppercase tracking-widest text-[var(--color-muted)] transition-colors hover:text-[var(--foreground)]"
-                activeClassName="!text-[var(--foreground)] border-b-2 border-[var(--accent)]"
+                className={navClass('px-3 py-2 font-mono text-sm uppercase tracking-widest text-[var(--color-muted)] transition-colors hover:text-[var(--foreground)]', '!text-[var(--foreground)] border-b-2 border-[var(--accent)]')}
               >
                 {n.label}
               </NavLink>
@@ -69,31 +75,22 @@ export function PublicLayout({ children, signedIn, name }: { children: ReactNode
         {open && (
           <nav id="mobile-nav" aria-label="Principal (móvel)" className="border-t border-[var(--color-line)] px-4 py-2 md:hidden">
             {NAV.map((n) => (
-              <button
-                key={n.to}
-                onClick={() => {
-                  navigate(n.to)
-                  setOpen(false)
-                }}
-                className="block w-full py-2 text-left font-mono text-sm uppercase tracking-widest text-[var(--color-muted)] hover:text-[var(--foreground)]"
-              >
+              <Link key={n.to} to={n.to} onClick={() => setOpen(false)} className={mobileLink}>
                 {n.label}
-              </button>
+              </Link>
             ))}
-            <button
-              onClick={() => {
-                navigate(signedIn ? '/painel' : '/entrar')
-                setOpen(false)
-              }}
-              className="block w-full py-2 text-left font-mono text-sm uppercase tracking-widest text-[var(--accent-text)]"
+            <Link
+              to={signedIn ? '/painel' : '/entrar'}
+              onClick={() => setOpen(false)}
+              className={`${mobileLink} !text-[var(--accent-text)]`}
             >
               {signedIn ? 'Painel' : 'Entrar'}
-            </button>
+            </Link>
           </nav>
         )}
       </header>
 
-      <main id="conteudo" className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+      <main id="conteudo" tabIndex={-1} className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 outline-none">
         {children}
       </main>
 
@@ -102,7 +99,8 @@ export function PublicLayout({ children, signedIn, name }: { children: ReactNode
           <span>
             <span className="text-[var(--accent-text)]">$</span> circuito_ne --scene=eletronica --regiao=nordeste
           </span>
-          <span>Hub cultural independente · {new Date(now).getFullYear()}</span>
+          {/* O ano vem do relógio de quem renderiza: com o navegador em outra data o texto do servidor é mantido, sem erro de hidratação. */}
+          <span>Hub cultural independente · <span suppressHydrationWarning>{new Date().getFullYear()}</span></span>
         </div>
       </footer>
     </div>

@@ -12,14 +12,12 @@ export type AccountSession = {
   state: "active" | "suspended" | "incomplete" | "deletion_pending";
   reason: string | null;
 };
-export type IdentityData = {
-  preview?: boolean;
-  account?: AccountSession;
+/** Resposta do loader e da ação de `/entrar`: só a mensagem de erro e o e-mail digitado (nunca a senha). */
+export type LoginData = {
   error?: string;
   email?: string;
-  unavailable?: boolean;
 };
-const reply = (data: IdentityData, status: number, headers: Headers) =>
+const reply = (data: LoginData, status: number, headers: Headers) =>
   Response.json(data, { status, headers });
 const redirect = (location: string, headers: Headers) => {
   headers.set("Location", location);
@@ -180,57 +178,43 @@ export async function readAccountSession(
   return { kind: "account", account, user: data.user };
 }
 
-export async function identityLoader(request: Request): Promise<Response> {
+/**
+ * Loader de `/entrar`: quem já tem conta (ativa ou não) segue para `/painel`, onde o layout autenticado mostra o painel
+ * ou o aviso da conta restrita; visitante vê o formulário. Uma identidade invalidada limpa os cookies e conta como visitante.
+ */
+export async function loginLoader(request: Request): Promise<Response> {
   const headers = privateHeaders();
-  const path = routePath(request);
-  if (path === "/sair") return reply({ error: "Use o botão Sair." }, 405, headers);
-  if (process.env.CIRCUITONE_RUNTIME === "preview" || !process.env.CIRCUITONE_RUNTIME)
-    return reply({ preview: true }, 200, headers);
-  if (process.env.CIRCUITONE_RUNTIME !== 'development') return reply({error:'Serviço indisponível.'},503,headers)
-  if (path !== '/entrar' && !path.startsWith('/painel') && !path.startsWith('/coletivo/')) return reply({preview:true},200,headers)
   try {
     const client = createSupabaseServerClient(request, headers);
     const session = await readAccountSession(client, request, headers);
     if (session.kind === "error") return reply({ error: session.message }, 503, headers);
-    if (session.kind === "anonymous")
-      return path === "/entrar" ? reply({}, 200, headers) : redirect("/entrar", headers);
-    const { account } = session;
-    if (path === "/entrar" && account.state === "active") return redirect("/painel", headers);
-    return reply(
-      { account, unavailable: path !== "/painel" },
-      account.state === "active" ? 200 : 403,
-      headers,
-    );
+    if (session.kind === "account") return redirect("/painel", headers);
+    return reply({}, 200, headers);
   } catch {
     return reply({ error: "Serviço temporariamente indisponível. Tente novamente." }, 503, headers);
   }
 }
 
-export async function identityAction(request: Request): Promise<Response> {
+/** `GET /sair` não encerra nada (só o POST encerra): volta para o formulário de entrada. */
+export const logoutLoader = () => {
   const headers = privateHeaders();
-  const path = routePath(request);
-  if (request.method !== "POST" || !["/entrar", "/sair"].includes(path))
+  return redirect("/entrar", headers);
+};
+
+/** Mesma guarda das demais ações: a origem externa vem da configuração, nunca de cabeçalhos forwarded do cliente. */
+const originAllowed = (request: Request) =>
+  !!process.env.APP_ORIGIN &&
+  request.headers.get("origin") === process.env.APP_ORIGIN &&
+  request.headers.get("sec-fetch-site") !== "cross-site";
+
+export async function loginAction(request: Request): Promise<Response> {
+  const headers = privateHeaders();
+  if (request.method !== "POST" || routePath(request) !== "/entrar")
     return reply({ error: "Operação indisponível." }, 405, headers);
-  // A origem externa vem da configuração; não confiar em cabeçalhos forwarded do cliente.
-  if (
-    !process.env.APP_ORIGIN ||
-    request.headers.get("origin") !== process.env.APP_ORIGIN ||
-    request.headers.get("sec-fetch-site") === "cross-site"
-  )
-    return reply({ error: "Origem recusada." }, 403, headers);
+  if (!originAllowed(request)) return reply({ error: "Origem recusada." }, 403, headers);
   try {
     const form = await boundedForm(request);
     const client = createSupabaseServerClient(request, headers);
-    if (path === "/sair") {
-      const { error } = await client.auth.signOut({ scope: "local" });
-      if (error)
-        return reply(
-          { error: "Não foi possível encerrar a sessão. Tente novamente." },
-          503,
-          headers,
-        );
-      return redirect("/entrar", headers);
-    }
     const email = form.get("email")?.trim() ?? "";
     const password = form.get("password") ?? "";
     if (
@@ -254,6 +238,31 @@ export async function identityAction(request: Request): Promise<Response> {
         headers,
       );
     return redirect("/painel", headers);
+  } catch (error) {
+    return reply(
+      { error: "Não foi possível concluir a operação. Tente novamente." },
+      error instanceof Response ? error.status : 503,
+      headers,
+    );
+  }
+}
+
+export async function logoutAction(request: Request): Promise<Response> {
+  const headers = privateHeaders();
+  if (request.method !== "POST" || routePath(request) !== "/sair")
+    return reply({ error: "Operação indisponível." }, 405, headers);
+  if (!originAllowed(request)) return reply({ error: "Origem recusada." }, 403, headers);
+  try {
+    await boundedForm(request);
+    const client = createSupabaseServerClient(request, headers);
+    const { error } = await client.auth.signOut({ scope: "local" });
+    if (error)
+      return reply(
+        { error: "Não foi possível encerrar a sessão. Tente novamente." },
+        503,
+        headers,
+      );
+    return redirect("/entrar", headers);
   } catch (error) {
     return reply(
       { error: "Não foi possível concluir a operação. Tente novamente." },

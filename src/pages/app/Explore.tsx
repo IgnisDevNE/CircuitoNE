@@ -1,8 +1,9 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import { Link, NavLink } from '../../router'
+import { Link, NavLink } from 'react-router'
 import { ESTADOS } from '../../data/types'
 import { estiloLabels } from '../../lib/artist'
 import { documentPath } from '../../lib/uploads'
+import { navClass } from '../../lib/utils'
 import type { ColetivoPublico } from '../../server/mappers/collectives'
 import type { DadosRestritos, ExploreColetivosData, ExploreData, ExplorePerfisData, ExploreKind, PerfilExplorar } from '../../server/mappers/explore'
 import { Badge, Empty, LinkButton, Panel, SectionHeading } from '../../components/ui/primitives'
@@ -204,8 +205,7 @@ export function Explore({ data }: { data: ExploreData }) {
           <NavLink
             key={kind}
             to={`/painel/explorar/${kind}`}
-            className="-mb-px border-b-2 border-transparent px-3 py-2 font-mono text-xs uppercase tracking-widest text-[var(--color-muted)] hover:text-[var(--foreground)]"
-            activeClassName="!border-[var(--accent)] !text-[var(--foreground)]"
+            className={navClass('-mb-px border-b-2 border-transparent px-3 py-2 font-mono text-xs uppercase tracking-widest text-[var(--color-muted)] hover:text-[var(--foreground)]', '!border-[var(--accent)] !text-[var(--foreground)]')}
           >
             {PAGES[kind].label}
           </NavLink>

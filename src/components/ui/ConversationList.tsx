@@ -1,4 +1,4 @@
-import { Link } from '../../router'
+import { Link } from 'react-router'
 import { cx } from '../../lib/utils'
 import type { ConversaItem } from '../../server/mappers/messages'
 import { Badge, Empty } from './primitives'

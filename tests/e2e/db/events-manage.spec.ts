@@ -111,7 +111,7 @@ test('publicar: o evento entra na agenda e ganha página pública com o lineup',
   await expect(page.getByText('Convidada W8 livre')).toBeVisible()
   await expect(page.getByRole('link', { name: 'Convidada W8 livre' })).toHaveCount(0)
   await expect(page.locator('main strong')).toHaveText('destaque')
-  await expect(page.getByRole('button', { name: 'Entrada gratuita' })).toBeVisible()
+  await expect(page.getByText('Entrada gratuita — é só chegar!')).toBeVisible()
   await expect(page.locator('main b')).toHaveCount(0)
   expect(await agendaTitles(page)).toContain(name)
 })

@@ -1,11 +1,10 @@
 import type { ComponentProps } from 'react'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { createMemoryRouter, data, MemoryRouter, Outlet, RouterProvider, useLoaderData } from 'react-router'
+import { createMemoryRouter, data, MemoryRouter, RouterProvider, useLoaderData } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { EventPage } from '../../src/pages/public/EventPage'
 import { EventsList } from '../../src/pages/public/EventsList'
-import { ToastProvider } from '../../src/context/ToastContext'
 import EventRoute, { ErrorBoundary as EventError, meta as eventMeta } from '../../src/routes/event'
 import EventsRoute, { meta as eventsMeta } from '../../src/routes/events'
 import PublicRoute from '../../src/routes/layouts/public'
@@ -47,9 +46,7 @@ const pageData = (extra: Partial<EventPageData> = {}, ev: Partial<Evento> = {}):
 const page = (props: EventPageData) =>
   render(
     <MemoryRouter>
-      <ToastProvider>
-        <EventPage {...props} />
-      </ToastProvider>
+      <EventPage {...props} />
     </MemoryRouter>,
   )
 
@@ -110,7 +107,8 @@ describe('EventPage', () => {
     expect(container.querySelector('strong')?.textContent).toBe('Fixture')
     expect(screen.getByText('07 out 2026 · 12:00 (Fortaleza)')).toBeTruthy()
     expect(screen.getByText('Não informado')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Entrada gratuita' })).toBeTruthy()
+    expect(screen.getByText('Entrada gratuita — é só chegar!')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /Entrada gratuita/ })).toBeNull()
   })
 
   it('usa a cor do coletivo como destaque e o padrão quando não há cor', () => {
@@ -118,9 +116,7 @@ describe('EventPage', () => {
     expect((container.firstElementChild as HTMLElement).style.getPropertyValue('--accent')).toBeTruthy()
     rerender(
       <MemoryRouter>
-        <ToastProvider>
-          <EventPage {...pageData({ coletivo: null })} />
-        </ToastProvider>
+        <EventPage {...pageData({ coletivo: null })} />
       </MemoryRouter>,
     )
     expect(screen.queryByText(/^por /)).toBeNull()
@@ -174,8 +170,7 @@ describe('módulos de rota', () => {
     render(
       <RouterProvider
         router={createMemoryRouter(
-          [{ id: 'root', path: '/', loader: () => ({ renderedAt: Date.parse('2026-10-06T12:00:00Z') }), Component: Outlet,
-             children: [{ Component: PublicRoute, children: [child] }] }],
+          [{ path: '/', Component: PublicRoute, children: [child] }],
           { initialEntries: [path] },
         )}
       />,
@@ -189,7 +184,7 @@ describe('módulos de rota', () => {
     })
     expect(await screen.findByRole('heading', { name: 'Evento sintético 2' })).toBeTruthy()
     expect(screen.getByRole('navigation', { name: 'Principal' })).toBeTruthy()
-    expect(screen.getByText(/Hub cultural independente · 2026/)).toBeTruthy()
+    expect(screen.getByRole('contentinfo').textContent).toContain(`Hub cultural independente · ${new Date().getFullYear()}`)
   })
 
   it('404 do loader mostra o estado "não encontrado" dentro do layout, com caminho de volta', async () => {

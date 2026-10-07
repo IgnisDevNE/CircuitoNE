@@ -1,10 +1,9 @@
 import { type RouteConfig, index, layout, route } from '@react-router/dev/routes'
 
-// Ainda pelo protótipo (identity -> legacy): entrar (login real no runtime development).
-const paths = ['/entrar']
-
 export default [
-  ...paths.map((path, position) => route(path.slice(1), './routes/identity.tsx', { id: `page-${position}` })),
+  // Entrar e sair (Supabase Auth): fora dos layouts, com a própria sessão validada no servidor.
+  route('entrar', './routes/login.tsx'),
+  route('sair', './routes/logout.tsx'),
   // Cadastro real (e confirmação do link do e-mail): fora do layout autenticado, mas com SSR e a sessão validada no servidor.
   route('cadastro', './routes/registration.tsx'),
   route('auth/confirmar', './routes/auth-confirm.tsx'),
@@ -35,7 +34,7 @@ export default [
       route('perfil', './routes/collective-profile-edit.tsx'),
     ]),
   ]),
-  // Páginas ligadas ao banco: um módulo por página, dentro de layouts. O restante ainda é o protótipo (identity -> legacy).
+  // Páginas públicas: um módulo por página, todas lidas do banco como visitante.
   layout('./routes/layouts/public.tsx', [
     index('./routes/home.tsx'),
     route('artistas', './routes/artists.tsx'),
@@ -45,6 +44,5 @@ export default [
     route('coletivos', './routes/collectives.tsx'),
     route('coletivos/:id', './routes/collective.tsx'),
   ]),
-  route('sair', './routes/identity.tsx', { id: 'logout' }),
   route('*', './routes/not-found.tsx'),
 ] satisfies RouteConfig

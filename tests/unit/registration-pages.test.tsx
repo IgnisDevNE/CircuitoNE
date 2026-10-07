@@ -8,7 +8,7 @@ import { RestrictedAccount } from '../../src/pages/app/RestrictedAccount'
 import { RegisterFlow } from '../../src/pages/auth/RegisterFlow'
 import type { Taxonomia } from '../../src/server/mappers/account-settings'
 
-type Page = Exclude<RegistrationPage, { preview: true }>
+type Page = RegistrationPage
 const taxonomia: Taxonomia = [
   { estilo: 'house', subestilos: ['deep house'] },
   { estilo: 'techno', subestilos: [] },
@@ -199,6 +199,6 @@ describe('conta incompleta', () => {
 describe('rota /cadastro', () => {
   it('título da página', async () => {
     const { meta } = await import('../../src/routes/registration')
-    expect(meta({ loaderData: { step: 'account', notice: null } } as never)).toEqual([{ title: 'Cadastro · CIRCUITO NE' }])
+    expect(meta()).toEqual([{ title: 'Cadastro · CIRCUITO NE' }])
   })
 })

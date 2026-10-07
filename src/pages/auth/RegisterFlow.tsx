@@ -8,7 +8,7 @@ import { Stepper } from '../../components/ui/Stepper'
 import { Feedback, GeneralFeedback, ResendButton, errorsOf, useCooldown, valueOf, valuesOf } from './flow-ui'
 import { ProfileFields } from './ProfileFields'
 
-type FlowPage = Exclude<RegistrationPage, { preview: true }>
+type FlowPage = RegistrationPage
 
 const STEPS = ['Conta', 'Celular', 'Dados']
 const STEP_INDEX: Record<FlowPage['step'], number> = { account: 0, email: 0, phone: 1, code: 1, data: 2 }

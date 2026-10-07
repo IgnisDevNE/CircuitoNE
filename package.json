@@ -18,7 +18,6 @@
     "test": "pnpm test:infra && pnpm test:unit",
     "test:infra": "node --test tests/*.test.mjs",
     "test:unit": "vitest run",
-    "test:e2e": "playwright test",
     "test:e2e:db": "playwright test --config playwright.db.config.ts",
     "test:coverage": "vitest run --coverage",
     "test:build": "node --test --test-concurrency=1 tests/assets/*.test.mjs",

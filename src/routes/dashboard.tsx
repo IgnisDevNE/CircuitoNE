@@ -1,4 +1,5 @@
 import { useRouteLoaderData } from 'react-router'
+import { LoadError } from '../components/ui/LoadError'
 import { Dashboard } from '../pages/app/Dashboard'
 import { loadDashboard } from '../server/account.server'
 import { supabaseLoader, supabaseRouteHeaders } from '../server/supabase.server'
@@ -24,4 +25,8 @@ export default function DashboardRoute({ loaderData }: Route.ComponentProps) {
       proximos={loaderData.proximos}
     />
   )
+}
+
+export function ErrorBoundary() {
+  return <LoadError notFound="Página não encontrada." backTo="/painel" backLabel="voltar ao dashboard" />
 }

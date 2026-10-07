@@ -173,13 +173,12 @@ describe('loadRegistration: retoma na etapa certa a partir do estado real', () =
   })
 })
 
-describe('registrationLoader: fora do runtime development', () => {
-  it('o preview (protótipo) não chama o Auth: devolve só o marcador', async () => {
-    vi.stubEnv('CIRCUITONE_RUNTIME', 'preview')
+describe('registrationLoader: sem configuração do Supabase', () => {
+  it('responde 503 sem chamar a rede (nunca uma etapa inventada)', async () => {
+    vi.stubEnv('CIRCUITONE_RUNTIME', '')
     vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('não deveria chamar a rede') }))
     const { registrationLoader } = await import('../../src/server/registration.server')
-    const result = (await registrationLoader(new Request(origin + '/cadastro'))) as unknown as { data: unknown }
-    expect(result.data).toEqual({ preview: true })
+    await expect(registrationLoader(new Request(origin + '/cadastro'))).rejects.toMatchObject({ init: { status: 503 } })
   })
 })
 

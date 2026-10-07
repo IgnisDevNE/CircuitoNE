@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { boundedBody, boundedMultipart, identityAction } from '../../src/server/auth.server'
+import { boundedBody, boundedMultipart, loginAction } from '../../src/server/auth.server'
 import { openDocument, SIGNED_URL_SECONDS } from '../../src/server/documents.server'
 import { publicImageUrl } from '../../src/server/public-image'
 import { readUpload, removeStored, returnedPath, storageFailure, storeUpload } from '../../src/server/storage.server'
@@ -404,7 +404,7 @@ describe('profileAction: fotos e documentos (ponta a ponta)', () => {
     ...extra,
   })
   const signIn = async () => {
-    const response = await identityAction(new Request(origin + '/entrar', { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ email: 'a@example.invalid', password: 'synthetic-password' }) }))
+    const response = await loginAction(new Request(origin + '/entrar', { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ email: 'a@example.invalid', password: 'synthetic-password' }) }))
     calls = []
     return response.headers.getSetCookie().map((value) => value.split(';')[0]).join('; ')
   }
@@ -546,7 +546,7 @@ describe('profileAction: fotos e documentos (ponta a ponta)', () => {
 describe('openDocument: abre o PDF privado com um endereço assinado de poucos segundos', () => {
   const request = (cookie?: string) => new Request(`${origin}/painel/documentos/${P}/presskit`, { headers: cookie ? { Cookie: cookie } : {} })
   const signIn = async () => {
-    const response = await identityAction(new Request(origin + '/entrar', { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ email: 'a@example.invalid', password: 'synthetic-password' }) }))
+    const response = await loginAction(new Request(origin + '/entrar', { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ email: 'a@example.invalid', password: 'synthetic-password' }) }))
     calls = []
     return response.headers.getSetCookie().map((value) => value.split(';')[0]).join('; ')
   }

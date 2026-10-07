@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useRevalidator } from 'react-router'
-import { Link } from '../../router'
+import { Link, useRevalidator } from 'react-router'
 import type { ActionResult } from '../../lib/action-result'
 import { REFRESH_INTERVAL_MS } from '../../lib/messages'
 import { cx } from '../../lib/utils'
@@ -36,7 +35,7 @@ function useAutoRefresh() {
 export function MessagesWorkspace({ basePath, conversas, limitada, podeEnviar, aberta, feedback, busy = false, novaHref }: MessagesWorkspaceProps) {
   const revalidator = useAutoRefresh()
   return (
-    <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
       <Panel title="conversas" className={cx('lg:h-[70vh]', aberta && 'hidden lg:block')} bodyClassName="max-h-[70vh] overflow-y-auto">
         {novaHref && (
           <p className="mb-3 font-mono text-xs text-[var(--color-muted)]">

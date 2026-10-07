@@ -4,6 +4,9 @@ export function cx(...parts: (string | false | null | undefined)[]) {
   return parts.filter(Boolean).join(' ')
 }
 
+/** `className` de `NavLink` com um trecho extra quando o link da rota está ativo. */
+export const navClass = (base: string, active: string) => ({ isActive }: { isActive: boolean }) => cx(base, isActive && active)
+
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 const eventZone = 'America/Fortaleza'
 const eventParts = new Intl.DateTimeFormat('en-US', {
@@ -59,35 +62,11 @@ export function eventoNaoEncerrado(evento: Evento, now = Date.now()) {
   return fortalezaDay(new Date(evento.inicio)) >= fortalezaDay(new Date(now))
 }
 
-export function porProximidade(a: Evento, b: Evento, now = Date.now()) {
-  const ta = new Date(a.inicio).getTime()
-  const tb = new Date(b.inicio).getTime()
-  const fa = eventoNaoEncerrado(a, now)
-  const fb = eventoNaoEncerrado(b, now)
-  // Em andamento primeiro; futuros por proximidade; passados do mais recente para o mais antigo.
-  if (fa && fb) return Math.max(ta, now) - Math.max(tb, now) || ta - tb || a.id.localeCompare(b.id)
-  if (fa) return -1
-  if (fb) return 1
-  return tb - ta || a.id.localeCompare(b.id)
-}
-
 export function tipoEventoLabel(e: Evento) {
   return e.tipo === 'outros' && e.tipoOutro ? e.tipoOutro : EVENTO_TIPO_LABEL[e.tipo]
 }
 
-// ---- input masks ----
-/** Formata CPF parcial sem apagar entradas inválidas que precisam ser corrigidas. */
-export function maskCPF(v: string) {
-  const d = v.replace(/[.\-\s]/g, '')
-  if (!/^\d{0,11}$/.test(d)) return v
-  const p = [d.slice(0, 3), d.slice(3, 6), d.slice(6, 9), d.slice(9, 11)]
-  let out = p[0]
-  if (p[1]) out += '.' + p[1]
-  if (p[2]) out += '.' + p[2]
-  if (p[3]) out += '-' + p[3]
-  return out
-}
-
+// ---- cachê (reais <-> centavos) ----
 /** Lê uma quantia única em reais no formato brasileiro e devolve centavos inteiros. */
 export function parseCacheCents(v: string): number | null {
   const match = /^(?:R\$\s*)?(\d{1,3}(?:\.\d{3})+|\d+)(?:,(\d{1,2}))?$/.exec(v.trim())
@@ -100,13 +79,6 @@ export function parseCacheCents(v: string): number | null {
 export function formatCacheCents(cents: number) {
   const intFmt = String(Math.floor(cents / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
   return `R$ ${intFmt},${String(cents % 100).padStart(2, '0')}`
-}
-
-/** Vazio permanece vazio; entrada inválida permanece visível para correção. */
-export function maskCache(v: string) {
-  if (!v.trim()) return ''
-  const cents = parseCacheCents(v)
-  return cents === null ? v : formatCacheCents(cents)
 }
 
 // ---- WCAG contrast helpers ----
@@ -122,9 +94,10 @@ function luminance([r, g, b]: [number, number, number]) {
     const s = v / 255
     return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
   })
-  return 0.2126 * a[0] + 0.7152 * a[1] + 0.7222 * a[2]
+  return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2]
 }
 
+/** Razão de contraste WCAG entre duas cores `#rgb`/`#rrggbb` (1 a 21). */
 export function contrastRatio(fg: string, bg: string) {
   const l1 = luminance(hexToRgb(fg))
   const l2 = luminance(hexToRgb(bg))

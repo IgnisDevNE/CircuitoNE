@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Form } from 'react-router'
-import { Link } from '../../router'
+import { Form, Link } from 'react-router'
 import type { ActionResult } from '../../lib/action-result'
 import { MAX_MESSAGE_LENGTH, routeKey } from '../../lib/messages'
 import type { NewMessageData } from '../../server/mappers/messages'
@@ -55,9 +54,10 @@ export function NewMessage({ destinatario, remetentes, feedback, busy = false }:
                 required
                 maxLength={MAX_MESSAGE_LENGTH}
                 rows={5}
+                aria-describedby="nova-mensagem-dica"
                 className={`${fieldClass} resize-y`}
               />
-              <p className="mt-1 font-mono text-xs text-[var(--color-muted)]">Texto simples, até 2.000 caracteres.</p>
+              <p id="nova-mensagem-dica" className="mt-1 font-mono text-xs text-[var(--color-muted)]">Texto simples, até 2.000 caracteres.</p>
             </div>
             {feedback && !feedback.ok && (
               <p role="alert" className="font-mono text-sm text-[var(--accent-text)]">[erro] {feedback.error}</p>

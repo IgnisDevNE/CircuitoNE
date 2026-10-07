@@ -1,5 +1,4 @@
-import { Form } from 'react-router'
-import { Link } from '../../router'
+import { Form, Link } from 'react-router'
 import { ESTADOS, TIPO_LABEL, type AtuacaoTipo } from '../../data/types'
 import {
   AUDIOVISUAL_TYPES,
@@ -189,8 +188,16 @@ export function EditProfile({ perfil, taxonomia, result, busy }: EditProfileProp
               <label htmlFor="cor" className="block font-mono text-xs uppercase tracking-widest text-[var(--color-muted)]">
                 <span aria-hidden className="text-[var(--accent-text)]">$ </span>cor predominante
               </label>
-              <input id="cor" name="cor" type="color" defaultValue={value('cor', perfil.cor ?? DEFAULT_COLOR)} className="h-10 w-16 cursor-pointer border border-[var(--color-line)] bg-transparent" />
-              {errors.cor && <p className="font-mono text-xs text-[var(--accent-text)]">[erro] {errors.cor}</p>}
+              <input
+                id="cor"
+                name="cor"
+                type="color"
+                defaultValue={value('cor', perfil.cor ?? DEFAULT_COLOR)}
+                aria-invalid={errors.cor ? true : undefined}
+                aria-describedby={errors.cor ? 'cor-erro' : undefined}
+                className="h-10 w-16 cursor-pointer border border-[var(--color-line)] bg-transparent"
+              />
+              {errors.cor && <p id="cor-erro" className="font-mono text-xs text-[var(--accent-text)]">[erro] {errors.cor}</p>}
             </div>
 
             {artist && (

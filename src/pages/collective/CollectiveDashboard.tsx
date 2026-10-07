@@ -1,4 +1,4 @@
-import { Link } from '../../router'
+import { Link } from 'react-router'
 import { collectiveSections, type Permissao } from '../../lib/collective-access'
 import { fmtDataHora } from '../../lib/utils'
 import type { ColetivoArea, EventoGestao, ResumoMensagens } from '../../server/mappers/collective-area'

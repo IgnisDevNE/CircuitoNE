@@ -12,7 +12,7 @@ export function Stepper({ steps, current }: { steps: string[]; current: number }
               className={cx(
                 'flex items-center gap-2 whitespace-nowrap border px-2.5 py-1 uppercase tracking-widest',
                 active
-                  ? 'border-[var(--accent)] text-[var(--foreground)]'
+                  ? 'border-[var(--accent)] font-bold text-[var(--foreground)]'
                   : done
                     ? 'border-[var(--color-ok)] text-[var(--color-ok)]'
                     : 'border-[var(--color-line)] text-[var(--color-muted)]',

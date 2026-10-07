@@ -105,7 +105,7 @@ export function ScanBeam() {
       className="pointer-events-none absolute inset-x-0 top-0 h-16 opacity-30"
       style={{
         background: 'linear-gradient(to bottom, color-mix(in srgb, var(--accent) 40%, transparent), transparent)',
-        animation: 'scan 7s linear infinite',
+        animation: 'scan 4s linear 1 forwards',
       }}
     />
   )

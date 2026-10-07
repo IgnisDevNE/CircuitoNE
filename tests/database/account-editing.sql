@@ -49,8 +49,8 @@ select pg_temp.assert_true((select d->>'name'='Titular sintético 1' and d->>'cp
 select pg_temp.assert_true(not (public.get_my_account_details())::text like '%52998224725%','CPF completo saiu do banco');
 
 -- Edição válida: nome, gênero, cidade/UF e WhatsApp diferente do celular.
-select public.update_my_account_details('{"name":"  Nome editado  ","gender":"Pessoa não binária","city":"Olinda","state_code":"PE","phone_is_whatsapp":false,"whatsapp_number":"+5581988887777"}');
-select pg_temp.assert_true((select d->>'name'='Nome editado' and d->>'gender'='Pessoa não binária' and d->>'city'='Olinda'
+select public.update_my_account_details('{"name":"  Nome editado  ","gender":"Não binário","city":"Olinda","state_code":"PE","phone_is_whatsapp":false,"whatsapp_number":"+5581988887777"}');
+select pg_temp.assert_true((select d->>'name'='Nome editado' and d->>'gender'='Não binário' and d->>'city'='Olinda'
   and not (d->>'phone_is_whatsapp')::boolean and d->>'whatsapp_number'='+5581988887777' and d->>'cpf_masked'='***.982.247-**' and d->>'birth_date'='1990-01-01'
   from (select public.get_my_account_details() d) x),'Edição da conta não persistiu ou alterou campo imutável');
 -- Nome só: não mexe no resto (inclui WhatsApp). Gênero vazio volta a "não informar". "Não tenho WhatsApp" = false + nulo.
@@ -74,6 +74,8 @@ select pg_temp.expect_error($$select public.update_my_account_details('{"name":n
 select pg_temp.expect_error($$select public.update_my_account_details('{"city":""}')$$,'22023');
 select pg_temp.expect_error($$select public.update_my_account_details('{"state_code":"XX"}')$$,'22023');
 select pg_temp.expect_error($$select public.update_my_account_details(jsonb_build_object('gender',repeat('x',101)))$$,'22023');
+select pg_temp.expect_error($$select public.update_my_account_details('{"gender":"Pessoa não binária"}')$$,'22023');
+select pg_temp.expect_error($$select public.update_my_account_details('{"city":"Fortaleza"}')$$,'22023');
 select pg_temp.expect_error($$select public.update_my_account_details('{"phone_is_whatsapp":true}')$$,'22023');
 select pg_temp.expect_error($$select public.update_my_account_details('{"whatsapp_number":"+5581988887777"}')$$,'22023');
 select pg_temp.expect_error($$select public.update_my_account_details('{"phone_is_whatsapp":true,"whatsapp_number":"+5581988887777"}')$$,'22023');

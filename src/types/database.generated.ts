@@ -66,7 +66,13 @@ isOneToOne: false
                     "activity"?: string,"city"?: string,"color"?: string | null,"created_at"?: string,"description"?: string,"id"?: string,"image_path"?: string | null,"kind"?: string,"member_role_builtin"?: boolean,"member_role_id"?: string,"name"?: string,"owner_user_id"?: string | null,"social_links"?: NonNullable<Json>,"state"?: string,"state_code"?: string,"updated_at"?: string,"version"?: number
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "collectives_municipality_fk"
+      columns: ["state_code","city"]
+isOneToOne: false
+      referencedRelation: "municipalities"
+      referencedColumns: ["state_code","name"]
+    }
                   ]
                 },"events": {
                   Row: {
@@ -86,12 +92,31 @@ isOneToOne: false
       referencedRelation: "collectives"
       referencedColumns: ["id"]
     },{
+      foreignKeyName: "events_municipality_fk"
+      columns: ["state_code","city"]
+isOneToOne: false
+      referencedRelation: "municipalities"
+      referencedColumns: ["state_code","name"]
+    },{
       foreignKeyName: "events_style_fkey"
       columns: ["style"]
 isOneToOne: false
       referencedRelation: "music_styles"
       referencedColumns: ["name"]
     }
+                  ]
+                },"municipalities": {
+                  Row: {
+                    "ibge_code": number,"name": string,"state_code": string
+                  }
+                  Insert: {
+                    "ibge_code": number,"name": string,"state_code": string
+                  }
+                  Update: {
+                    "ibge_code"?: number,"name"?: string,"state_code"?: string
+                  }
+                  Relationships: [
+                    
                   ]
                 },"music_styles": {
                   Row: {
@@ -174,7 +199,13 @@ isOneToOne: false
                     "city"?: string,"color"?: string | null,"created_at"?: string,"description"?: string,"id"?: string,"kind"?: string,"name"?: string,"owner_id"?: string,"published"?: boolean,"social_links"?: NonNullable<Json>,"state_code"?: string,"updated_at"?: string
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "profiles_municipality_fk"
+      columns: ["state_code","city"]
+isOneToOne: false
+      referencedRelation: "municipalities"
+      referencedColumns: ["state_code","name"]
+    }
                   ]
                 }
           }
@@ -513,4 +544,3 @@ export const Constants = {
           }
         }
 } as const
-

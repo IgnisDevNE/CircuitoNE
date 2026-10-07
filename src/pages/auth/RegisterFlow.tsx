@@ -181,7 +181,7 @@ function DataStep({ page, result, busy }: { page: Extract<FlowPage, { step: 'dat
           <Input label="Nome completo" name="nome" defaultValue={value('nome')} error={errors.nome} maxLength={200} autoComplete="name" required />
           <GenderSelect defaultValue={value('genero')} error={errors.genero} />
           <Input label="Data de nascimento" name="nascimento" type="date" defaultValue={value('nascimento')} error={errors.nascimento} autoComplete="bday" hint="é preciso ter 18 anos completos" required />
-          <CpfInput defaultValue={value('cpf')} serverError={errors.cpf} />
+          <CpfInput defaultValue={value('cpf')} serverError={errors.cpf} submission={result} />
           <LocationFields ufName="estado" cityName="cidade" defaultUf={value('estado')} defaultCity={value('cidade')} ufError={errors.estado} cityError={errors.cidade} />
         </div>
         <fieldset aria-describedby={errors.whatsapp ? 'whatsapp-erro' : undefined}>

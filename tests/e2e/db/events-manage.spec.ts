@@ -55,14 +55,17 @@ test('criar um rascunho com lineup vinculado e livre: aparece no dashboard como 
   await expect(page.getByRole('alert').first()).toHaveText('[erro] Corrija os campos destacados.')
   await expect(page.getByText('[erro] Informe o nome do evento.')).toBeVisible()
   await expect(page.getByText('[erro] Informe a data e a hora de início.')).toBeVisible()
-  await expect(page.getByText('[erro] Informe a cidade.')).toBeVisible()
+  await expect(page.getByText('[erro] Escolha o estado.')).toBeVisible()
+  await expect(page.getByText('[erro] Escolha a cidade.')).toBeVisible()
   await expect(page.getByText('[erro] Escolha a vertente principal do evento.')).toBeVisible()
 
   await field(page, 'name').fill(name)
   await field(page, 'style').selectOption('house')
   await field(page, 'starts_at').fill('2031-03-15T20:00')
   await field(page, 'ends_at').fill('2031-03-15T19:00')
-  await field(page, 'city').fill('Recife')
+  // UF primeiro, depois a cidade da lista do estado.
+  await field(page, 'state_code').selectOption('PE')
+  await field(page, 'city').selectOption('Recife')
   await field(page, 'venue').fill('Pátio sintético')
   await field(page, 'description').fill('Texto com **destaque** e <b>html bruto</b>.')
   await expect(page.getByLabel('Pré-visualização da descrição').locator('strong')).toHaveText('destaque')
@@ -139,7 +142,7 @@ test('editar o nome atualiza a página pública; edição concorrente mostra o c
 
   // Outra pessoa (outro dispositivo) salva antes: este envio usa a versão antiga e é recusado.
   await page.goto(managePath())
-  await field(page, 'city').fill('Olinda')
+  await field(page, 'city').selectOption('Olinda')
   const row = await rpcAs<{ version: number }>(accounts.active.email, 'get_event', { target: eventId })
   await rpcAs(accounts.active.email, 'update_event', { target: eventId, expected_version: row.version, payload: { venue: 'Outro pátio' } })
   await page.getByRole('button', { name: 'salvar alterações' }).click()

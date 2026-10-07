@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { FlowResult, RegistrationPage } from '../../src/lib/registration-forms'
 import { NewProfile } from '../../src/pages/app/NewProfile'
 import { RestrictedAccount } from '../../src/pages/app/RestrictedAccount'
+import { CpfInput } from '../../src/pages/auth/CpfInput'
 import { RegisterFlow } from '../../src/pages/auth/RegisterFlow'
 import type { Taxonomia } from '../../src/server/mappers/account-settings'
 
@@ -184,6 +185,17 @@ describe('cadastro: etapas', () => {
       expect(cpf.getAttribute('aria-invalid')).toBe('false')
       await user.tab()
       expect(cpf.getAttribute('aria-invalid')).toBe('true')
+    })
+
+    it('CPF: o erro do servidor some ao editar e volta a cada nova resposta', async () => {
+      const first = {}
+      const { rerender } = render(<CpfInput defaultValue="529.982.247-25" serverError="Recusado pelo servidor." submission={first} />)
+      expect(screen.getByText('[erro] Recusado pelo servidor.')).toBeTruthy()
+      const cpf = screen.getByLabelText(/\$ CPF/) as HTMLInputElement
+      await userEvent.setup().type(cpf, '{Backspace}5')
+      expect(screen.queryByText('[erro] Recusado pelo servidor.')).toBeNull()
+      rerender(<CpfInput defaultValue="529.982.247-25" serverError="Recusado pelo servidor." submission={{}} />)
+      expect(screen.getByText('[erro] Recusado pelo servidor.')).toBeTruthy()
     })
 
     it('estilos: escolher um subestilo marca o principal e desmarcar o principal desmarca os subestilos', async () => {

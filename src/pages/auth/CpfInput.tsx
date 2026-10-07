@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Input } from '../../components/ui/form'
 import { cpfError, formatCpf } from '../../lib/registration-validation'
 
@@ -7,10 +7,12 @@ import { cpfError, formatCpf } from '../../lib/registration-validation'
  * campo, se incompleto), antes do envio. O servidor e o banco continuam validando; o erro do servidor vale até o
  * valor ser editado.
  */
-export function CpfInput({ defaultValue = '', serverError }: { defaultValue?: string; serverError?: string }) {
+export function CpfInput({ defaultValue = '', serverError, submission }: { defaultValue?: string; serverError?: string; submission?: unknown }) {
   const [value, setValue] = useState(() => formatCpf(defaultValue))
   const [touched, setTouched] = useState(false)
   const [edited, setEdited] = useState(false)
+  // Cada resposta nova do servidor (`submission`) traz o erro de volta até o valor ser editado de novo.
+  useEffect(() => setEdited(false), [submission])
   const local = cpfError(value)
   const complete = value.replace(/\D/g, '').length === 11
   const error = local && (touched || complete) ? local : edited ? undefined : serverError

@@ -76,13 +76,15 @@ async function confirmPhone(page: Page) {
   await expect(page.getByText('Seus dados', { exact: true })).toBeVisible()
 }
 
-async function fillData(page: Page, fields: { name: string; cpf: string; birth?: string; kind: RegExp; profile: string; style?: string }) {
+async function fillData(page: Page, fields: { name: string; cpf: string; birth?: string; gender?: string; kind: RegExp; profile: string; style?: string }) {
   await hydrated(page)
   await page.getByLabel(/Nome completo/).fill(fields.name)
+  if (fields.gender) await page.getByLabel(/Gênero/).selectOption(fields.gender)
   await page.getByLabel(/Data de nascimento/).fill(fields.birth ?? '1990-05-20')
   await page.getByLabel(/CPF/).fill(fields.cpf)
-  await page.getByLabel(/Cidade/).fill('Recife')
+  // UF primeiro, depois a cidade da lista do estado (IBGE).
   await page.getByLabel(/Estado/).selectOption('PE')
+  await page.getByLabel(/Cidade/).selectOption('Recife')
   await page.getByRole('radio', { name: fields.kind }).check()
   await page.getByLabel(/Nome da atuação/).fill(fields.profile)
   if (fields.style) await page.getByRole('checkbox', { name: fields.style, exact: true }).check()
@@ -127,7 +129,37 @@ test('cadastro completo: e-mail, celular, dados e atuação até o painel, com r
   // Etapa 3: recarregar mantém os dados; CPF de outra conta é recusado sem dizer de quem, e o digitado fica.
   await page.reload()
   await expect(page.getByText('Seus dados', { exact: true })).toBeVisible()
-  await fillData(page, { name: 'Pessoa de teste', cpf: FIXTURE_CPF, kind: /Artista/, profile, style: 'techno' })
+
+  // Gênero opcional (três opções e "prefiro não informar"); estado e cidade dependentes; CPF com máscara e erro imediato.
+  await hydrated(page)
+  await expect(page.getByLabel(/Gênero/).locator('option')).toHaveText(['Prefiro não informar', 'Masculino', 'Feminino', 'Não binário'])
+  await expect(page.getByLabel(/Gênero/)).toHaveValue('')
+  await expect(page.getByLabel(/Estado/)).toHaveValue('')
+  await expect(page.getByLabel(/Cidade/).locator('option')).toHaveCount(1)
+  await page.getByLabel(/Estado/).selectOption('CE')
+  await expect(page.getByLabel(/Cidade/).locator('option[value="Juazeiro do Norte"]')).toHaveCount(1)
+  await expect(page.getByLabel(/Cidade/).locator('option[value="Recife"]')).toHaveCount(0)
+  await page.getByLabel(/Cidade/).selectOption('Juazeiro do Norte')
+  await page.getByLabel(/Estado/).selectOption('PE')
+  await expect(page.getByLabel(/Cidade/)).toHaveValue('')
+  await page.getByLabel(/CPF/).pressSequentially('11111111111')
+  await expect(page.getByLabel(/CPF/)).toHaveValue('111.111.111-11')
+  await expect(page.getByText('[erro] Informe um CPF válido.')).toBeVisible()
+  await page.getByLabel(/CPF/).fill('')
+  await page.getByLabel(/CPF/).pressSequentially(FIXTURE_CPF.replace(/\D/g, ''))
+  await expect(page.getByLabel(/CPF/)).toHaveValue(FIXTURE_CPF)
+  await expect(page.getByText('[erro] Informe um CPF válido.')).toHaveCount(0)
+
+  // Estilos: o subestilo marca o estilo principal e desmarcar o principal desmarca os subestilos.
+  await page.getByRole('radio', { name: /Artista/ }).check()
+  await page.getByText('subestilos de house', { exact: true }).click()
+  await page.getByRole('checkbox', { name: 'deep house', exact: true }).check()
+  await expect(page.getByRole('checkbox', { name: 'house', exact: true })).toBeChecked()
+  await page.getByRole('checkbox', { name: 'house', exact: true }).uncheck()
+  await expect(page.getByRole('checkbox', { name: 'deep house', exact: true })).not.toBeChecked()
+  await page.getByRole('radio', { name: /Serviços/ }).check()
+
+  await fillData(page, { name: 'Pessoa de teste', cpf: FIXTURE_CPF, gender: 'Feminino', kind: /Artista/, profile, style: 'techno' })
   await page.getByRole('button', { name: /concluir cadastro/ }).click()
   await expect(page.getByText(/concluir o cadastro com este CPF/)).toBeVisible()
   await expect(page).toHaveURL(/\/cadastro$/)
@@ -149,6 +181,9 @@ test('cadastro completo: e-mail, celular, dados e atuação até o painel, com r
   await page.goto('/painel/dados')
   await expect(page.getByText(profile).first()).toBeVisible()
   await expect(page.getByText('Pessoa de teste').first()).toBeVisible()
+  await expect(page.getByLabel(/Gênero/)).toHaveValue('Feminino')
+  await expect(page.getByLabel(/Estado/)).toHaveValue('PE')
+  await expect(page.getByLabel(/Cidade/)).toHaveValue('Recife')
 
   // Cadastro concluído: /cadastro vai para o painel.
   await page.goto('/cadastro')
@@ -161,8 +196,17 @@ test('cadastro completo: e-mail, celular, dados e atuação até o painel, com r
   await expect(page.getByText('Escolha o tipo de atuação.')).toBeVisible()
   await page.getByRole('radio', { name: /Serviços/ }).check()
   await page.getByLabel(/Nome da atuação/).fill('Som e luz de teste')
+  // A atuação começa com a UF e a cidade da conta e pode ter as suas.
+  await expect(page.getByLabel(/Estado/)).toHaveValue('PE')
+  await expect(page.getByLabel(/Cidade/)).toHaveValue('Recife')
+  await page.getByLabel(/Estado/).selectOption('CE')
+  await page.getByRole('button', { name: 'criar atuação' }).click()
+  await expect(page.getByText('[erro] Escolha a cidade.')).toBeVisible()
+  await page.getByLabel(/Cidade/).selectOption('Fortaleza')
   await page.getByRole('button', { name: 'criar atuação' }).click()
   await expect(page).toHaveURL(/\/painel\/perfil\/[0-9a-f-]{36}$/)
+  await expect(page.getByLabel(/Estado/)).toHaveValue('CE')
+  await expect(page.getByLabel(/Cidade/)).toHaveValue('Fortaleza')
   await page.goto('/painel/dados')
   await expect(page.getByText('Som e luz de teste').first()).toBeVisible()
   await expect(page.getByText(profile).first()).toBeVisible()

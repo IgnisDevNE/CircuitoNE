@@ -38,7 +38,13 @@ const external = 'text-[var(--accent-text)] underline break-all'
 
 function Restricted({ dados, perfilId }: { dados: DadosRestritos; perfilId: string }) {
   const empty = Object.keys(dados).length === 0
-  if (empty) return <p className="mt-3 border-t border-[var(--color-line)] pt-3 font-mono text-xs text-[var(--color-muted)]">Sem dados profissionais cadastrados.</p>
+  // Sem dados: um grupo com o mesmo nome (e não um `dl` vazio) para o aviso não ficar dentro de uma lista de definições.
+  if (empty)
+    return (
+      <div role="group" aria-label="Dados restritos" className="mt-3 border-t border-[var(--color-line)] pt-3">
+        <p className="font-mono text-xs text-[var(--color-muted)]">Sem dados profissionais cadastrados.</p>
+      </div>
+    )
   return (
     <dl aria-label="Dados restritos" className="mt-3 space-y-2 border-t border-[var(--color-line)] pt-3 font-mono text-sm">
       {dados.tipo && <Info label="tipo">{dados.tipo}</Info>}

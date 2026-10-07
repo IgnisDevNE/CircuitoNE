@@ -200,7 +200,8 @@ export function Explore({ data }: { data: ExploreData }) {
           </NavLink>
         ))}
       </nav>
-      {data.kind === 'coletivos' ? <Collectives data={data} /> : <Profiles data={data} />}
+      {/* A chave por tipo descarta a busca e os filtros ao trocar de página: a rota é a mesma e o estado do tipo anterior filtraria tudo. */}
+      {data.kind === 'coletivos' ? <Collectives key={data.kind} data={data} /> : <Profiles key={data.kind} data={data} />}
     </div>
   )
 }

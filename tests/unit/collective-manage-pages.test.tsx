@@ -327,6 +327,32 @@ describe('Explore', () => {
     expect(screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent)).toEqual(['Produtora 6'])
   })
 
+  it('trocar de tipo pelo menu descarta busca e filtros do tipo anterior (mesma rota, estado não pode sobreviver)', async () => {
+    const user = userEvent.setup()
+    const byKind: Record<string, ExploreData> = {
+      artistas: artistas([perfil('a1', 'Artista A', { estilos: [{ estilo: 'techno' }] })], false),
+      servicos: { kind: 'servicos', perfis: [perfil('s1', 'Som A')], restritoIndisponivel: false },
+    }
+    const Catalog = () => <Explore data={useLoaderData() as ExploreData} />
+    render(
+      <RouterProvider
+        router={createMemoryRouter(
+          [{ path: '/painel/explorar/:kind', loader: ({ params }) => byKind[params.kind!], Component: Catalog }],
+          { initialEntries: ['/painel/explorar/artistas'] },
+        )}
+      />,
+    )
+    const names = () => screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent)
+    await user.selectOptions(await screen.findByRole('combobox', { name: /Estilo/ }), 'techno')
+    await user.type(screen.getByRole('searchbox', { name: /Buscar/ }), 'Artista')
+    await user.click(screen.getByRole('link', { name: 'Serviços' }))
+    await waitFor(() => expect(names()).toEqual(['Som A']))
+    expect((screen.getByRole('searchbox', { name: /Buscar/ }) as HTMLInputElement).value).toBe('')
+    await user.click(screen.getByRole('link', { name: 'Artistas' }))
+    await waitFor(() => expect(names()).toEqual(['Artista A']))
+    expect((screen.getByRole('combobox', { name: /Estilo/ }) as HTMLSelectElement).value).toBe('')
+  })
+
   it('as quatro páginas do catálogo ficam num menu com a atual marcada', () => {
     page({ kind: 'audiovisual', perfis: [], restritoIndisponivel: false })
     const nav = within(screen.getByRole('navigation', { name: 'Catálogo' }))

@@ -1,6 +1,6 @@
 # Regras do MVP
 
-Registro inicial: 21/09/2026, America/Fortaleza. Fontes: brief em `src/imports/pasted_text/hub-cultural-projeto.md`, interface/código do protótipo e respostas do responsável nesta tarefa.
+Registro inicial: 21/09/2026, America/Fortaleza. Fontes: brief em `docs/references/hub-cultural-projeto.md`, interface/código do protótipo e respostas do responsável nesta tarefa.
 
 **Confirmada** = brief coerente com protótipo ou confirmação explícita. **Observada** = comportamento do mock, sujeito a validação. **Proposta** = regra necessária sugerida, ainda não decisão de produto. Falhas do mock não viram regra.
 

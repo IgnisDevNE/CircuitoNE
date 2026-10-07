@@ -233,6 +233,19 @@ describe('mapManagedEvent', () => {
     })
   })
 
+  it('capa enviada vira URL pública do Storage; sem Supabase configurado ou com caminho inválido, nula', () => {
+    vi.stubEnv('SUPABASE_URL', 'https://synthetic.supabase.test')
+    try {
+      expect(mapManagedEvent(eventRow({ cover_path: `${E}/capa.png`, cover_bytes: 100 })).capaEnviada).toBe(`https://synthetic.supabase.test/storage/v1/object/public/public-images/${E}/capa.png`)
+      expect(mapManagedEvent(eventRow({})).capaEnviada).toBeNull()
+      expect(mapManagedEvent(eventRow({ cover_path: '../x.png' })).capaEnviada).toBeNull()
+      vi.stubEnv('SUPABASE_URL', '')
+      expect(mapManagedEvent(eventRow({ cover_path: `${E}/capa.png` })).capaEnviada).toBeNull()
+    } finally {
+      vi.unstubAllEnvs()
+    }
+  })
+
   it('linha malformada falha em vez de mostrar dados parciais', () => {
     expect(() => mapManagedEvent(null)).toThrow()
     expect(() => mapManagedEvent(eventRow({ version: 'x' }))).toThrow()

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   COLLECTIVE_IMAGE_FALLBACK,
   DEFAULT_ACCENT,
@@ -47,8 +47,24 @@ describe('mapCollectiveRow', () => {
     expect(mapCollectiveRow({ ...row, color: 'red' }).corPredominante).toBe(DEFAULT_ACCENT)
   })
 
-  it('image_path (caminho do Storage) não vira URL: usa a imagem neutra', () => {
-    expect(mapCollectiveRow({ ...row, image_path: `${row.id}/capa.png` }).imagem).toBe(COLLECTIVE_IMAGE_FALLBACK)
+  describe('imagem (Storage)', () => {
+    beforeEach(() => vi.stubEnv('SUPABASE_URL', 'https://synthetic.supabase.test'))
+    afterEach(() => vi.unstubAllEnvs())
+
+    it('image_path vira a URL pública do bucket public-images', () => {
+      expect(mapCollectiveRow({ ...row, image_path: `${row.id}/capa.png` }).imagem).toBe(
+        `https://synthetic.supabase.test/storage/v1/object/public/public-images/${row.id}/capa.png`,
+      )
+    })
+
+    it('sem imagem, caminho fora do formato das constraints ou sem Supabase configurado: imagem neutra', () => {
+      expect(mapCollectiveRow({ ...row, image_path: null }).imagem).toBe(COLLECTIVE_IMAGE_FALLBACK)
+      expect(mapCollectiveRow(row).imagem).toBe(COLLECTIVE_IMAGE_FALLBACK)
+      expect(mapCollectiveRow({ ...row, image_path: '../../segredo.png' }).imagem).toBe(COLLECTIVE_IMAGE_FALLBACK)
+      expect(mapCollectiveRow({ ...row, image_path: `${row.id}/capa.svg` }).imagem).toBe(COLLECTIVE_IMAGE_FALLBACK)
+      vi.stubEnv('SUPABASE_URL', '')
+      expect(mapCollectiveRow({ ...row, image_path: `${row.id}/capa.png` }).imagem).toBe(COLLECTIVE_IMAGE_FALLBACK)
+    })
   })
 
   it.each([

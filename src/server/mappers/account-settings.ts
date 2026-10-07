@@ -1,4 +1,5 @@
 import { ESTADOS, type ArtistaEstilo, type AtuacaoTipo, type Estado, type SocialLinks } from '../../data/types'
+import { publicImageUrl } from '../public-image'
 import { invalid, isRow, oneOf, optionalText, text, webUrl, type Row } from './row'
 
 const UFS = ESTADOS.map((estado) => estado.value) as Estado[]
@@ -63,7 +64,13 @@ export type Profissional = {
   tipoAudiovisual: string | null
   presskit: string | null
   portfolio: string | null
+  /** Tamanho (bytes) do PDF enviado: presskit do artista ou lista de serviços/equipamentos; `null` sem arquivo. */
+  presskitPdfBytes: number | null
+  listaServicosBytes: number | null
 }
+
+/** Imagem de um artista (`profile_images`): posição 0 é a foto principal; 1 a 10, a galeria. */
+export type ImagemPerfil = { id: string; posicao: number; url: string | null; bytes: number }
 
 /** Atuação do titular com tudo o que a tela de edição precisa (`get_my_profile`). */
 export type PerfilEdicao = {
@@ -78,6 +85,8 @@ export type PerfilEdicao = {
   padrao: boolean
   redes: SocialLinks
   estilos: ArtistaEstilo[]
+  /** Foto principal e galeria, em ordem; vazio para quem não é artista. */
+  imagens: ImagemPerfil[]
   /** `null` para integrantes, que não têm dados profissionais. */
   profissional: Profissional | null
 }
@@ -103,6 +112,27 @@ function mapSocial(value: unknown): SocialLinks {
   return links
 }
 
+/** Tamanho do PDF enviado, só quando há caminho gravado (os dois campos andam juntos no banco). */
+function pdfBytes(row: Row, pathKey: string, bytesKey: string): number | null {
+  if (nullableText(row, pathKey) === null) return null
+  const bytes = row[bytesKey]
+  if (typeof bytes !== 'number' || !Number.isSafeInteger(bytes) || bytes < 1) throw invalid()
+  return bytes
+}
+
+function mapImages(value: unknown): ImagemPerfil[] {
+  if (value === null || value === undefined) return []
+  if (!Array.isArray(value)) throw invalid()
+  return value.map((item: unknown) => {
+    if (!isRow(item)) throw invalid()
+    const position = item.position
+    const size = item.size_bytes
+    if (typeof position !== 'number' || !Number.isInteger(position) || position < 0 || position > 10) throw invalid()
+    if (typeof size !== 'number' || !Number.isSafeInteger(size) || size < 1) throw invalid()
+    return { id: text(item, 'id'), posicao: position, url: publicImageUrl(text(item, 'object_path')), bytes: size }
+  })
+}
+
 function mapProfessional(value: unknown): Profissional | null {
   if (value === null || value === undefined) return null
   if (!isRow(value)) throw invalid()
@@ -119,6 +149,8 @@ function mapProfessional(value: unknown): Profissional | null {
     tipoAudiovisual: nullableText(value, 'audiovisual_type'),
     presskit: nullableText(value, 'presskit_url'),
     portfolio: nullableText(value, 'portfolio_url'),
+    presskitPdfBytes: pdfBytes(value, 'presskit_path', 'presskit_bytes'),
+    listaServicosBytes: pdfBytes(value, 'services_pdf_path', 'services_pdf_bytes'),
   }
 }
 
@@ -148,6 +180,7 @@ export function mapMyProfile(row: unknown): PerfilEdicao | null {
       const substyle = optionalText(style, 'substyle')
       return substyle ? { estilo: text(style, 'style'), subestilo: substyle } : { estilo: text(style, 'style') }
     }),
+    imagens: mapImages(row.images),
     profissional: mapProfessional(row.professional),
   }
 }

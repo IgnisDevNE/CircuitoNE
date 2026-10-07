@@ -95,6 +95,7 @@ export function ManageEvent({ evento, acoes, artistas, feedback, busy = false }:
           errors={failed?.fields}
           busy={busy}
           hidden={{ intent: 'update', version: String(evento.versao) }}
+          upload={{ capaEnviada: evento.capaEnviada }}
           submitLabel="salvar alterações"
           note={evento.situacao === 'published' ? 'Este evento está publicado: ao salvar, a alteração aparece na página pública imediatamente.' : undefined}
         />

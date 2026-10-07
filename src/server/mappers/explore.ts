@@ -33,6 +33,9 @@ export type DadosRestritos = {
   tipoValor?: string
   presskit?: string
   portfolio?: string
+  /** Há PDF privado enviado (o link passa pela rota que gera o endereço assinado; o caminho nunca sai do servidor). */
+  presskitPdf?: true
+  listaServicosPdf?: true
 }
 
 export type PerfilExplorar = {
@@ -62,9 +65,9 @@ const TYPE_LABEL: Record<string, string> = Object.fromEntries([...SERVICE_TYPES,
 
 /** Colunas de `profiles` liberadas a contas autenticadas (as demais não são legíveis pela Data API). */
 export const EXPLORE_PROFILE_COLUMNS = 'id,name,description,city,state_code'
-/** Colunas restritas lidas de `professional_details`; os caminhos de arquivo privado entram com os uploads (W11). */
+/** Colunas restritas lidas de `professional_details`, inclusive os caminhos dos PDFs privados (só usados para saber se há arquivo). */
 export const EXPLORE_DETAIL_COLUMNS =
-  'profile_id,booking_email,contact_email,contact_phone,fee_cents,cnpj,service_type,service_other,audiovisual_type,presskit_url,portfolio_url'
+  'profile_id,booking_email,contact_email,contact_phone,fee_cents,cnpj,service_type,service_other,audiovisual_type,presskit_url,portfolio_url,presskit_path,services_pdf_path'
 
 function typeLabel(value: string): string {
   const label = TYPE_LABEL[value]
@@ -102,6 +105,8 @@ export function mapRestrictedDetails(rows: unknown): Map<string, DadosRestritos>
         : {}),
       ...(presskit ? { presskit } : {}),
       ...(portfolio ? { portfolio } : {}),
+      ...(optionalString(row, 'presskit_path') ? { presskitPdf: true as const } : {}),
+      ...(optionalString(row, 'services_pdf_path') ? { listaServicosPdf: true as const } : {}),
     }
     byProfile.set(text(row, 'profile_id'), details)
   }

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   EVENT_COVER_FALLBACK,
   mapEventDetail,
@@ -69,6 +69,27 @@ describe('mapEventListRow', () => {
     expect(evento.ingressoLink).toBe('https://tickets.example.invalid/fixture')
     expect(evento.gratuito).toBe(false)
     expect(evento.fim).toBe('2026-10-08T03:00:00.000Z')
+  })
+
+  describe('capa enviada (Storage)', () => {
+    const path = `${listRow.id}/capa.webp`
+    beforeEach(() => vi.stubEnv('SUPABASE_URL', 'https://synthetic.supabase.test'))
+    afterEach(() => vi.unstubAllEnvs())
+
+    it('cover_path vira a URL pública do bucket public-images', () => {
+      expect(mapEventListRow({ ...listRow, cover_path: path }).capa).toBe(`https://synthetic.supabase.test/storage/v1/object/public/public-images/${path}`)
+    })
+
+    it('a capa enviada vale mais que o link externo', () => {
+      expect(mapEventListRow({ ...listRow, cover_path: path, cover_url: 'https://img.example.invalid/capa.jpg' }).capa).toContain('/public-images/')
+    })
+
+    it('caminho fora do formato ou sem Supabase configurado cai no link ou na capa neutra', () => {
+      expect(mapEventListRow({ ...listRow, cover_path: '../x.png', cover_url: 'https://img.example.invalid/capa.jpg' }).capa).toBe('https://img.example.invalid/capa.jpg')
+      expect(mapEventListRow({ ...listRow, cover_path: '../x.png' }).capa).toBe(EVENT_COVER_FALLBACK)
+      vi.stubEnv('SUPABASE_URL', '')
+      expect(mapEventListRow({ ...listRow, cover_path: path }).capa).toBe(EVENT_COVER_FALLBACK)
+    })
   })
 
   it('ignora capa e ingresso que não sejam http(s)', () => {

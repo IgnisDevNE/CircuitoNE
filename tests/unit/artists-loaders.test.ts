@@ -44,6 +44,8 @@ const collectiveRow = (n: number) => ({
   state_code: 'PE',
 })
 
+const photoPath = (n: number, name = 'foto') => `02000000-0000-4000-8000-00000000000${n}/${name}.png`
+
 type Result = { data: unknown; error: unknown; count?: number | null }
 const ok = (data: unknown, count?: number): Result => ({ data, error: null, count })
 const failure: Result = { data: null, error: { message: 'boom', code: 'PGRST000' }, count: null }
@@ -87,7 +89,10 @@ function fakeClient(
 }
 
 describe('loadArtistList', () => {
-  it('lista os artistas visíveis com estilos, em duas consultas e sem tocar em dados profissionais', async () => {
+  beforeEach(() => vi.stubEnv('SUPABASE_URL', 'https://synthetic.supabase.test'))
+  afterEach(() => vi.unstubAllEnvs())
+
+  it('lista os artistas visíveis com estilos e foto principal, em três consultas e sem tocar em dados profissionais', async () => {
     const { client, selects } = fakeClient(
       {},
       {
@@ -96,6 +101,7 @@ describe('loadArtistList', () => {
           { profile_id: profileRow(1).id, style: 'techno', substyle: null },
           { profile_id: profileRow(2).id, style: 'house', substyle: 'afro house' },
         ]),
+        profile_images: ok([{ profile_id: profileRow(1).id, position: 0, object_path: photoPath(1) }]),
       },
     )
     const { artistas } = await loadArtistList(client)
@@ -103,20 +109,28 @@ describe('loadArtistList', () => {
       ['Artista 1', [{ estilo: 'techno' }]],
       ['Artista 2', [{ estilo: 'house', subestilo: 'afro house' }]],
     ])
-    expect(selects.map((s) => s.table)).toEqual(['profiles', 'artist_styles'])
+    // A foto enviada vira URL pública do Storage; sem foto, a imagem neutra.
+    expect(artistas.map((a) => a.foto)).toEqual([
+      `https://synthetic.supabase.test/storage/v1/object/public/public-images/${photoPath(1)}`,
+      '/artist-photo-fallback.svg',
+    ])
+    expect(selects.map((s) => s.table)).toEqual(['profiles', 'artist_styles', 'profile_images'])
+    expect(selects[2]).toMatchObject({ columns: 'profile_id,position,object_path' })
+    expect(selects[2].filters).toContainEqual(['eq', 'position', 0])
     expect(selects[0].columns).toBe('id,name,description,city,state_code')
     expect(selects[0].filters).toContainEqual(['eq', 'kind', 'artist'])
     expect(client.from).not.toHaveBeenCalledWith('professional_details')
   })
 
   it('lista vazia é um resultado válido', async () => {
-    const { client } = fakeClient({}, { profiles: ok([]), artist_styles: ok([]) })
+    const { client } = fakeClient({}, { profiles: ok([]), artist_styles: ok([]), profile_images: ok([]) })
     expect(await loadArtistList(client)).toEqual({ artistas: [] })
   })
 
   it('erro em qualquer consulta vira 503 e nunca uma lista vazia', async () => {
-    await expect(loadArtistList(fakeClient({}, { profiles: failure, artist_styles: ok([]) }).client)).rejects.toMatchObject({ status: 503 })
-    await expect(loadArtistList(fakeClient({}, { profiles: ok([]), artist_styles: failure }).client)).rejects.toMatchObject({ status: 503 })
+    const ready = { profiles: ok([]), artist_styles: ok([]), profile_images: ok([]) }
+    for (const broken of ['profiles', 'artist_styles', 'profile_images'])
+      await expect(loadArtistList(fakeClient({}, { ...ready, [broken]: failure }).client)).rejects.toMatchObject({ status: 503 })
   })
 })
 
@@ -128,7 +142,7 @@ describe('loadArtistPage', () => {
     'list_events:past': ok([eventRow(3)]),
     ...extra,
   })
-  const tables = { artist_styles: ok([{ style: 'techno', substyle: 'melodic techno' }]) }
+  const tables = { artist_styles: ok([{ style: 'techno', substyle: 'melodic techno' }]), profile_images: ok([]) }
 
   it('carrega perfil, estilos e eventos: em andamento antes dos futuros, passados à parte', async () => {
     const { client, rpc: spy, selects } = fakeClient(rpc(), tables)
@@ -143,15 +157,39 @@ describe('loadArtistPage', () => {
     expect(page.anteriores.map((e) => e.nome)).toEqual(['Evento sintético 3'])
     expect(spy).toHaveBeenCalledWith('get_profile', { target: artistId })
     for (const period of ['ongoing', 'future', 'past']) expect(spy).toHaveBeenCalledWith('list_events', { period, artist: artistId })
-    expect(selects).toHaveLength(1)
+    expect(selects).toHaveLength(2)
     expect(selects[0]).toMatchObject({ table: 'artist_styles', columns: 'style,substyle' })
     expect(selects[0].filters).toContainEqual(['eq', 'profile_id', artistId])
+    expect(selects[1]).toMatchObject({ table: 'profile_images', columns: 'profile_id,position,object_path' })
+    expect(selects[1].filters).toContainEqual(['eq', 'profile_id', artistId])
+  })
+
+  it('foto principal e galeria (em ordem) viram URLs públicas do Storage', async () => {
+    vi.stubEnv('SUPABASE_URL', 'https://synthetic.supabase.test/')
+    try {
+      const url = (name: string) => `https://synthetic.supabase.test/storage/v1/object/public/public-images/${photoPath(1, name)}`
+      const { client } = fakeClient(rpc(), {
+        ...tables,
+        profile_images: ok([
+          { profile_id: artistId, position: 2, object_path: photoPath(1, 'g2') },
+          { profile_id: artistId, position: 0, object_path: photoPath(1, 'principal') },
+          { profile_id: artistId, position: 1, object_path: photoPath(1, 'g1') },
+          // Caminho fora do formato das constraints nunca vira URL.
+          { profile_id: artistId, position: 3, object_path: '../../etc/passwd' },
+        ]),
+      })
+      const { artista } = await loadArtistPage(client, artistId)
+      expect(artista.foto).toBe(url('principal'))
+      expect(artista.fotos).toEqual([url('g1'), url('g2')])
+    } finally {
+      vi.unstubAllEnvs()
+    }
   })
 
   it('artista sem eventos nem estilos ainda é uma página válida', async () => {
     const { client } = fakeClient(
       rpc({ 'list_events:ongoing': ok([]), 'list_events:future': ok([]), 'list_events:past': ok([]) }),
-      { artist_styles: ok([]) },
+      { artist_styles: ok([]), profile_images: ok([]) },
     )
     const page = await loadArtistPage(client, artistId)
     expect(page.proximos).toEqual([])
@@ -180,8 +218,9 @@ describe('loadArtistPage', () => {
     },
   )
 
-  it('erro na consulta de estilos é 503', async () => {
-    await expect(loadArtistPage(fakeClient(rpc(), { artist_styles: failure }).client, artistId)).rejects.toMatchObject({ status: 503 })
+  it('erro na consulta de estilos ou de fotos é 503', async () => {
+    await expect(loadArtistPage(fakeClient(rpc(), { ...tables, artist_styles: failure }).client, artistId)).rejects.toMatchObject({ status: 503 })
+    await expect(loadArtistPage(fakeClient(rpc(), { ...tables, profile_images: failure }).client, artistId)).rejects.toMatchObject({ status: 503 })
   })
 
   it('perfil inexistente não esconde falha de dados: 404 só quando o RPC responde null sem erro', async () => {
@@ -197,6 +236,7 @@ describe('loadHome', () => {
         profiles: (select) => (select.head ? ok(null, 12) : ok([profileRow(1), profileRow(2)])),
         collectives: (select) => (select.head ? ok(null, 5) : ok([collectiveRow(1)])),
         artist_styles: ok([{ profile_id: profileRow(1).id, style: 'techno', substyle: 'hypnotic techno' }]),
+        profile_images: ok([]),
         ...overrides,
       },
     )
@@ -217,6 +257,9 @@ describe('loadHome', () => {
     expect(selects.find((s) => s.table === 'collectives' && !s.head)!.filters).toContainEqual(['limit', HOME_COLLECTIVES])
     const styles = selects.find((s) => s.table === 'artist_styles')!
     expect(styles.filters).toContainEqual(['in', 'profile_id', [profileRow(1).id, profileRow(2).id]])
+    const photos = selects.find((s) => s.table === 'profile_images')!
+    expect(photos.filters).toContainEqual(['in', 'profile_id', [profileRow(1).id, profileRow(2).id]])
+    expect(photos.filters).toContainEqual(['eq', 'position', 0])
   })
 
   it('sem dados tudo é vazio e os estilos nem são consultados', async () => {
@@ -230,7 +273,7 @@ describe('loadHome', () => {
       coletivos: [],
       totais: { artistas: 0, coletivos: 0, eventos: 0 },
     })
-    expect(selects.some((s) => s.table === 'artist_styles')).toBe(false)
+    expect(selects.some((s) => s.table === 'artist_styles' || s.table === 'profile_images')).toBe(false)
   })
 
   it('falha em qualquer fonte é 503, inclusive total ausente', async () => {
@@ -240,6 +283,7 @@ describe('loadHome', () => {
     await expect(loadHome(home({ profiles: (s) => (s.head ? ok(null, undefined) : ok([])) }).client)).rejects.toMatchObject({ status: 503 })
     await expect(loadHome(home({ collectives: failure }).client)).rejects.toMatchObject({ status: 503 })
     await expect(loadHome(home({ artist_styles: failure }).client)).rejects.toMatchObject({ status: 503 })
+    await expect(loadHome(home({ profile_images: failure }).client)).rejects.toMatchObject({ status: 503 })
   })
 })
 
@@ -276,7 +320,7 @@ describe('loaders das rotas', () => {
     }
     expect(result.data.artistas.map((a) => a.nome)).toEqual(['Artista 1'])
     expect(result.init.headers.get('cache-control')).toContain('no-store')
-    expect(paths().sort()).toEqual(['/rest/v1/artist_styles', '/rest/v1/profiles'])
+    expect(paths().sort()).toEqual(['/rest/v1/artist_styles', '/rest/v1/profile_images', '/rest/v1/profiles'])
     for (const { headers } of calls) {
       // Só a chave publicável: nunca o token do visitante, para que o RLS seja o do papel anon.
       expect(headers.get('authorization')).toBe('Bearer sb_publishable_synthetic')
@@ -308,7 +352,7 @@ describe('loaders das rotas', () => {
     const { loader } = await import('../../src/routes/artist')
     stubFetch((path) => {
       if (path.endsWith('get_profile')) return Response.json(fullProfile)
-      if (path.endsWith('list_events')) return Response.json([])
+      if (path.endsWith('list_events') || path.endsWith('profile_images')) return Response.json([])
       return Response.json([{ style: 'techno', substyle: null }])
     })
     const result = (await loader({ request: withSession('/artistas/' + artistId), params: { id: artistId } } as never)) as unknown as {
@@ -317,6 +361,7 @@ describe('loaders das rotas', () => {
     expect(result.data.artista.nome).toBe('Artista 1')
     expect(paths().sort()).toEqual([
       '/rest/v1/artist_styles',
+      '/rest/v1/profile_images',
       '/rest/v1/rpc/get_profile',
       '/rest/v1/rpc/list_events',
       '/rest/v1/rpc/list_events',

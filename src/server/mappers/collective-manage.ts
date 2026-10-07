@@ -1,5 +1,6 @@
 import { ESTADOS, type Estado, type SocialLinks } from '../../data/types'
 import { isPermission, type Permissao } from '../../lib/collective-access'
+import { publicImageUrl } from '../public-image'
 import { mapSocialLinks } from './collectives'
 import { instant, invalid, isRow, oneOf, optionalText, text, type Row } from './row'
 
@@ -27,6 +28,8 @@ export type ColetivoEdicao = {
   /** Cor de destaque escolhida; nula quando o coletivo usa a padrão. */
   cor: string | null
   social: SocialLinks
+  /** URL pública da imagem enviada (Storage); nula quando o coletivo usa a imagem padrão. */
+  imagem: string | null
 }
 
 const anyText = (row: Row, key: string) => {
@@ -56,6 +59,7 @@ export function mapCollectiveEdit(value: unknown): ColetivoEdicao {
     cnpj: optionalText(value, 'cnpj') ?? '',
     cor: color && /^#[0-9a-f]{6}$/i.test(color) ? color.toLowerCase() : null,
     social: mapSocialLinks(profile.social_links ?? {}),
+    imagem: publicImageUrl(optionalText(profile, 'image_path')),
   }
 }
 

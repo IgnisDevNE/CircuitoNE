@@ -15,6 +15,7 @@ import { Badge, Button, Panel } from '../../components/ui/primitives'
 import { Checkbox, Input, Select, Textarea } from '../../components/ui/form'
 import { AccentScope } from '../../components/ui/AccentScope'
 import { errorsFor, FormFeedback, GeneralFeedback, valueFor, valuesFor } from './account-ui'
+import { DocumentPanel, PhotosPanel } from './ProfileFiles'
 
 export interface EditProfileProps {
   perfil: PerfilEdicao
@@ -83,7 +84,15 @@ function ProfessionalFields({ tipo, saved, result }: { tipo: AtuacaoTipo; saved:
         <>
           <Input label="E-mail de booking" name="emailBooking" type="email" defaultValue={value('emailBooking', saved.emailBooking ?? '')} error={errors.emailBooking} />
           <Input label="Média de cachê" name="cache" inputMode="decimal" placeholder="R$ 0,00" defaultValue={value('cache', cache)} error={errors.cache} hint="por apresentação, em reais" />
-          <Input label="Presskit (URL)" name="presskit" type="url" placeholder="https://" defaultValue={value('presskit', saved.presskit ?? '')} error={errors.presskit} />
+          <Input
+            label="Presskit (URL)"
+            name="presskit"
+            type="url"
+            placeholder="https://"
+            defaultValue={value('presskit', saved.presskit ?? '')}
+            error={errors.presskit}
+            hint={saved.presskitPdfBytes !== null ? 'Há um PDF de presskit enviado: remova-o (painel abaixo) para usar um link.' : 'ou envie um PDF no painel abaixo'}
+          />
         </>
       )}
       {tipo === 'servicos' && (
@@ -205,10 +214,12 @@ export function EditProfile({ perfil, taxonomia, result, busy }: EditProfileProp
           </Form>
         </Panel>
 
+        {artist && <PhotosPanel perfil={perfil} result={result} busy={busy} />}
+
         {perfil.profissional && (
           <Panel title="dados profissionais">
             <p className="mb-4 font-mono text-xs text-[var(--color-muted)]">
-              Visíveis só para você e para proprietários de coletivos aprovados, com MFA. Envio de arquivos (presskit em PDF, fotos) chega em uma próxima etapa.
+              Visíveis só para você e para proprietários de coletivos aprovados, com MFA.
             </p>
             <Form method="post" className="grid gap-4 sm:grid-cols-2" noValidate>
               <input type="hidden" name="intent" value="save-professional" />
@@ -220,6 +231,8 @@ export function EditProfile({ perfil, taxonomia, result, busy }: EditProfileProp
             </Form>
           </Panel>
         )}
+
+        <DocumentPanel perfil={perfil} result={result} busy={busy} />
 
         <Panel title="excluir atuação">
           <p className="mb-4 text-sm text-[var(--color-muted)]">

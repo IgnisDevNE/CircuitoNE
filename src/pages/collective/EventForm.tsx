@@ -6,6 +6,8 @@ import { toFortalezaInput } from '../../lib/utils'
 import type { ArtistaOpcao, EventoGerido } from '../../server/mappers/events-manage'
 import { Badge, Button, Panel } from '../../components/ui/primitives'
 import { Checkbox, Input, Select } from '../../components/ui/form'
+import { FileField } from '../../components/ui/FileField'
+import { IMAGE_MAX_BYTES } from '../../lib/uploads'
 import { Markdown, MarkdownEditor } from '../../components/ui/Markdown'
 
 /** Valores do formulário, nos mesmos termos da página: horários como `datetime-local` em Fortaleza. */
@@ -70,10 +72,15 @@ export interface EventFormProps {
   submitLabel: string
   /** Aviso mostrado acima do botão, por exemplo que a alteração fica pública na hora. */
   note?: string
+  /**
+   * Envio de capa (só na edição: o caminho do arquivo leva o id do evento, que só existe depois de criado).
+   * `capaEnviada` é a URL pública da capa já enviada, se houver.
+   */
+  upload?: { capaEnviada: string | null }
 }
 
 /** Formulário de evento compartilhado por "criar" e "editar": o envio é um POST para a ação da rota. */
-export function EventForm({ initial, artistas, errors = {}, busy = false, hidden, submitLabel, note }: EventFormProps) {
+export function EventForm({ initial, artistas, errors = {}, busy = false, hidden, submitLabel, note, upload }: EventFormProps) {
   const [form, setForm] = useState(initial)
   const [busca, setBusca] = useState('')
   const [nomeLivre, setNomeLivre] = useState('')
@@ -93,7 +100,7 @@ export function EventForm({ initial, artistas, errors = {}, busy = false, hidden
   }
 
   return (
-    <Form method="post" className="grid gap-6 lg:grid-cols-2" noValidate>
+    <Form method="post" encType={upload ? 'multipart/form-data' : undefined} className="grid gap-6 lg:grid-cols-2" noValidate>
       {Object.entries(hidden).map(([name, value]) => (
         <input key={name} type="hidden" name={name} value={value} />
       ))}
@@ -131,9 +138,31 @@ export function EventForm({ initial, artistas, errors = {}, busy = false, hidden
             value={form.capa}
             onChange={(e) => set('capa', e.target.value)}
             placeholder="https://"
-            hint="opcional; sem link, o evento usa a capa padrão (o envio de arquivo vem depois)"
+            hint={upload ? 'opcional; informar um link remove a capa enviada' : 'opcional; sem link, o evento usa a capa padrão'}
             error={errors.cover_url}
           />
+          {upload ? (
+            <div className="space-y-3 border border-[var(--color-line)] p-3">
+              {upload.capaEnviada ? (
+                <>
+                  <img src={upload.capaEnviada} alt={`Capa enviada do evento ${initial.nome}`} className="aspect-[16/9] w-full max-w-sm border border-[var(--color-line)] object-cover" />
+                  <Checkbox label="Remover a capa enviada" name="remove_cover" />
+                </>
+              ) : (
+                <p className="font-mono text-xs text-[var(--color-muted)]">Nenhuma capa enviada.</p>
+              )}
+              <FileField
+                label={upload.capaEnviada ? 'Substituir a capa (arquivo)' : 'Enviar capa (arquivo)'}
+                kind="image"
+                name="cover_file"
+                required={false}
+                error={errors.cover_file}
+                hint={`opcional; JPG, PNG ou WebP, até ${(IMAGE_MAX_BYTES / 1_000_000).toLocaleString('pt-BR')} MB. A capa enviada vale mais que o link e é salva com o evento.`}
+              />
+            </div>
+          ) : (
+            <p className="font-mono text-xs text-[var(--color-muted)]">O envio de uma imagem de capa fica disponível depois de criar o rascunho, na página do evento.</p>
+          )}
         </div>
       </Panel>
 

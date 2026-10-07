@@ -1,8 +1,12 @@
 import { EVENT_PERMISSIONS, can } from '../lib/collective-access'
 import { parseEventForm } from '../lib/event-form'
+import { IMAGE_MAX_BYTES } from '../lib/uploads'
+import type { Json } from '../types/database.generated'
 import { noPermission, requireAccess } from './collective-area.server'
 import { mapArtistOptions, mapManagedEvent, type ArtistaOpcao, type EventActions, type EventoGerido } from './mappers/events-manage'
+import type { UploadedFiles } from './auth.server'
 import { ActionFailure, UNAVAILABLE_MESSAGE, callRpc, formId, runMutation } from './mutation.server'
+import { readUpload, removeStored, returnedPath, storeUpload } from './storage.server'
 import { createSupabaseServerClient, HttpError, unwrap, type SupabaseServerClient } from './supabase.server'
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -10,6 +14,8 @@ const eventNotFound = () => new HttpError(404, 'Evento não encontrado.')
 
 /** O corpo inclui a descrição Markdown (até 20.000 caracteres) e o lineup: bem acima do limite padrão das ações. */
 export const EVENT_FORM_MAX_BYTES = 300 * 1024
+/** Edição com capa enviada: o corpo multipart leva o formulário e, no máximo, uma imagem. */
+export const EVENT_UPLOAD_MAX_BYTES = EVENT_FORM_MAX_BYTES + IMAGE_MAX_BYTES + 64 * 1024
 /** Quantos artistas públicos o seletor do lineup oferece. */
 export const ARTIST_OPTIONS_LIMIT = 500
 
@@ -85,7 +91,7 @@ export function eventCreateAction(request: Request, id: string) {
       if (typeof created !== 'string' || !uuid.test(created)) throw new ActionFailure(503, UNAVAILABLE_MESSAGE)
       return { redirectTo: eventManagePath(id, created) }
     },
-    { maxBytes: EVENT_FORM_MAX_BYTES },
+    { maxBytes: EVENT_FORM_MAX_BYTES, uploadBytes: EVENT_UPLOAD_MAX_BYTES },
   )
 }
 
@@ -96,21 +102,57 @@ const expectedVersion = (form: URLSearchParams) => {
   return version
 }
 
+/**
+ * Salva o evento e, no mesmo `update_event`, a capa: arquivo novo (envia para `<evento>/<nome>.<ext>`, limpa o link),
+ * remoção da capa enviada, ou link novo (que substitui a capa enviada, pois o banco não aceita as duas). O objeto antigo
+ * só é apagado depois de o banco aceitar; se o banco recusar, o objeto recém-enviado é descartado.
+ */
+async function updateEvent(
+  client: SupabaseServerClient,
+  eventId: string,
+  version: number,
+  parsed: Record<string, unknown> & { cover_url: string | null },
+  form: URLSearchParams,
+  files: UploadedFiles,
+) {
+  const payload: Record<string, unknown> = { ...parsed }
+  const hasFile = files.has('cover_file')
+  const removeCover = form.get('remove_cover') === 'on'
+  // O caminho atual é lido do banco (não do formulário) e só quando a capa muda; o controle de versão do RPC garante que ele ainda vale.
+  const previous = hasFile || removeCover || parsed.cover_url ? returnedPath(await callRpc(client.rpc('get_event', { target: eventId })), 'cover_path') : null
+  let uploaded: string | null = null
+  if (hasFile) {
+    const upload = await readUpload(files, 'cover_file', 'image')
+    if (!upload.ok) throw new ActionFailure(422, 'Corrija os campos destacados.', { cover_file: upload.error })
+    uploaded = await storeUpload(client, 'image', eventId, upload)
+    Object.assign(payload, { cover_path: uploaded, cover_bytes: upload.size, cover_url: null })
+  } else if (removeCover || (parsed.cover_url && previous)) {
+    Object.assign(payload, { cover_path: null, cover_bytes: null })
+  }
+  try {
+    await callRpc(client.rpc('update_event', { target: eventId, expected_version: version, payload: payload as Json }))
+  } catch (error) {
+    await removeStored(client, 'image', [uploaded])
+    throw error
+  }
+  if ('cover_path' in payload) await removeStored(client, 'image', [previous])
+  return 'Alterações salvas.'
+}
+
 /** Salvar, publicar ou cancelar: cada ação manda a versão que a pessoa viu; o banco recusa se mudou (409). */
 export function eventManageAction(request: Request, id: string, eventId: string) {
   if (!uuid.test(id) || !uuid.test(eventId)) throw new Response('Evento não encontrado', { status: 404 })
   return runMutation(
     request,
     eventManagePath(id, eventId),
-    async (client, form) => {
+    async (client, form, files) => {
       const intent = form.get('intent')
       if (intent !== 'update' && intent !== 'publish' && intent !== 'cancel') throw new ActionFailure(400, 'Operação inválida.')
       const version = expectedVersion(form)
       if (intent === 'update') {
         const parsed = parseEventForm(form)
         if (!parsed.ok) throw new ActionFailure(422, 'Corrija os campos destacados.', parsed.fields)
-        await callRpc(client.rpc('update_event', { target: eventId, expected_version: version, payload: parsed.payload }))
-        return 'Alterações salvas.'
+        return updateEvent(client, eventId, version, parsed.payload, form, files)
       }
       if (intent === 'publish') {
         await callRpc(client.rpc('publish_event', { target: eventId, expected_version: version }))
@@ -119,6 +161,6 @@ export function eventManageAction(request: Request, id: string, eventId: string)
       await callRpc(client.rpc('cancel_event', { target: eventId, expected_version: version }))
       return 'Evento cancelado.'
     },
-    { maxBytes: EVENT_FORM_MAX_BYTES },
+    { maxBytes: EVENT_FORM_MAX_BYTES, uploadBytes: EVENT_UPLOAD_MAX_BYTES },
   )
 }

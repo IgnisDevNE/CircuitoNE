@@ -16,7 +16,10 @@ import {
   type FormValues,
   type MfaEnrollment,
 } from '../lib/account-forms'
-import { boundedForm, readAccountSession } from './auth.server'
+import { GALLERY_MAX, DOCUMENT_MAX_BYTES } from '../lib/uploads'
+import { boundedBody, readAccountSession, type UploadedFiles } from './auth.server'
+import { ActionFailure, UPLOAD_TIMEOUT_MS } from './mutation.server'
+import { readUpload, removeStored, returnedPath, storeUpload } from './storage.server'
 import { confirmationUrl } from './registration.server'
 import {
   mapAccountDetails,
@@ -127,13 +130,14 @@ function rpcFailure(intent: FormIntent, error: RpcError): Outcome {
   return fail(intent, {}, { message: UNAVAILABLE, status: 503 })
 }
 
-export type ActionContext = { client: SupabaseServerClient; form: URLSearchParams; request: Request }
+export type ActionContext = { client: SupabaseServerClient; form: URLSearchParams; files: UploadedFiles; request: Request }
 
 /** Ação com origem verificada (`APP_ORIGIN`), corpo limitado, sessão revalidada no servidor e respostas privadas. */
 export async function accountAction(
   request: Request,
   handle: (context: ActionContext) => Promise<Outcome>,
-  options: { limit?: number } = {},
+  /** `limit`: corpo urlencoded; `uploadLimit`: corpo multipart (só as ações que recebem arquivo). */
+  options: { limit?: number; uploadLimit?: number } = {},
 ) {
   const headers = privateHeaders()
   const reply = (result: ActionResult, status: number) => data(result, { status, headers })
@@ -148,13 +152,13 @@ export async function accountAction(
     return deny(403, 'Origem recusada.')
   let outcome: Outcome
   try {
-    const form = await boundedForm(request, options.limit)
-    const client = createSupabaseServerClient(request, headers)
+    const { form, files } = await boundedBody(request, options)
+    const client = createSupabaseServerClient(request, headers, options.uploadLimit ? { timeoutMs: UPLOAD_TIMEOUT_MS } : {})
     const session = await readAccountSession(client, request, headers)
     if (session.kind === 'error') return deny(503, session.message)
     if (session.kind === 'anonymous') return redirect('/entrar', { headers, status: 303 })
     if (session.account.state !== 'active') return deny(403, 'Esta conta não pode realizar esta operação.')
-    outcome = await handle({ client, form, request })
+    outcome = await handle({ client, form, files, request })
   } catch (error) {
     if (error instanceof Response) return deny(error.status, error.status === 413 ? 'Dados grandes demais.' : 'Formato de envio não aceito.')
     return deny(503, UNAVAILABLE)
@@ -198,11 +202,18 @@ export async function saveProfile(client: SupabaseServerClient, profile: PerfilE
   return ok('save-profile', 'Perfil atualizado.')
 }
 
+const PROFESSIONAL_FIELDS = ['emailBooking', 'emailContato', 'telefoneContato', 'cache', 'cnpj', 'presskit', 'portfolio', 'tipoServico', 'servicoOutro', 'tipoAudiovisual']
+const professionalValues = (form: URLSearchParams): FormValues =>
+  Object.fromEntries(PROFESSIONAL_FIELDS.map((key) => [key, (form.get(key) ?? '').trim()]))
+
 export async function saveProfessional(client: SupabaseServerClient, profile: PerfilEdicao, form: URLSearchParams): Promise<Outcome> {
   if (profile.tipo === 'integrante')
     return fail('save-professional', {}, { message: 'Esta atuação não tem dados profissionais.' })
   const parsed = parseProfessionalForm(form, profile.tipo)
   if (!parsed.ok) return fail('save-professional', parsed.errors, { values: parsed.values })
+  // Presskit é um link ou um PDF, nunca os dois (RN-35); o banco também recusa, mas aqui a mensagem aponta o campo.
+  if (parsed.payload.presskit_url && profile.profissional?.presskitPdfBytes != null)
+    return fail('save-professional', { presskit: 'Remova o PDF do presskit antes de informar um link.' }, { values: professionalValues(form) })
   const { error } = await client.rpc('update_my_professional_details', { target: profile.id, payload: parsed.payload as Json })
   if (error) return rpcFailure('save-professional', error)
   return ok('save-professional', 'Dados profissionais atualizados.')
@@ -216,20 +227,128 @@ export async function removeProfile(client: SupabaseServerClient, profile: Perfi
   return { redirectTo: '/painel/dados' }
 }
 
+// -- Fotos e documentos (W11) --
+
+const UPLOAD_INTENTS = ['upload-photo', 'upload-gallery', 'upload-document'] as const
+const FILE_INTENTS = [...UPLOAD_INTENTS, 'remove-photo', 'remove-gallery', 'move-gallery', 'remove-document'] as const
+
+/** Falha do Storage ou das conferências do envio vira mensagem no campo do arquivo; o resto, indisponibilidade. */
+function uploadFailure(intent: FormIntent, error: unknown): Outcome {
+  if (error instanceof ActionFailure) return fail(intent, error.status === 422 ? { arquivo: error.message } : {}, { message: error.status === 422 ? undefined : error.message, status: error.status })
+  return fail(intent, {}, { message: UNAVAILABLE, status: 503 })
+}
+
+/** Foto principal (substitui a anterior) ou imagem da galeria (até 10); só artistas (RN-09). */
+export async function uploadImage(client: SupabaseServerClient, profile: PerfilEdicao, files: UploadedFiles, slot: 'main' | 'gallery'): Promise<Outcome> {
+  const intent = slot === 'main' ? 'upload-photo' : 'upload-gallery'
+  if (profile.tipo !== 'artista') return fail(intent, {}, { message: 'Somente atuações de artista têm fotos.', status: 400 })
+  if (slot === 'gallery' && profile.imagens.filter((image) => image.posicao >= 1).length >= GALLERY_MAX)
+    return fail(intent, { arquivo: `A galeria aceita até ${GALLERY_MAX} imagens. Remova uma para enviar outra.` }, { status: 409 })
+  const upload = await readUpload(files, 'arquivo', 'image')
+  if (!upload.ok) return fail(intent, { arquivo: upload.error }, { status: 422 })
+  let path: string
+  try {
+    path = await storeUpload(client, 'image', profile.id, upload)
+  } catch (error) {
+    return uploadFailure(intent, error)
+  }
+  const { data: attached, error } = await client.rpc('attach_profile_image', { target: profile.id, slot, object_path: path })
+  if (error) {
+    // A referência não foi gravada: o objeto recém-enviado não serve a ninguém.
+    await removeStored(client, 'image', [path])
+    return rpcFailure(intent, error)
+  }
+  await removeStored(client, 'image', [returnedPath(attached, 'replaced_path')])
+  return ok(intent, slot === 'main' ? 'Foto principal atualizada.' : 'Imagem adicionada à galeria.')
+}
+
+export async function removeImage(client: SupabaseServerClient, profile: PerfilEdicao, form: URLSearchParams, intent: 'remove-photo' | 'remove-gallery'): Promise<Outcome> {
+  const image = form.get('imagem') ?? ''
+  if (!UUID.test(image)) return fail(intent, {}, { message: 'Imagem inválida. Recarregue a página.' })
+  const { data: removed, error } = await client.rpc('detach_profile_image', { target: profile.id, image })
+  if (error) return rpcFailure(intent, error)
+  await removeStored(client, 'image', [returnedPath(removed)])
+  return ok(intent, intent === 'remove-photo' ? 'Foto principal removida.' : 'Imagem removida da galeria.')
+}
+
+export async function moveGalleryImage(client: SupabaseServerClient, profile: PerfilEdicao, form: URLSearchParams): Promise<Outcome> {
+  const image = form.get('imagem') ?? ''
+  const direction = form.get('direcao') ?? ''
+  if (!UUID.test(image) || !['earlier', 'later'].includes(direction)) return fail('move-gallery', {}, { message: 'Imagem inválida. Recarregue a página.' })
+  const { error } = await client.rpc('move_profile_image', { target: profile.id, image, direction })
+  if (error) return rpcFailure('move-gallery', error)
+  return ok('move-gallery', 'Ordem da galeria atualizada.')
+}
+
+/** Documento do tipo da atuação (RN-35): presskit em PDF para artista; lista de serviços/equipamentos para serviços. */
+const documentKind = (profile: PerfilEdicao) => (profile.tipo === 'artista' ? 'presskit' : profile.tipo === 'servicos' ? 'services' : null)
+
+export async function uploadDocument(client: SupabaseServerClient, profile: PerfilEdicao, files: UploadedFiles): Promise<Outcome> {
+  const kind = documentKind(profile)
+  if (!kind) return fail('upload-document', {}, { message: 'Esta atuação não tem documento para enviar.', status: 400 })
+  const upload = await readUpload(files, 'arquivo', 'document')
+  if (!upload.ok) return fail('upload-document', { arquivo: upload.error }, { status: 422 })
+  let path: string
+  try {
+    path = await storeUpload(client, 'document', profile.id, upload)
+  } catch (error) {
+    return uploadFailure('upload-document', error)
+  }
+  const { data: previous, error } = await client.rpc('set_professional_document', { target: profile.id, kind, object_path: path })
+  if (error) {
+    await removeStored(client, 'document', [path])
+    return rpcFailure('upload-document', error)
+  }
+  await removeStored(client, 'document', [returnedPath(previous)])
+  return ok(
+    'upload-document',
+    kind === 'presskit' ? 'Presskit em PDF enviado. O link do presskit, se havia, foi removido.' : 'Lista de serviços e equipamentos enviada.',
+  )
+}
+
+export async function removeDocument(client: SupabaseServerClient, profile: PerfilEdicao): Promise<Outcome> {
+  const kind = documentKind(profile)
+  if (!kind) return fail('remove-document', {}, { message: 'Esta atuação não tem documento para remover.', status: 400 })
+  // O banco aceita caminho nulo para remover; os tipos gerados não o marcam como opcional.
+  const { data: previous, error } = await client.rpc('set_professional_document', { target: profile.id, kind, object_path: null as unknown as string })
+  if (error) return rpcFailure('remove-document', error)
+  await removeStored(client, 'document', [returnedPath(previous)])
+  return ok('remove-document', 'Documento removido.')
+}
+
 /** Ações da página de edição: a atuação precisa ser do titular (senão 404) antes de qualquer escrita. */
 export const profileAction = (request: Request, id: string) =>
   accountAction(
     request,
-    async ({ client, form }) => {
+    async ({ client, form, files }) => {
       const intent = intentOf(form)
-      if (!['save-profile', 'save-professional', 'delete-profile'].includes(intent)) return unknownIntent()
+      if (!['save-profile', 'save-professional', 'delete-profile', ...FILE_INTENTS].includes(intent)) return unknownIntent()
       const profile = await ownedProfile(client, id)
       if (!profile) return { notFound: 'Atuação não encontrada.' }
-      if (intent === 'save-profile') return saveProfile(client, profile, form)
-      if (intent === 'save-professional') return saveProfessional(client, profile, form)
-      return removeProfile(client, profile, form)
+      switch (intent) {
+        case 'save-profile':
+          return saveProfile(client, profile, form)
+        case 'save-professional':
+          return saveProfessional(client, profile, form)
+        case 'upload-photo':
+          return uploadImage(client, profile, files, 'main')
+        case 'upload-gallery':
+          return uploadImage(client, profile, files, 'gallery')
+        case 'remove-photo':
+        case 'remove-gallery':
+          return removeImage(client, profile, form, intent)
+        case 'move-gallery':
+          return moveGalleryImage(client, profile, form)
+        case 'upload-document':
+          return uploadDocument(client, profile, files)
+        case 'remove-document':
+          return removeDocument(client, profile)
+        default:
+          return removeProfile(client, profile, form)
+      }
     },
-    { limit: 128 * 1024 },
+    // Formulários de texto: 128 KiB. Com arquivo (multipart): o maior PDF (10 MB) mais os campos e a moldura do envio.
+    { limit: 128 * 1024, uploadLimit: DOCUMENT_MAX_BYTES + 64 * 1024 },
   )
 
 // -- /painel/seguranca --

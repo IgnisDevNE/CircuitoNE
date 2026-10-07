@@ -1,4 +1,5 @@
 import { ESTADOS, EVENTO_TIPO_LABEL, type Estado, type Evento, type EventoTipo } from '../../data/types'
+import { publicImageUrl } from '../public-image'
 import { instant, invalid, isRow, oneOf, optionalText, text, webUrl } from './row'
 
 export type EventoPeriodo = 'future' | 'ongoing' | 'past'
@@ -8,7 +9,7 @@ export type EventoColetivo = { id: string; nome: string; cor: string | null }
 export type EventListData = { ongoing: Evento[]; future: Evento[] }
 export type EventPageData = EventoDetalhe & { coletivo: EventoColetivo | null }
 
-/** Capa neutra servida de `public/` quando o evento não tem imagem. */
+/** Capa neutra servida de `public/` quando o evento não tem capa (nem enviada, nem por link). */
 export const EVENT_COVER_FALLBACK = '/event-cover-fallback.svg'
 
 const TIPOS = Object.keys(EVENTO_TIPO_LABEL) as EventoTipo[]
@@ -35,7 +36,8 @@ export function mapEventListRow(row: unknown): Evento {
     lineup: [],
     ingressoLink: webUrl(optionalText(row, 'ticket_url')),
     gratuito: row.is_free,
-    capa: webUrl(optionalText(row, 'cover_url')) ?? EVENT_COVER_FALLBACK,
+    // A capa enviada (Storage) vale mais que o link externo; o banco não permite os dois ao mesmo tempo.
+    capa: publicImageUrl(optionalText(row, 'cover_path')) ?? webUrl(optionalText(row, 'cover_url')) ?? EVENT_COVER_FALLBACK,
   }
 }
 

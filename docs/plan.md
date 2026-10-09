@@ -80,6 +80,14 @@ Atualizado em 09/10/2026 (W1–W20 concluídas).
 
 **Issues abertas.** [#177](https://github.com/IgnisDevNE/CircuitoNE/issues/177) (limpeza de objetos órfãos no Storage), [#178](https://github.com/IgnisDevNE/CircuitoNE/issues/178) (fotos de artistas não publicados em bucket público), [#184](https://github.com/IgnisDevNE/CircuitoNE/issues/184) (verificação humana com tecnologia assistiva), [#23](https://github.com/IgnisDevNE/CircuitoNE/issues/23) (falta recuperação de senha) e [#26](https://github.com/IgnisDevNE/CircuitoNE/issues/26) (SEO de lançamento). As demais issues de produto (#12–#28) foram fechadas com a evidência de cada tarefa.
 
+## Checklist antes de dados reais
+
+Pendências da revisão OWASP (`docs/reviews/owasp-top10-2026-10.md`) que precisam estar resolvidas antes de a produção receber dados de pessoas de verdade:
+
+- Flags de dev (M7): remover os ramos das flags de dev (`20261012100000_dev_flags.sql`: `mfa_optional`, `auto_approve_collectives`) numa migração, ou garantir `get_environment_flags() = '{}'` no banco de produção (conferir antes de cada liberação; o `tests/database/homologation-smoke.sql` não roda em nenhum fluxo automático hoje, então a conferência é manual até existir um teste de fumaça de produção).
+- `allowedActionOrigins` de produção, cabeçalhos no Caddy (B1) e cotas (B10).
+- Banco de produção na mesma versão do Postgres do projeto (17): a migração `20261013110000_db_hardening.sql` revoga `MAINTAIN`, que só existe a partir da 17.
+
 ## Fora do escopo do PoC
 
 Lançamento em produção, backup próprio e criptografia de backup, host dedicado, disponibilidade do Supabase pago, auto-start do PC.

@@ -84,7 +84,11 @@ select pg_temp.reject($q$select public.create_collective('{"kind":"producer","na
 select pg_temp.reject($q$select public.create_collective('{"kind":"producer","name":"Produtora curta","city":"Recife","state_code":"PE","description":"S","activity":"Música","cnpj":"123"}',gen_random_uuid())$q$,'22023');
 select pg_temp.reject($q$select public.create_collective('{"kind":"collective","name":"Coletivo com CNPJ inválido","city":"Recife","state_code":"PE","description":"S","activity":"Música","cnpj":"11.222.333/0001-82"}',gen_random_uuid())$q$,'22023');
 select pg_temp.assert_true(pg_temp.error_message($q$select public.create_collective('{"kind":"producer","name":"Produtora inválida","city":"Recife","state_code":"PE","description":"S","activity":"Música","cnpj":"11222333000182"}',gen_random_uuid())$q$)='CNPJ inválido','Mensagem do CNPJ inválido');
+-- `owner_user_id` não tem grant de leitura para `authenticated`: confere como dono do banco.
+reset role;
 select pg_temp.assert_true((select count(*) from public.collectives where owner_user_id='a9000000-0000-4000-8000-000000000001')=0,'Coletivo criado com CNPJ inválido');
+set local role authenticated;
+select pg_temp.actor(1);
 select set_config('test.producer',public.create_collective('{"kind":"producer","name":"Produtora válida","city":"Recife","state_code":"PE","description":"S","activity":"Música","cnpj":"11.222.333/0001-81"}',gen_random_uuid())::text,true);
 select set_config('test.alpha',public.create_collective('{"kind":"producer","name":"Produtora alfanumérica","city":"Recife","state_code":"PE","description":"S","activity":"Música","cnpj":"12abc34501de35"}',gen_random_uuid())::text,true);
 select set_config('test.a',public.create_collective('{"kind":"collective","name":"Coletivo A","city":"Recife","state_code":"PE","description":"S","activity":"Música"}',gen_random_uuid())::text,true);
@@ -199,7 +203,9 @@ delete from private.account_deletions where user_id='a9000000-0000-4000-8000-000
 set local role authenticated;
 select pg_temp.actor(5);
 select public.complete_registration('{"name":"Sem pendência","cpf":"86288366757","birth_date":"1990-01-01","city":"Recife","state_code":"PE","phone_is_whatsapp":true}','{"kind":"member","name":"Atuação liberada"}',gen_random_uuid());
+reset role;
 select pg_temp.assert_true((select count(*) from public.profiles where owner_id='a9000000-0000-4000-8000-000000000005')=1,'Cadastro sem exclusão pendente deve concluir');
+set local role authenticated;
 
 -- ---- B13: list_conversations parte das identidades de quem chama ----
 reset role;

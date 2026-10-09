@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { loadEventList, loadEventPage } from '../../src/server/events.server'
+import { eventSheetLoader, loadEventList, loadEventPage } from '../../src/server/events.server'
 import { HttpError, type SupabaseServerClient } from '../../src/server/supabase.server'
 
 const listRow = (n: number, extra = {}) => ({
@@ -206,5 +206,47 @@ describe('loaders das rotas', () => {
     expect(result.data.evento.nome).toBe('Evento sintético 1')
     expect(result.data.coletivo.nome).toBe('Organização sintética 1')
     expect(paths).toEqual(['/rest/v1/rpc/get_event', '/rest/v1/collectives'])
+  })
+
+  describe('eventSheetLoader (GET /api/eventos/:id)', () => {
+    const request = () => new Request(origin + '/api/eventos/x', { headers: { Cookie: 'sb-session=privado' } })
+
+    it('responde o detalhe público em JSON, sem cache, consultando como visitante', async () => {
+      stubFetch((path) =>
+        path.endsWith('get_event')
+          ? Response.json(detailRow)
+          : Response.json({ id: detailRow.collective_id, name: 'Organização sintética 1', color: null }),
+      )
+      const response = await eventSheetLoader(request(), detailRow.id)
+      expect(response.status).toBe(200)
+      expect(response.headers.get('cache-control')).toContain('no-store')
+      const body = await response.json()
+      expect(body.evento.nome).toBe('Evento sintético 1')
+      expect(body.coletivo.nome).toBe('Organização sintética 1')
+      expect(paths).toEqual(['/rest/v1/rpc/get_event', '/rest/v1/collectives'])
+    })
+
+    it('404 (UUID inválido ou evento invisível) e 503 viram JSON { error } com o status, sem lançar', async () => {
+      stubFetch(() => Response.json(null))
+      const missing = await eventSheetLoader(request(), detailRow.id)
+      expect(missing.status).toBe(404)
+      expect(await missing.json()).toEqual({ error: 'Evento não encontrado.' })
+      const invalid = await eventSheetLoader(request(), 'ev-porto')
+      expect(invalid.status).toBe(404)
+      expect(paths).toEqual(['/rest/v1/rpc/get_event'])
+      stubFetch(() => Response.json({ message: 'down' }, { status: 500 }))
+      const down = await eventSheetLoader(request(), detailRow.id)
+      expect(down.status).toBe(503)
+      expect(await down.json()).toEqual({ error: 'Serviço temporariamente indisponível. Tente novamente.' })
+    })
+
+    it('configuração ausente também responde 503 em JSON', async () => {
+      vi.stubEnv('CIRCUITONE_RUNTIME', '')
+      stubFetch(() => Response.json([]))
+      const response = await eventSheetLoader(request(), detailRow.id)
+      expect(response.status).toBe(503)
+      expect(await response.json()).toHaveProperty('error')
+      expect(paths).toEqual([])
+    })
   })
 })

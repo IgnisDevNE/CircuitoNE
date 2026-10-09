@@ -126,6 +126,31 @@ html[data-chat-dock='open'] body {
   }
 }
 
+/* Painel lateral do evento (EventSheet): a página de trás não rola enquanto ele está aberto; a entrada desliza só para quem não
+   pediu menos movimento. */
+body:has(dialog.event-sheet[open]) {
+  overflow: hidden;
+}
+@media (prefers-reduced-motion: no-preference) {
+  dialog.event-sheet[open] {
+    animation: event-sheet-in 180ms ease-out;
+  }
+  dialog.event-sheet[open]::backdrop {
+    animation: event-sheet-fade 180ms ease-out;
+  }
+}
+@keyframes event-sheet-in {
+  from {
+    transform: translateX(2rem);
+    opacity: 0;
+  }
+}
+@keyframes event-sheet-fade {
+  from {
+    opacity: 0;
+  }
+}
+
 /* Caixas e botões de opção com alvo de 24 px ou mais (WCAG 2.5.8): a caixa em 1,25 rem e o rótulo que a envolve com 1,5 rem. */
 input[type='checkbox'],
 input[type='radio'] {

@@ -6,16 +6,26 @@ import { Markdown } from '../../components/ui/Markdown'
 import { fmtDataHora, tipoEventoLabel } from '../../lib/utils'
 import type { EventPageData } from '../../server/mappers/events'
 
-export function EventPage({ evento: ev, coletivo: col, periodo, situacao }: EventPageData) {
+export interface EventPageProps extends EventPageData {
+  /** Versão para o painel lateral: título `h2` (o `h1` é da página de trás), sem o link "← eventos/" e em uma coluna só. */
+  compacto?: boolean
+  /** `id` do título, para o painel lateral nomear o diálogo (`aria-labelledby`). */
+  titleId?: string
+}
+
+export function EventPage({ evento: ev, coletivo: col, periodo, situacao, compacto = false, titleId }: EventPageProps) {
+  const Titulo = compacto ? 'h2' : 'h1'
   const cancelado = situacao === 'cancelled'
 
   return (
     <AccentScope color={col?.cor ?? '#ff2040'}>
       <div className="space-y-8">
-        <Link to="/eventos" className="inline-block font-mono text-xs text-[var(--color-muted)] hover:text-[var(--accent-text)]">← eventos/</Link>
+        {!compacto && (
+          <Link to="/eventos" className="inline-block font-mono text-xs text-[var(--color-muted)] hover:text-[var(--accent-text)]">← eventos/</Link>
+        )}
 
         {/* capa no topo */}
-        <DuotoneImage src={ev.capa} alt={`Capa do evento ${ev.nome}`} className="aspect-[21/9] w-full neon-border" />
+        <DuotoneImage src={ev.capa} alt={`Capa do evento ${ev.nome}`} className={compacto ? 'aspect-video w-full neon-border' : 'aspect-[21/9] w-full neon-border'} />
 
         <header>
           <div className="flex flex-wrap items-center gap-2">
@@ -26,7 +36,9 @@ export function EventPage({ evento: ev, coletivo: col, periodo, situacao }: Even
             {!cancelado && periodo === 'ongoing' && <Badge tone="warn">Em andamento</Badge>}
             {!cancelado && periodo === 'past' && <Badge tone="warn">Evento passado</Badge>}
           </div>
-          <h1 className="mt-3 font-display text-4xl font-bold text-glow sm:text-5xl">{ev.nome}</h1>
+          <Titulo id={titleId} className={compacto ? 'mt-3 font-display text-3xl font-bold text-glow' : 'mt-3 font-display text-4xl font-bold text-glow sm:text-5xl'}>
+            {ev.nome}
+          </Titulo>
           {col && (
             <p className="mt-2 font-mono text-sm text-[var(--color-muted)]">
               por <Link to={`/coletivos/${col.id}`} className="text-[var(--accent-text)] underline">{col.nome}</Link>
@@ -34,7 +46,7 @@ export function EventPage({ evento: ev, coletivo: col, periodo, situacao }: Even
           )}
         </header>
 
-        <div className="grid gap-6 lg:grid-cols-[1fr_320px] lg:items-start">
+        <div className={compacto ? 'grid gap-6' : 'grid gap-6 lg:grid-cols-[1fr_320px] lg:items-start'}>
           <Panel title="descrição">
             <Markdown source={ev.descricao} />
           </Panel>

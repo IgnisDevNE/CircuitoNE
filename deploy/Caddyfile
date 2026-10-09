@@ -46,3 +46,24 @@
     respond "Not found" 404
   }
 }
+
+# Roteiro de testes (UAT): uat.magalz.space -> 5188 -> :8082 (página estática, sem dados)
+:8082 {
+  header {
+    Cache-Control no-cache
+    X-Content-Type-Options nosniff
+    Referrer-Policy no-referrer
+    X-Robots-Tag noindex
+    Content-Security-Policy "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+  }
+
+  handle / {
+    root * /srv
+    rewrite * /roteiro.html
+    file_server
+  }
+
+  handle {
+    respond "Not found" 404
+  }
+}

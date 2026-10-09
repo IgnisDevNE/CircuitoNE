@@ -121,10 +121,15 @@ update private.account_details a set default_artist_profile_id=p.id from public.
 set local role anon;
 select set_config('request.jwt.claims','{}',true);
 select pg_temp.assert_true((select count(*) from public.get_collective_members(current_setting('test.c')::uuid) where artist_profile_id is not null)=1,'Perfil padrão público ausente');
+-- Perfil publicado: o nome exibido é o artístico; os demais membros aparecem só pelo primeiro nome. Nenhum nome civil completo.
+select pg_temp.assert_true((select count(*) from public.get_collective_members(current_setting('test.c')::uuid) where name='Atuação sintética' and artist_profile_id is not null)=1,'Nome artístico do perfil publicado ausente');
+select pg_temp.assert_true((select count(*)>0 and bool_and(name='Pessoa' or artist_profile_id is not null) from public.get_collective_members(current_setting('test.c')::uuid)),'Membro sem perfil publicado deve aparecer só pelo primeiro nome');
+select pg_temp.assert_true(not exists(select from public.get_collective_members(current_setting('test.c')::uuid) where name ~ 'Pessoa sintética'),'Nome civil completo exposto');
 reset role;
 update public.profiles set published=false where owner_id='70000000-0000-4000-8000-000000000003';
 set local role anon;
 select pg_temp.assert_true((select count(*) from public.get_collective_members(current_setting('test.c')::uuid) where artist_profile_id is not null)=0,'Perfil padrão privado exposto');
+select pg_temp.assert_true((select count(*)>0 and bool_and(name='Pessoa' and artist_profile_id is null) from public.get_collective_members(current_setting('test.c')::uuid)),'Sem perfil publicado, só o primeiro nome deveria aparecer');
 set local role authenticated;
 select pg_temp.actor(3);
 select set_config('test.other',public.create_collective('{"kind":"collective","name":"Outro","city":"Recife","state_code":"PE","description":"Outro sintético","activity":"Música"}',gen_random_uuid())::text,true);

@@ -129,6 +129,7 @@ test(
       queryFile("tests/database/collective-area.sql")
       queryFile("tests/database/account-editing.sql")
       queryFile("tests/database/messaging-ui.sql")
+      queryFile("tests/database/db-hardening.sql")
       queryFile("tests/database/collective-management.sql")
       queryFile("tests/database/storage.sql")
       queryFile("tests/database/dev-flags.sql")

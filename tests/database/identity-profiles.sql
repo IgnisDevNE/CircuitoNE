@@ -101,7 +101,7 @@ select pg_temp.reject($q$update auth.users set phone='5581990000001' where id='0
 set local role anon;
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 select pg_temp.assert_true((select count(*) from public.profiles) = 0, 'Perfil não publicado exposto anonimamente');
-select pg_temp.assert_true((select count(*) from public.professional_details) = 0, 'Materiais expostos anonimamente');
+select pg_temp.reject('select count(*) from public.professional_details', '42501');
 select pg_temp.reject('select owner_id from public.profiles', '42501');
 reset role;
 update public.profiles set published=true where kind='artist';

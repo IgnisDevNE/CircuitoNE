@@ -65,6 +65,7 @@ const KNOWN_FAILURES: Record<string, ActionFailure> = {
   'Edição inválida': new ActionFailure(422, 'O banco recusou os dados informados. Revise os campos e tente de novo.'),
   'Dados de coletivo inválidos': new ActionFailure(422, 'O banco recusou os dados do coletivo. Revise os campos e tente de novo.'),
   'Produtora exige CNPJ': new ActionFailure(422, 'Produtora exige CNPJ.'),
+  'CNPJ inválido': new ActionFailure(422, 'Corrija os campos destacados.', { cnpj: 'CNPJ inválido: confira os dígitos verificadores.' }),
   'Conta indisponível': new ActionFailure(403, 'Sua conta não está disponível para criar coletivos ou produtoras.'),
   'Permissões inválidas': new ActionFailure(422, 'As permissões escolhidas são inválidas.'),
   'Perfil/permissões inválidos': new ActionFailure(422, 'Já existe um perfil com esse nome, ou o nome e as permissões são inválidos.'),

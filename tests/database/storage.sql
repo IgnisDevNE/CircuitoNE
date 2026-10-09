@@ -370,7 +370,7 @@ select pg_temp.assert_true(public.set_professional_document(current_setting('tes
 reset role;
 set local role anon;
 select set_config('request.jwt.claims','{"role":"anon"}',true);
-select pg_temp.assert_true((select count(*) from public.professional_details)=0,'Anônimo leu dados profissionais');
+select pg_temp.expect_error('select count(*) from public.professional_details','42501');
 reset role;
 set local role authenticated;
 
@@ -462,8 +462,13 @@ set local role authenticated;
 
 -- ---- Capa do evento: sem RPC nova; update_event aceita cover_path sob o id do evento ----
 select pg_temp.actor(1);
-select public.update_event(current_setting('test.event')::uuid,1,jsonb_build_object('cover_path',current_setting('test.event')||'/capa.png','cover_bytes',1000));
+-- A capa só vale se o objeto existe em `public-images` (verified_upload); sem o objeto, o caminho forjado é recusado.
+select pg_temp.expect_error(format($$select public.update_event(%L,1,jsonb_build_object('cover_path',%L,'cover_bytes',1000))$$,current_setting('test.event'),current_setting('test.event')||'/capa.png'),'22023');
+select pg_temp.put('public-images',current_setting('test.event')||'/capa.png',1234);
+-- `cover_bytes` vem do objeto, não do payload.
+select public.update_event(current_setting('test.event')::uuid,1,jsonb_build_object('cover_path',current_setting('test.event')||'/capa.png','cover_bytes',1));
 select pg_temp.assert_true((public.get_event(current_setting('test.event')::uuid)->>'cover_path')=current_setting('test.event')||'/capa.png','Capa do evento não gravada');
+select pg_temp.assert_true((public.get_event(current_setting('test.event')::uuid)->>'cover_bytes')::integer=1234,'Tamanho da capa deve vir do objeto');
 select pg_temp.expect_error(format($$select public.update_event(%L,2,jsonb_build_object('cover_path',%L,'cover_bytes',1000))$$,current_setting('test.event'),current_setting('test.event2')||'/capa.png'),'22023');
 select pg_temp.expect_error(format($$select public.update_event(%L,2,jsonb_build_object('cover_url','https://example.invalid/capa.png'))$$,current_setting('test.event')),'22023');
 select public.update_event(current_setting('test.event')::uuid,2,jsonb_build_object('cover_path',null,'cover_bytes',null,'cover_url','https://example.invalid/capa.png'));

@@ -21,6 +21,7 @@ import { boundedBody, readAccountSession, type UploadedFiles } from './auth.serv
 import { ActionFailure, UPLOAD_TIMEOUT_MS } from './mutation.server'
 import { readUpload, removeStored, returnedPath, storeUpload } from './storage.server'
 import { confirmationUrl } from './registration.server'
+import { loadEnvironmentFlags } from './environment.server'
 import {
   mapAccountDetails,
   mapMyProfile,
@@ -51,7 +52,8 @@ export async function loadAccountData(client: SupabaseServerClient): Promise<Acc
   return { conta: mapAccountDetails(unwrap(await client.rpc('get_my_account_details'))) }
 }
 
-export type ProfileEditPage = { perfil: PerfilEdicao | null; taxonomia: Taxonomia }
+/** `mfaOpcional`: ambiente dev sem exigência de MFA (os textos sobre dados restritos avisam que produção a exige). */
+export type ProfileEditPage = { perfil: PerfilEdicao | null; taxonomia: Taxonomia; mfaOpcional: boolean }
 
 const notFound = () => new HttpError(404, 'Atuação não encontrada.')
 
@@ -64,28 +66,34 @@ export async function loadProfileEdit(client: SupabaseServerClient, id: string):
   const perfil = mapMyProfile(unwrap(await client.rpc('get_my_profile', { target: id })))
   if (!perfil) {
     const session = unwrap(await client.rpc('get_account_session')) as { state?: unknown } | null
-    if (session?.state !== 'active') return { perfil: null, taxonomia: [] }
+    if (session?.state !== 'active') return { perfil: null, taxonomia: [], mfaOpcional: false }
     throw notFound()
   }
-  if (perfil.tipo !== 'artista') return { perfil, taxonomia: [] }
+  const { mfaOptional } = await loadEnvironmentFlags(client)
+  if (perfil.tipo !== 'artista') return { perfil, taxonomia: [], mfaOpcional: mfaOptional }
   const [styles, substyles] = await Promise.all([
     client.from('music_styles').select('name'),
     client.from('music_substyles').select('style,name'),
   ])
-  return { perfil, taxonomia: mapTaxonomy(unwrap(styles), unwrap(substyles)) }
+  return { perfil, taxonomia: mapTaxonomy(unwrap(styles), unwrap(substyles)), mfaOpcional: mfaOptional }
 }
 
-export type SecurityPage = { seguranca: SegurancaDados | null }
+export type SecurityPage = { seguranca: SegurancaDados | null; mfaOpcional: boolean }
 
 /** `/painel/seguranca`: e-mail atual (validado no Auth), fatores TOTP verificados e se falta a confirmação do segundo fator. */
 export async function loadSecurity(client: SupabaseServerClient): Promise<SecurityPage> {
   const { data: user, error } = await client.auth.getUser()
   // Sem sessão o Auth responde 4xx (o layout já redireciona); falha de rede ou 5xx é indisponibilidade.
   if (error && !(error.status && error.status < 500)) throw unavailable()
-  if (!user.user) return { seguranca: null }
-  const [factors, assurance] = await Promise.all([client.auth.mfa.listFactors(), client.auth.mfa.getAuthenticatorAssuranceLevel()])
+  if (!user.user) return { seguranca: null, mfaOpcional: false }
+  const [factors, assurance, flags] = await Promise.all([
+    client.auth.mfa.listFactors(),
+    client.auth.mfa.getAuthenticatorAssuranceLevel(),
+    loadEnvironmentFlags(client),
+  ])
   if (factors.error || assurance.error) throw unavailable()
   return {
+    mfaOpcional: flags.mfaOptional,
     seguranca: {
       email: user.user.email ?? null,
       emailPendente: user.user.new_email ?? null,

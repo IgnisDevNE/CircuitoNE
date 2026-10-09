@@ -9,6 +9,7 @@ import type { DadosRestritos, ExploreColetivosData, ExploreData, ExplorePerfisDa
 import { Badge, Empty, Panel, SectionHeading } from '../../components/ui/primitives'
 import { Input, Select } from '../../components/ui/form'
 import { AccentScope } from '../../components/ui/AccentScope'
+import { MfaDevNotice } from '../../components/ui/MfaDevNotice'
 import { ChatLink } from '../../components/chat/ChatLink'
 
 const PAGES: Record<ExploreKind, { title: string; sub: string; label: string }> = {
@@ -21,7 +22,10 @@ const PAGES: Record<ExploreKind, { title: string; sub: string; label: string }> 
 /** Aviso mostrado a quem não é proprietário elegível: o banco não devolve os dados restritos, então nada é escondido por CSS. */
 export const RESTRICTED_NOTICE = 'Disponível para proprietários de coletivos aprovados com verificação em duas etapas'
 
-const normalize = (value: string) => value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+/** Mesmo aviso no dev, onde a verificação em duas etapas não é exigida (o `MfaDevNotice` explica a diferença para produção). */
+export const RESTRICTED_NOTICE_DEV = 'Disponível para proprietários de coletivos aprovados'
+
+const normalize =(value: string) => value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 const includes = (haystack: string, needle: string) => normalize(haystack).includes(normalize(needle))
 const UF_OPTIONS = [{ value: '', label: 'todos os estados' }, ...ESTADOS.map((estado) => ({ value: estado.value, label: estado.value }))]
 
@@ -125,10 +129,17 @@ function Profiles({ data }: { data: ExplorePerfisData }) {
   return (
     <>
       {data.restritoIndisponivel && (
-        <p role="note" className="mb-6 border border-[var(--color-line)] p-3 font-mono text-xs text-[var(--color-muted)]">
-          Contatos, cachê, presskit, portfólio e tipo de serviço: {RESTRICTED_NOTICE}.{' '}
-          <Link to="/painel/seguranca" className="text-[var(--accent-text)] underline">verificação em duas etapas (Segurança)</Link>
-        </p>
+        <div className="mb-6 space-y-2 border border-[var(--color-line)] p-3 font-mono text-xs text-[var(--color-muted)]">
+          {data.mfaOpcional ? (
+            <p role="note">Contatos, cachê, presskit, portfólio e tipo de serviço: {RESTRICTED_NOTICE_DEV}.</p>
+          ) : (
+            <p role="note">
+              Contatos, cachê, presskit, portfólio e tipo de serviço: {RESTRICTED_NOTICE}.{' '}
+              <Link to="/painel/seguranca" className="text-[var(--accent-text)] underline">verificação em duas etapas (Segurança)</Link>
+            </p>
+          )}
+          <MfaDevNotice show={data.mfaOpcional} />
+        </div>
       )}
       <form role="search" aria-label="Filtrar atuações" onSubmit={(event) => event.preventDefault()} className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Input label="Buscar" type="search" placeholder="nome ou cidade…" value={q} onChange={(event) => setQ(event.target.value)} />

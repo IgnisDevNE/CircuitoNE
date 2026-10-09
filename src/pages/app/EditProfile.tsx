@@ -15,6 +15,7 @@ import type { PerfilEdicao, Profissional, Taxonomia } from '../../server/mappers
 import { Badge, Button, Panel } from '../../components/ui/primitives'
 import { Checkbox, Input, Select, Textarea } from '../../components/ui/form'
 import { LocationFields } from '../../components/ui/LocationFields'
+import { MfaDevNotice } from '../../components/ui/MfaDevNotice'
 import { AccentScope } from '../../components/ui/AccentScope'
 import { errorsFor, FormFeedback, GeneralFeedback, valueFor, valuesFor } from './account-ui'
 import { DocumentPanel, PhotosPanel } from './ProfileFiles'
@@ -23,6 +24,8 @@ export interface EditProfileProps {
   perfil: PerfilEdicao
   /** Estilos e subestilos do banco; só usada por artistas. */
   taxonomia: Taxonomia
+  /** Ambiente dev: a MFA não é exigida; os textos sobre dados restritos trazem o aviso de produção. */
+  mfaOpcional?: boolean
   result?: ActionResult
   busy?: boolean
 }
@@ -136,7 +139,7 @@ function ProfessionalFields({ tipo, saved, result }: { tipo: AtuacaoTipo; saved:
   )
 }
 
-export function EditProfile({ perfil, taxonomia, result, busy }: EditProfileProps) {
+export function EditProfile({ perfil, taxonomia, mfaOpcional = false, result, busy }: EditProfileProps) {
   const errors = errorsFor(result, 'save-profile')
   const value = (key: string, saved: string) => valueFor(result, 'save-profile', key, saved)
   const artist = perfil.tipo === 'artista'
@@ -243,8 +246,9 @@ export function EditProfile({ perfil, taxonomia, result, busy }: EditProfileProp
         {perfil.profissional && (
           <Panel title="dados profissionais">
             <p className="mb-4 font-mono text-xs text-[var(--color-muted)]">
-              Visíveis só para você e para proprietários de coletivos aprovados, com MFA.
+              {mfaOpcional ? 'Visíveis só para você e para proprietários de coletivos aprovados.' : 'Visíveis só para você e para proprietários de coletivos aprovados, com MFA.'}
             </p>
+            <MfaDevNotice show={mfaOpcional} className="mb-4" />
             <Form method="post" className="grid gap-4 sm:grid-cols-2" noValidate>
               <input type="hidden" name="intent" value="save-professional" />
               <ProfessionalFields tipo={perfil.tipo} saved={perfil.profissional} result={result} />
@@ -256,7 +260,7 @@ export function EditProfile({ perfil, taxonomia, result, busy }: EditProfileProp
           </Panel>
         )}
 
-        <DocumentPanel perfil={perfil} result={result} busy={busy} />
+        <DocumentPanel perfil={perfil} result={result} busy={busy} mfaOpcional={mfaOpcional} />
 
         <Panel title="excluir atuação">
           <p className="mb-4 text-sm text-[var(--color-muted)]">

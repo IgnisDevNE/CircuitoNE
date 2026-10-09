@@ -131,6 +131,7 @@ test(
       queryFile("tests/database/messaging-ui.sql")
       queryFile("tests/database/collective-management.sql")
       queryFile("tests/database/storage.sql")
+      queryFile("tests/database/dev-flags.sql")
     }
     // Duas conexões reais: lock da identidade e UNIQUE do CPF devem decidir no banco.
     for (const sameAccount of [false, true]) {
@@ -281,6 +282,16 @@ ${demoCheck}`)
     assert.throws(() => query(hideFixtures), error => /Seed exige destino sintético/.test(String(error.stdout) + String(error.stderr)))
     query(`set circuitone.seed_target='disposable';\n${hideFixtures}\n${hideFixtures}`)
     queryFile('tests/database/dev-hide-fixtures.sql')
+
+    // Flags do dev: só o projeto dev as aceita (nem "disposable", nem sem destino); idempotente; apagar as linhas as desliga.
+    const devFlags = readFileSync('supabase/seeds/dev-flags.sql', 'utf8')
+    const refusedSeed = /Seed exige destino sintético/
+    assert.throws(() => query(devFlags), error => refusedSeed.test(String(error.stdout) + String(error.stderr)))
+    assert.throws(() => query(`set circuitone.seed_target='disposable';\n${devFlags}`), error => refusedSeed.test(String(error.stdout) + String(error.stderr)))
+    assert.equal(query('select count(*) from private.environment_flags').match(/\d+/)[0], '0')
+    query(`set circuitone.seed_target='odphoxozclrshqjgwbqk';\n${devFlags}\n${devFlags}`)
+    assert.equal(query('select count(*) from private.environment_flags').match(/\d+/)[0], '2')
+    query('delete from private.environment_flags')
 
     // Senhas sintéticas (login nos ambientes dev/e2e): exige destino declarado e senha forte, é idempotente e só toca contas @example.invalid.
     const passwordSeed = readFileSync("supabase/seeds/passwords.sql", "utf8")

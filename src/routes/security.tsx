@@ -19,7 +19,7 @@ export default function SecurityRoute({ loaderData, actionData }: Route.Componen
   const busy = useNavigation().state === 'submitting'
   if (shell?.status !== 'active') return null
   if (!loaderData.seguranca) return <Empty>Não foi possível carregar os dados de segurança.</Empty>
-  return <Security seguranca={loaderData.seguranca} result={actionData} busy={busy} />
+  return <Security seguranca={loaderData.seguranca} mfaOpcional={loaderData.mfaOpcional} result={actionData} busy={busy} />
 }
 
 export function ErrorBoundary() {

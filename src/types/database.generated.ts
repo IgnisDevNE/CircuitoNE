@@ -309,6 +309,9 @@ isOneToOne: false
 "get_conversation_details":
 { Args: { "targets": (string)[] }; Returns: Json
                            },
+"get_environment_flags":
+{ Args: Record<PropertyKey, never>; Returns: (string)[]
+                           },
 "get_event":
 { Args: { "target": string }; Returns: Json
                            },

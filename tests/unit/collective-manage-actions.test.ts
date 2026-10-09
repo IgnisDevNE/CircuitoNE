@@ -13,6 +13,8 @@ type Sent = { name: string; body: Record<string, unknown> }
 let sent: Sent[]
 let reply: (name: string) => Response
 let level: 'aal1' | 'aal2'
+/** Flags de ambiente do dev devolvidas por `get_environment_flags` (leitura; não conta como escrita em `sent`). */
+let flags: string[]
 
 const token = (aal: string) =>
   ['eyJhbGciOiJIUzI1NiJ9', Buffer.from(JSON.stringify({ sub: OWNER, aal, exp: Math.floor(Date.now() / 1000) + 3600 })).toString('base64url'), 'sig'].join('.')
@@ -21,6 +23,7 @@ beforeEach(() => {
   sent = []
   reply = () => new Response(null, { status: 204 })
   level = 'aal2'
+  flags = []
   vi.stubEnv('CIRCUITONE_RUNTIME', 'development')
   vi.stubEnv('APP_ORIGIN', origin)
   vi.stubEnv('SUPABASE_URL', 'https://odphoxozclrshqjgwbqk.supabase.co')
@@ -40,6 +43,7 @@ beforeEach(() => {
       if (path === '/rest/v1/rpc/get_account_session') return Response.json({ id: OWNER, name: 'Dona sintética', state: 'active', reason: null })
       if (!path.startsWith('/rest/v1/rpc/')) throw new Error(`HTTP inesperado: ${path}`)
       const name = path.replace('/rest/v1/rpc/', '')
+      if (name === 'get_environment_flags') return Response.json(flags)
       sent.push({ name, body: init?.body ? JSON.parse(String(init.body)) : {} })
       return reply(name)
     }),
@@ -231,6 +235,22 @@ describe('collectiveEditAction: transferir a propriedade e encerrar', () => {
     level = 'aal1'
     const result = await withCookie({ intent: 'transfer', successor: MEMBER, confirm: 'yes' })
     expect(result).toMatchObject({ ok: false, status: 403, error: TRANSFER_NEEDS_MFA })
+    expect(sent).toEqual([])
+  })
+
+  it('dev (flag mfa_optional): a sessão aal1 também transfere; o banco continua decidindo', async () => {
+    level = 'aal1'
+    flags = ['mfa_optional']
+    const cookie = await signIn()
+    const response = (await collectiveEditAction(post(path, { intent: 'transfer', successor: MEMBER, confirm: 'yes' }, { headers: { Cookie: cookie } }), C)) as Response
+    expect(sent).toEqual([{ name: 'transfer_collective_ownership', body: { target: C, successor: MEMBER } }])
+    expect(response.status).toBe(302)
+  })
+
+  it('dev: só a flag de coletivos aprovados automaticamente não dispensa a MFA da transferência', async () => {
+    level = 'aal1'
+    flags = ['auto_approve_collectives']
+    expect(await withCookie({ intent: 'transfer', successor: MEMBER, confirm: 'yes' })).toMatchObject({ ok: false, status: 403, error: TRANSFER_NEEDS_MFA })
     expect(sent).toEqual([])
   })
 

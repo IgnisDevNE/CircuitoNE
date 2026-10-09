@@ -158,8 +158,15 @@ export const identityOf = (parties: Party[]): Identity => {
 const other = (lados: [Lado, Lado], mine: Lado) => (lados[0] === mine ? lados[1] : lados[0])
 
 /** Conversa vista por quem lê: título, quem pode enviar, estado do bloqueio e prévia da última mensagem. */
-export function toConversaItem(conversa: Conversa, detalhe: DetalheConversa | undefined, me: Identity): ConversaItem {
-  const meus = conversa.lados.filter(me)
+export function toConversaItem(
+  conversa: Conversa,
+  detalhe: DetalheConversa | undefined,
+  me: Identity,
+  /** `canSend`: pontas do titular por onde ele pode enviar (padrão: todas). `adoptDeleted`: conversa legível sem ponta reconhecida é da atuação excluída do titular (só leitura). */
+  options: { canSend?: Identity; adoptDeleted?: boolean } = {},
+): ConversaItem {
+  const identified = conversa.lados.filter(me)
+  const meus = identified.length === 0 && options.adoptDeleted ? conversa.lados.filter((lado) => lado.id === null) : identified
   const titulo = meus.length === 1 ? other(conversa.lados, meus[0]).nome : meus.length > 1 ? `${conversa.lados[0].nome} ↔ ${conversa.lados[1].nome}` : conversa.lados[0].nome
   const ultima = detalhe?.ultima ?? null
   const blocker = (detalhe?.bloqueadaPor ?? []).find(me)
@@ -172,7 +179,7 @@ export function toConversaItem(conversa: Conversa, detalhe: DetalheConversa | un
     bloqueadaComo: blocker ?? null,
     arquivada: conversa.arquivada,
     naoLidas: conversa.naoLidas,
-    remetentes: meus.map((de) => ({ de, para: other(conversa.lados, de) })),
+    remetentes: meus.filter((lado) => options.canSend?.(lado) ?? true).map((de) => ({ de, para: other(conversa.lados, de) })),
     meus,
     ultima: ultima ? { ...ultima, minha: me(ultima.autor) } : null,
   }

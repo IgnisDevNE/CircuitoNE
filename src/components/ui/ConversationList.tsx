@@ -8,11 +8,15 @@ export interface ConversationListProps {
   conversas: ConversaItem[]
   abertaId?: string
   limitada?: boolean
+  /** Mostra sob cada conversa por qual atuação ou coletivo ela acontece ("como …"): a central da conta mistura várias. */
+  identidade?: boolean
+  /** Texto do estado vazio. */
+  vazio?: string
 }
 
 /** Lista de conversas com a última mensagem (texto puro) e as não lidas. */
-export function ConversationList({ basePath, conversas, abertaId, limitada = false }: ConversationListProps) {
-  if (conversas.length === 0) return <Empty>Nenhuma conversa ainda.</Empty>
+export function ConversationList({ basePath, conversas, abertaId, limitada = false, identidade = false, vazio = 'Nenhuma conversa ainda.' }: ConversationListProps) {
+  if (conversas.length === 0) return <Empty>{vazio}</Empty>
   return (
     <nav aria-label="Conversas">
       <ul className="space-y-1">
@@ -41,6 +45,12 @@ export function ConversationList({ basePath, conversas, abertaId, limitada = fal
                   )}
                 </span>
               </span>
+              {identidade && c.meus.length === 1 && (
+                <span data-identity className="mt-0.5 block break-words text-[0.7rem] text-[var(--accent-text)]">
+                  como {c.meus[0].nome}
+                  {c.meus[0].kind === 'collective' && ' (coletivo)'}
+                </span>
+              )}
               {c.ultima && (
                 <span data-teaser className="mt-0.5 block truncate text-xs text-[var(--color-muted)]">
                   {c.ultima.minha ? 'Você: ' : c.meus.length > 1 ? `${c.ultima.autor.nome}: ` : ''}

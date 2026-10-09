@@ -55,19 +55,107 @@ describe('loadMessages (conta)', () => {
   const base = (extra: Record<string, Rpc> = {}) =>
     fakeClient({
       list_my_profiles: ok([profileRow(ME, 'Minha atuação')]),
+      list_my_collectives: ok([]),
       list_conversations: ok([conversation(1, { unread_count: 2 }), conversation(2, { side_a: label('profile', 'outro', 'Outra pessoa'), side_b: label('profile', 'terceiro', 'Terceiro') })]),
       get_conversation_details: ok([detail(1)]),
       ...extra,
     })
 
-  it('lista só as conversas em que uma atuação do titular é ponta, com prévia e não lidas', async () => {
+  it('lista só as conversas em que o titular é ponta (atuação ou coletivo que ele lê), com prévia e não lidas', async () => {
     const { client, rpc } = base()
     const result = await loadMessages(client, { kind: 'account' })
     expect(result.conversas.map((c) => [c.id, c.titulo, c.naoLidas])).toEqual([[conv(1), 'Interlocutor', 2]])
     expect(result.conversas[0].ultima?.texto).toBe('Mensagem 1')
+    expect(result.conversas[0].meus).toEqual([{ kind: 'profile', id: ME, nome: 'Minha atuação' }])
     expect(result).toMatchObject({ aberta: null, limitada: false, podeEnviar: true })
     expect(calls(rpc, 'get_conversation_details')).toEqual([{ targets: [conv(1)] }])
     expect(calls(rpc, 'get_recent_messages')).toEqual([])
+    // Sem coletivo nas conversas, nenhuma conferência de acesso é necessária.
+    expect(calls(rpc, 'get_collective_access')).toEqual([])
+  })
+
+  describe('conversas de coletivos', () => {
+    const COL = '05000000-0000-4000-8000-000000000003'
+    const myCollective = (id: string, name: string, state = 'approved') => ({ id, kind: 'collective', name, city: 'Recife', state_code: 'PE', state, role_name: 'Produção', is_owner: false })
+    const access = (permissions: string[]) => ({ owner: false, role_id: 'r', permissions })
+    const rows = [
+      conversation(1),
+      conversation(2, { side_a: label('collective', C, 'Organização 1'), side_b: label('profile', OTHER, 'Interlocutor') }),
+      conversation(3, { side_a: label('collective', COL, 'Organização 3'), side_b: label('profile', 'terceiro', 'Terceiro') }),
+    ]
+    const withCollectives = (permissions: Record<string, string[] | null>, mine = [myCollective(C, 'Organização 1'), myCollective(COL, 'Organização 3')]) =>
+      base({
+        list_my_collectives: ok(mine),
+        list_conversations: ok(rows),
+        get_conversation_details: ok([detail(1), detail(2)]),
+        get_recent_messages: ok([message(1)]),
+        get_collective_access: (args) => {
+          const granted = permissions[args.target as string]
+          return ok(granted ? access(granted) : null)
+        },
+      })
+
+    it('a central mostra também as conversas dos coletivos que o titular lê, com a identidade de cada uma', async () => {
+      const { client, rpc } = withCollectives({ [C]: ['read_messages', 'send_messages'], [COL]: ['read_messages'] })
+      const result = await loadMessages(client, { kind: 'account' })
+      expect(result.conversas.map((c) => [c.id, c.meus.map((m) => `${m.kind}:${m.nome}`)])).toEqual([
+        [conv(1), ['profile:Minha atuação']],
+        [conv(2), ['collective:Organização 1']],
+        [conv(3), ['collective:Organização 3']],
+      ])
+      expect(result.conversas[1].titulo).toBe('Interlocutor')
+      // Só os coletivos que aparecem nas conversas têm o acesso conferido.
+      expect(calls(rpc, 'get_collective_access').map((args) => (args as { target: string }).target).sort()).toEqual([C, COL].sort())
+    })
+
+    it('enviar exige a permissão "enviar mensagens": só ler deixa a conversa sem remetente', async () => {
+      const { client } = withCollectives({ [C]: ['read_messages', 'send_messages'], [COL]: ['read_messages'] })
+      const result = await loadMessages(client, { kind: 'account' })
+      expect(result.conversas.map((c) => c.remetentes.map((r) => `${r.de.kind}:${r.de.nome}>${r.para.nome}`))).toEqual([
+        ['profile:Minha atuação>Interlocutor'],
+        ['collective:Organização 1>Interlocutor'],
+        [],
+      ])
+    })
+
+    it('sem "ler mensagens" (ou sem acesso, ou coletivo que não é do titular) a conversa não aparece', async () => {
+      const { client } = withCollectives({ [C]: ['send_messages'], [COL]: null })
+      const result = await loadMessages(client, { kind: 'account' })
+      expect(result.conversas.map((c) => c.id)).toEqual([conv(1)])
+      // Coletivo pendente não é conferido: não há função de mensagens para ele.
+      const pending = withCollectives({}, [myCollective(C, 'Organização 1', 'pending')])
+      expect((await loadMessages(pending.client, { kind: 'account' })).conversas.map((c) => c.id)).toEqual([conv(1)])
+      expect(calls(pending.rpc, 'get_collective_access')).toEqual([])
+    })
+
+    it('abre pelo link direto uma conversa do coletivo, e uma que o titular não lê continua 404', async () => {
+      const { client, rpc } = withCollectives({ [C]: ['read_messages', 'send_messages'], [COL]: null })
+      const open = await loadMessages(client, { kind: 'account' }, { conversationId: conv(2) })
+      expect(open.aberta?.conversa.remetentes[0].de).toMatchObject({ kind: 'collective', id: C })
+      expect(calls(rpc, 'get_recent_messages')).toEqual([{ target: conv(2) }])
+      expect(await status(loadMessages(withCollectives({ [C]: ['read_messages'], [COL]: null }).client, { kind: 'account' }, { conversationId: conv(3) }))).toMatchObject({ status: 404 })
+    })
+
+    it('falha do banco ao conferir o acesso é falha (503), não uma lista sem as conversas do coletivo', async () => {
+      const broken = fakeClient({
+        list_my_profiles: ok([profileRow(ME, 'Minha atuação')]),
+        list_my_collectives: ok([myCollective(C, 'Organização 1')]),
+        list_conversations: ok(rows),
+        get_collective_access: { data: null, error: { message: 'boom' } },
+      })
+      expect(await status(loadMessages(broken.client, { kind: 'account' }))).toMatchObject({ status: 503 })
+    })
+  })
+
+  it('conversa cuja atuação do titular foi excluída continua legível (só leitura), com a outra ponta como título', async () => {
+    const { client } = base({
+      list_conversations: ok([conversation(5, { side_a: label('profile', null as unknown as string, 'Atuação excluída'), side_b: label('profile', OTHER, 'Interlocutor'), archived: true })]),
+      get_conversation_details: ok([detail(5)]),
+    })
+    const result = await loadMessages(client, { kind: 'account' })
+    expect(result.conversas).toHaveLength(1)
+    expect(result.conversas[0]).toMatchObject({ id: conv(5), titulo: 'Interlocutor', arquivada: true, remetentes: [] })
+    expect(result.conversas[0].meus[0].nome).toBe('Atuação excluída')
   })
 
   it('pagina list_conversations pelo cursor original até a última página', async () => {

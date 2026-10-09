@@ -43,20 +43,67 @@ export type MessageScope = { kind: 'account' } | { kind: 'collective'; id: strin
 export const messagesBase = (scope: MessageScope) => (scope.kind === 'account' ? '/painel/mensagens' : `/coletivo/${scope.id}/mensagens`)
 const threadPath = (scope: MessageScope, id: string) => `${messagesBase(scope)}/${id}`
 
-type Context = { me: Identity; podeEnviar: boolean }
+/** Coletivos do titular cujo acesso é conferido ao montar a central da conta (um `get_collective_access` por coletivo presente nas conversas). */
+const MAX_ACCOUNT_COLLECTIVES = 20
+
+type Context = {
+  /** Pontas que o titular lê. */
+  me: Identity
+  /** Pontas por onde ele pode enviar (a permissão de enviar é diferente da de ler). */
+  canSend: Identity
+  podeEnviar: boolean
+  /** Conta: uma conversa legível sem ponta reconhecida é da atuação excluída do titular. */
+  adoptDeleted: boolean
+}
+
+/** Só a ausência de acesso vira "sem permissão"; qualquer outra falha (banco fora do ar) continua sendo falha. */
+const accessOrNull = (client: SupabaseServerClient, id: string) =>
+  requireAccess(client, id).catch((error: unknown) => {
+    if (error instanceof HttpError && (error.status === 403 || error.status === 404)) return null
+    throw error
+  })
 
 /**
- * Quem está lendo. Conta: conversas em que uma das suas atuações é uma ponta. Coletivo: exige "ler mensagens"
- * (o banco também recusa); "enviar mensagens" é outra permissão e só libera o campo de envio.
+ * Quem está lendo e as conversas que o banco deixa ler (`list_conversations`). Conta: as conversas em que uma atuação do
+ * titular ou um coletivo em que ele lê mensagens é uma ponta. Coletivo: exige "ler mensagens" (o banco também recusa);
+ * "enviar mensagens" é outra permissão e só libera o campo de envio.
  */
-async function resolveContext(client: SupabaseServerClient, scope: MessageScope): Promise<Context> {
-  if (scope.kind === 'account') {
-    const profiles = mapMyProfiles(unwrap(await client.rpc('list_my_profiles')))
-    return { me: identityOf(profiles.map((profile) => ({ kind: 'profile' as const, id: profile.id }))), podeEnviar: profiles.length > 0 }
+async function resolveContext(client: SupabaseServerClient, scope: MessageScope): Promise<{ context: Context; all: Conversa[] }> {
+  if (scope.kind === 'collective') {
+    const access = await requireAccess(client, scope.id)
+    if (!can(access, 'read_messages')) throw new HttpError(403, 'Você não tem permissão para ler as mensagens deste coletivo.')
+    const self = identityOf([{ kind: 'collective', id: scope.id }])
+    return {
+      context: { me: self, canSend: self, podeEnviar: can(access, 'send_messages'), adoptDeleted: false },
+      all: await listConversations(client),
+    }
   }
-  const access = await requireAccess(client, scope.id)
-  if (!can(access, 'read_messages')) throw new HttpError(403, 'Você não tem permissão para ler as mensagens deste coletivo.')
-  return { me: identityOf([{ kind: 'collective', id: scope.id }]), podeEnviar: can(access, 'send_messages') }
+  const [all, profileRows, collectiveRows] = await Promise.all([
+    listConversations(client),
+    client.rpc('list_my_profiles'),
+    client.rpc('list_my_collectives'),
+  ])
+  const profiles = mapMyProfiles(unwrap(profileRows)).map((profile) => ({ kind: 'profile' as const, id: profile.id }))
+  // Só os coletivos aprovados em que o titular é membro e que aparecem nas conversas precisam de conferência de permissões.
+  const present = new Set(all.flatMap((conversa) => conversa.lados).filter((lado) => lado.kind === 'collective' && lado.id).map((lado) => lado.id))
+  const candidates = mapMyCollectives(unwrap(collectiveRows))
+    .filter((collective) => collective.situacao === 'approved' && present.has(collective.id))
+    .slice(0, MAX_ACCOUNT_COLLECTIVES)
+  const access = await Promise.all(candidates.map((collective) => accessOrNull(client, collective.id)))
+  const collectives = candidates.flatMap((collective, index) => {
+    const granted = access[index]
+    return granted ? [{ id: collective.id, read: can(granted, 'read_messages'), send: can(granted, 'send_messages') }] : []
+  })
+  const party = (id: string) => ({ kind: 'collective' as const, id })
+  return {
+    context: {
+      me: identityOf([...profiles, ...collectives.filter((c) => c.read).map((c) => party(c.id))]),
+      canSend: identityOf([...profiles, ...collectives.filter((c) => c.read && c.send).map((c) => party(c.id))]),
+      podeEnviar: true,
+      adoptDeleted: true,
+    },
+    all,
+  }
 }
 
 /** Todas as conversas legíveis pelo titular, da mais recente à mais antiga (a RPC pagina por cursor). */
@@ -111,8 +158,8 @@ export async function loadMessages(
 ): Promise<MessagesPageData> {
   const { conversationId } = options
   if (conversationId !== undefined && !uuid.test(conversationId)) throw conversationNotFound()
-  const context = await resolveContext(client, scope)
-  const mine = (await listConversations(client)).filter((conversa) => conversa.lados.some(context.me))
+  const { context, all } = await resolveContext(client, scope)
+  const mine = all.filter((conversa) => conversa.lados.some(context.me) || (context.adoptDeleted && conversa.lados.some((lado) => lado.id === null)))
   const shown = mine.slice(0, PAGE)
   const open = conversationId ? mine.find((conversa) => conversa.id === conversationId) : undefined
   if (conversationId && !open) throw conversationNotFound()
@@ -123,7 +170,8 @@ export async function loadMessages(
     needsOwnDetails ? loadDetails(client, [open.id]) : Promise.resolve(new Map<string, DetalheConversa>()),
     open ? loadThread(client, open.id, pages) : Promise.resolve(null),
   ])
-  const item = (conversa: Conversa) => toConversaItem(conversa, details.get(conversa.id) ?? openDetails.get(conversa.id), context.me)
+  const item = (conversa: Conversa) =>
+    toConversaItem(conversa, details.get(conversa.id) ?? openDetails.get(conversa.id), context.me, { canSend: context.canSend, adoptDeleted: context.adoptDeleted })
   return {
     conversas: shown.map(item),
     limitada: mine.length > shown.length,
@@ -166,9 +214,12 @@ export async function sendFrom(client: SupabaseServerClient, form: URLSearchPara
       request_id: requestId(form),
     }),
   )
-  const conversation = (sent as { conversation_id?: unknown } | null)?.conversation_id
+  const result = sent as { conversation_id?: unknown; message_id?: unknown } | null
+  const conversation = result?.conversation_id
   if (typeof conversation !== 'string' || !uuid.test(conversation)) throw new ActionFailure(503, 'Não foi possível confirmar o envio. Atualize a página.')
-  return { route, conversation }
+  // O id da mensagem real deixa a tela trocar a mensagem em envio pela confirmada sem piscar.
+  const message = typeof result?.message_id === 'string' && uuid.test(result.message_id) ? result.message_id : null
+  return { route, conversation, message }
 }
 
 /**

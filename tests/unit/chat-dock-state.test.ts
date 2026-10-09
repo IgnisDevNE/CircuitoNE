@@ -1,16 +1,25 @@
 import { describe, expect, it } from 'vitest'
 import {
   closeWindow,
+  dropOutgoing,
   emptyDock,
   expandWindow,
+  isRetryable,
+  markFailed,
+  markRetry,
+  markSent,
   MAX_CHAT_WINDOWS,
   mergeMessages,
   minimizeWindow,
   nameWindow,
+  newOutgoing,
   openWindow,
   parseDock,
+  pendingOutgoing,
+  pruneDelivered,
   serializeDock,
   type ChatDockState,
+  type Outgoing,
 } from '../../src/lib/chat'
 import type { Mensagem } from '../../src/server/mappers/messages'
 
@@ -102,5 +111,65 @@ describe('mergeMessages', () => {
   it('o mesmo instante desempata pelo id', () => {
     const a = { ...msg(2), cursor: msg(1).cursor }
     expect(mergeMessages([a], [msg(1)]).map((m) => m.id)).toEqual([msg(1).id, msg(2).id])
+  })
+})
+
+describe('mensagens em envio (otimista)', () => {
+  const via = `${A}>${C}`
+  const draft = (n: number) => newOutgoing({ requestId: `req-${n}`, via, body: `texto ${n}`, conversationId: null })
+  const real = (id: string): Mensagem => ({
+    id,
+    texto: 'x',
+    criadaEm: '2026-10-06T10:00:00.000Z',
+    cursor: '2026-10-06T10:00:00.000001+00:00',
+    autor: { kind: 'profile', id: 'x', nome: 'Alguém' },
+  })
+  const REAL = '0e000000-0000-4000-8000-000000000001'
+
+  it('nasce "enviando", com a chave, a rota e o texto que serão repetidos no reenvio', () => {
+    const expected: Outgoing = { requestId: 'req-1', via, body: 'texto 1', conversationId: null, status: 'sending', error: null, retryable: false, messageId: null }
+    expect(draft(1)).toEqual(expected)
+  })
+
+  it('só falha de rede, limite de envio e erro do servidor valem uma nova tentativa', () => {
+    for (const status of [0, 429, 500, 503]) expect(isRetryable(status)).toBe(true)
+    for (const status of [400, 401, 403, 404, 409, 422]) expect(isRetryable(status)).toBe(false)
+  })
+
+  it('falhou: o item fica com o motivo; "tentar de novo" volta a enviando sem mudar chave, rota nem texto', () => {
+    const failed = markFailed([draft(1), draft(2)], 'req-1', 'Sem conexão', true)
+    expect(failed.map((item) => item.status)).toEqual(['failed', 'sending'])
+    expect(failed[0]).toMatchObject({ error: 'Sem conexão', retryable: true })
+    const retried = markRetry(failed, 'req-1')
+    expect(retried[0]).toMatchObject({ requestId: 'req-1', via, body: 'texto 1', status: 'sending', error: null })
+  })
+
+  it('recusa que não passa sozinha não pode ser reenviada, e só o que falhou é reenviado', () => {
+    const refused = markFailed([draft(1)], 'req-1', 'Esta conversa está bloqueada', false)
+    expect(markRetry(refused, 'req-1')).toEqual(refused)
+    const sending = [draft(2)]
+    expect(markRetry(sending, 'req-2')).toEqual(sending)
+  })
+
+  it('confirmado com o id da mensagem real: fica até a real chegar, e então some (sem duplicar)', () => {
+    const sent = markSent([draft(1), draft(2)], 'req-1', REAL)
+    expect(sent[0]).toMatchObject({ status: 'sent', messageId: REAL })
+    expect(pendingOutgoing(sent, [real('0e000000-0000-4000-8000-000000000009')]).map((item) => item.requestId)).toEqual(['req-1', 'req-2'])
+    expect(pendingOutgoing(sent, [real(REAL)]).map((item) => item.requestId)).toEqual(['req-2'])
+    const pruned = pruneDelivered(sent, [real(REAL)])
+    expect(pruned.map((item) => item.requestId)).toEqual(['req-2'])
+    // Nada a podar: a mesma lista (sem renderização à toa).
+    expect(pruneDelivered(pruned, [real(REAL)])).toBe(pruned)
+  })
+
+  it('confirmado sem o id da mensagem real: o item sai na hora (a lista real é relida em seguida)', () => {
+    expect(markSent([draft(1), draft(2)], 'req-1', null).map((item) => item.requestId)).toEqual(['req-2'])
+  })
+
+  it('uma falha nunca some sozinha, mesmo que haja mensagens reais; só "descartar" a tira', () => {
+    const failed = markFailed([draft(1)], 'req-1', 'x', true)
+    expect(pendingOutgoing(failed, [real(REAL)])).toHaveLength(1)
+    expect(dropOutgoing(failed, 'req-1')).toEqual([])
+    expect(dropOutgoing(failed, 'outra')).toEqual(failed)
   })
 })

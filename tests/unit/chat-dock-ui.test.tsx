@@ -225,25 +225,93 @@ describe('envio', () => {
     expect(posts('/api/chat/enviar')[0].body!.get('body')).toBe('linha 1\nlinha 2')
   })
 
-  it('o mesmo texto reenviado depois de uma falha repete a chave; texto novo troca a chave', async () => {
+  /** Resposta de envio que só sai quando o teste mandar: deixa ver a tela entre "enviar" e a resposta do servidor. */
+  const gate = () => {
+    let release!: (response: Response) => void
+    const promise = new Promise<Response>((resolve) => (release = resolve))
+    return { promise, release }
+  }
+  const bubble = (text: string) => within(dialog()).getByText(text).closest('li')!
+
+  it('envio otimista: a mensagem aparece na hora como "enviando…", o campo limpa antes da resposta e a real a substitui', async () => {
     const { user } = await openWindow()
-    server.send = () => Response.json({ ok: false, error: 'Não foi possível concluir a operação. Tente novamente.' }, { status: 503 })
-    await user.type(textbox(), 'oi')
-    const button = within(dialog()).getByRole('button', { name: 'enviar' })
-    await user.click(button)
-    await waitFor(() => expect(posts('/api/chat/enviar')).toHaveLength(1))
-    await within(dialog()).findByRole('alert')
-    await user.click(button)
-    await waitFor(() => expect(posts('/api/chat/enviar')).toHaveLength(2))
-    await user.type(textbox(), '!')
-    await user.click(button)
-    await waitFor(() => expect(posts('/api/chat/enviar')).toHaveLength(3))
-    const [a, b, c] = posts('/api/chat/enviar').map((r) => r.body!.get('request_id'))
-    expect(a).toBe(b)
-    expect(c).not.toBe(a)
+    const held = gate()
+    server.send = () => held.promise
+    await user.type(textbox(), 'Oi, tudo bem?')
+    await user.click(within(dialog()).getByRole('button', { name: 'enviar' }))
+    // Sem esperar o servidor: balão na conversa, marcado, e o campo livre (com o foco de volta nele).
+    expect(within(bubble('Oi, tudo bem?')).getByRole('status').textContent).toBe('enviando…')
+    expect(textbox()).toHaveProperty('value', '')
+    expect(document.activeElement).toBe(textbox())
+    expect(within(dialog()).queryByRole('alert')).toBeNull()
+    expect(within(dialog()).queryByText('Nenhuma mensagem ainda. Escreva a primeira.')).toBeNull()
+
+    const real = msg(me, 'Oi, tudo bem?')
+    server.threads[CONV] = { mensagens: [real], maisAnteriores: false, bloqueada: false }
+    held.release(Response.json({ ok: true, message: 'Mensagem enviada.', conversation_id: CONV, message_id: real.id }))
+    // A mensagem real entra e o balão em envio sai: uma só mensagem, sem marcação.
+    await waitFor(() => expect(within(dialog()).queryByRole('status')).toBeNull())
+    expect(within(within(dialog()).getByRole('log')).getAllByText('Oi, tudo bem?')).toHaveLength(1)
   })
 
-  it('recusa do banco aparece na janela como alerta, o texto digitado fica e a conversa é relida (bloqueio)', async () => {
+  it('várias mensagens seguidas: o campo continua livre, cada uma tem a sua chave e saem na ordem de escrita', async () => {
+    const { user } = await openWindow()
+    const first = gate()
+    server.send = (fields) => (fields.get('body') === 'um' ? first.promise : Response.json({ ok: true, message: 'Mensagem enviada.', conversation_id: CONV }))
+    await user.type(textbox(), 'um{Enter}')
+    await user.type(textbox(), 'dois{Enter}')
+    expect(within(dialog()).getAllByRole('status').map((s) => s.textContent)).toEqual(['enviando…', 'enviando…'])
+    expect(textbox()).toHaveProperty('value', '')
+    // A segunda espera a primeira: a ordem no banco é a ordem em que o usuário escreveu.
+    await waitFor(() => expect(posts('/api/chat/enviar')).toHaveLength(1))
+    expect(posts('/api/chat/enviar')[0].body!.get('body')).toBe('um')
+    server.threads[CONV] = { mensagens: [msg(me, 'um'), msg(me, 'dois')], maisAnteriores: false, bloqueada: false }
+    first.release(Response.json({ ok: true, message: 'Mensagem enviada.', conversation_id: CONV }))
+    await waitFor(() => expect(posts('/api/chat/enviar')).toHaveLength(2))
+    const [a, b] = posts('/api/chat/enviar').map((r) => r.body!.get('request_id'))
+    expect(a).toMatch(/^[0-9a-f-]{36}$/)
+    expect(b).not.toBe(a)
+    await waitFor(() => expect(within(dialog()).queryByRole('status')).toBeNull())
+  })
+
+  it('falha de rede: o balão fica com "mensagem não enviada"; "tentar de novo" reenvia com a mesma chave e o mesmo texto', async () => {
+    const { user } = await openWindow()
+    server.send = () => {
+      throw new TypeError('Failed to fetch')
+    }
+    await user.type(textbox(), 'Mensagem importante')
+    await user.click(within(dialog()).getByRole('button', { name: 'enviar' }))
+    const alert = await within(dialog()).findByRole('alert')
+    expect(alert.textContent).toContain('mensagem não enviada')
+    expect(alert.textContent).toContain('Sem conexão')
+    expect(within(dialog()).getByText('Mensagem importante')).toBeTruthy()
+    expect(textbox()).toHaveProperty('value', '')
+
+    const real = msg(me, 'Mensagem importante')
+    server.threads[CONV] = { mensagens: [real], maisAnteriores: false, bloqueada: false }
+    server.send = () => Response.json({ ok: true, message: 'Mensagem enviada.', conversation_id: CONV, message_id: real.id })
+    await user.click(within(dialog()).getByRole('button', { name: /^tentar de novo: enviar "Mensagem importante"/ }))
+    expect(within(dialog()).queryByRole('alert')).toBeNull()
+    await waitFor(() => expect(posts('/api/chat/enviar')).toHaveLength(2))
+    const [a, b] = posts('/api/chat/enviar').map((r) => Object.fromEntries(r.body!))
+    expect(b).toEqual(a)
+    await waitFor(() => expect(within(dialog()).queryByText('mensagem não enviada')).toBeNull())
+    expect(within(within(dialog()).getByRole('log')).getAllByText('Mensagem importante')).toHaveLength(1)
+  })
+
+  it('"descartar" tira a mensagem que falhou da conversa, sem enviar nada', async () => {
+    const { user } = await openWindow()
+    server.send = () => Response.json({ ok: false, error: 'Não foi possível concluir a operação. Tente novamente.' }, { status: 503 })
+    await user.type(textbox(), 'Desisti')
+    await user.click(within(dialog()).getByRole('button', { name: 'enviar' }))
+    expect((await within(dialog()).findByRole('alert')).textContent).toContain('mensagem não enviada')
+    await user.click(within(dialog()).getByRole('button', { name: /^descartar a mensagem não enviada "Desisti"/ }))
+    expect(within(dialog()).queryByText('Desisti')).toBeNull()
+    expect(within(dialog()).queryByRole('alert')).toBeNull()
+    expect(posts('/api/chat/enviar')).toHaveLength(1)
+  })
+
+  it('recusa do banco (bloqueio): "mensagem não enviada" com o motivo, sem "tentar de novo", e a conversa é relida', async () => {
     server.open = withHistory([msg(other, 'Oi')])
     const { user } = await openWindow()
     await within(dialog()).findByRole('log')
@@ -251,8 +319,13 @@ describe('envio', () => {
     server.threads[CONV] = { mensagens: [msg(other, 'Oi')], maisAnteriores: false, bloqueada: true }
     await user.type(textbox(), 'Não deve passar')
     await user.click(within(dialog()).getByRole('button', { name: 'enviar' }))
-    expect((await within(dialog()).findByRole('alert')).textContent).toContain('Esta conversa está bloqueada')
-    expect(textbox()).toHaveProperty('value', 'Não deve passar')
+    const alert = await within(dialog()).findByRole('alert')
+    expect(alert.textContent).toContain('mensagem não enviada')
+    expect(alert.textContent).toContain('Esta conversa está bloqueada')
+    expect(within(dialog()).getByText('Não deve passar')).toBeTruthy()
+    // Tentar de novo não adianta: só descartar.
+    expect(within(dialog()).queryByRole('button', { name: /tentar de novo/ })).toBeNull()
+    expect(within(dialog()).getByRole('button', { name: /^descartar/ })).toBeTruthy()
     // A leitura seguinte trouxe o bloqueio: o campo vira somente leitura e o envio fica desligado.
     await waitFor(() => expect(textbox().hasAttribute('readonly')).toBe(true))
     expect(within(dialog()).getByText(/Conversa bloqueada: ninguém envia mensagens/)).toBeTruthy()

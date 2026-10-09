@@ -271,6 +271,8 @@ export function parseProfessionalForm(form: URLSearchParams, kind: AtuacaoTipo):
 
 export const PASSWORD_MIN = 8
 export const PASSWORD_MAX = 72
+/** Limite só de sanidade para a senha atual digitada (o Auth aceita senhas antigas, mais longas que `PASSWORD_MAX`). */
+const PASSWORD_MAX_CHECK = 256
 
 export function parsePasswordForm(form: URLSearchParams): Parsed<{ current: string; next: string }> {
   const errors: FieldErrors = {}
@@ -285,12 +287,18 @@ export function parsePasswordForm(form: URLSearchParams): Parsed<{ current: stri
   return failure(errors, {}) ?? { ok: true, payload: { current, next } }
 }
 
-export function parseEmailForm(form: URLSearchParams, currentEmail: string | null): Parsed<{ email: string }> {
+/** Senha atual (campo `atual`), exigida para trocar o e-mail e para pedir a exclusão da conta. Nunca volta ao formulário. */
+export const CURRENT_PASSWORD_REQUIRED = 'Informe a senha atual.'
+
+export function parseEmailForm(form: URLSearchParams, currentEmail: string | null): Parsed<{ email: string; current: string }> {
   const errors: FieldErrors = {}
   const email = text(form, 'email')
+  const current = form.get('atual') ?? ''
   if (!validEmail(email)) errors.email = 'Informe um e-mail válido.'
   else if (email.toLowerCase() === currentEmail?.toLowerCase()) errors.email = 'Este já é o e-mail da conta.'
-  return failure(errors, { email }) ?? { ok: true, payload: { email } }
+  if (!current) errors.atual = CURRENT_PASSWORD_REQUIRED
+  else if (current.length > PASSWORD_MAX_CHECK) errors.atual = 'Senha atual incorreta.'
+  return failure(errors, { email }) ?? { ok: true, payload: { email, current } }
 }
 
 /** Código do aplicativo autenticador: 6 dígitos (espaços são tolerados). */
@@ -306,4 +314,15 @@ export function parseMfaCode(form: URLSearchParams): Parsed<{ factorId: string; 
 export function parseConfirmation(form: URLSearchParams, expected: string): Parsed<true> {
   if (text(form, 'confirmacao') === expected) return { ok: true, payload: true }
   return { ok: false, errors: { confirmacao: `Digite ${expected} para confirmar.` }, values: {} }
+}
+
+/** Pedido de exclusão da conta: a confirmação digitada e a senha atual. Os dois erros aparecem juntos. */
+export function parseDeletionForm(form: URLSearchParams): Parsed<{ current: string }> {
+  const errors: FieldErrors = {}
+  const confirmation = parseConfirmation(form, CONFIRM_DELETE_ACCOUNT)
+  if (!confirmation.ok) Object.assign(errors, confirmation.errors)
+  const current = form.get('atual') ?? ''
+  if (!current) errors.atual = CURRENT_PASSWORD_REQUIRED
+  else if (current.length > PASSWORD_MAX_CHECK) errors.atual = 'Senha atual incorreta.'
+  return failure(errors, {}) ?? { ok: true, payload: { current } }
 }

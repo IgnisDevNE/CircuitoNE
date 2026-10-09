@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { loginAction } from '../../src/server/auth.server'
+import { sessionCookie, AUTH_USER } from './session-cookie'
 import { collectiveEditAction, collectiveMembersAction, collectiveProfileAction, TRANSFER_NEEDS_MFA } from '../../src/server/collective-manage.server'
 
 const origin = 'https://circuitone-dev.magalz.space'
@@ -40,6 +41,7 @@ beforeEach(() => {
           token_type: 'bearer',
           user: { id: OWNER, email: 'owner@example.invalid', factors: [{ id: 'F', status: 'verified', factor_type: 'totp' }] },
         })
+      if (path === '/auth/v1/user') return AUTH_USER(OWNER)
       if (path === '/rest/v1/rpc/get_account_session') return Response.json({ id: OWNER, name: 'Dona sintética', state: 'active', reason: null })
       if (!path.startsWith('/rest/v1/rpc/')) throw new Error(`HTTP inesperado: ${path}`)
       const name = path.replace('/rest/v1/rpc/', '')
@@ -71,7 +73,7 @@ const post = (path: string, fields: Record<string, string | string[]>, init: { h
   for (const [key, value] of Object.entries(fields)) for (const v of Array.isArray(value) ? value : [value]) body.append(key, v)
   return new Request(origin + path, {
     method: init.method ?? 'POST',
-    headers: { Origin: origin, 'Content-Type': 'application/x-www-form-urlencoded', ...init.headers },
+    headers: { Origin: origin, Cookie: sessionCookie(OWNER), 'Content-Type': 'application/x-www-form-urlencoded', ...init.headers },
     body: init.body ?? body,
   })
 }
@@ -370,5 +372,42 @@ describe('collectiveMembersAction', () => {
     expect(await members({ intent: 'assign', member: MEMBER })).toMatchObject({ ok: false, status: 400 })
     expect(await members({ intent: 'remove', member: '' })).toMatchObject({ ok: false, status: 400 })
     expect(sent).toEqual([])
+  })
+})
+
+describe('sessão antes do corpo (envio da imagem do coletivo)', () => {
+  const tracked = (headers: Record<string, string>) => {
+    const state = { pulls: 0 }
+    const body = new ReadableStream<Uint8Array>(
+      {
+        pull(controller) {
+          state.pulls++
+          controller.enqueue(new Uint8Array(1024))
+        },
+      },
+      { highWaterMark: 0 },
+    )
+    const request = new Request(`${origin}/coletivo/${C}/perfil`, { method: 'POST', headers: { Origin: origin, 'Content-Type': 'multipart/form-data; boundary=zzz', ...headers }, body, duplex: 'half' } as RequestInit)
+    return { request, state }
+  }
+
+  it('visitante: 401 sem ler o corpo nem consultar o Auth', async () => {
+    const { request, state } = tracked({})
+    expect(await outcome(collectiveProfileAction(request, C))).toMatchObject({ ok: false, status: 401 })
+    expect(state.pulls).toBe(0)
+    expect(vi.mocked(fetch)).not.toHaveBeenCalled()
+  })
+
+  it('sessão sem conta (invalidada): 401 sem ler o corpo', async () => {
+    const cookie = await signIn()
+    vi.mocked(fetch).mockImplementation(async (url) => {
+      const path = new URL(String(url)).pathname
+      if (path === '/auth/v1/user') return AUTH_USER(OWNER)
+      if (path === '/rest/v1/rpc/get_account_session') return Response.json(null)
+      throw new Error(`HTTP inesperado: ${path}`)
+    })
+    const { request, state } = tracked({ Cookie: cookie })
+    expect(await outcome(collectiveProfileAction(request, C))).toMatchObject({ ok: false, status: 401 })
+    expect(state.pulls).toBe(0)
   })
 })

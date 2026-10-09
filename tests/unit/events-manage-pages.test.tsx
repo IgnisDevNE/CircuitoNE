@@ -287,8 +287,8 @@ describe('ManageEvent', () => {
   })
 
   it('gestão: com capa enviada mostra a prévia e a opção de remover; o campo vira "substituir"', () => {
-    page({ evento: evento({ capaEnviada: 'https://synthetic.supabase.test/storage/v1/object/public/public-images/x/y.png' }) })
-    expect(screen.getByRole('img', { name: /Capa enviada do evento Evento sintético 5/ }).getAttribute('src')).toMatch(/public-images/)
+    page({ evento: evento({ capaEnviada: '/img/x/y.png' }) })
+    expect(screen.getByRole('img', { name: /Capa enviada do evento Evento sintético 5/ }).getAttribute('src')).toBe('/img/x/y.png')
     expect(field('remove_cover').type).toBe('checkbox')
     expect(screen.getByLabelText(/Substituir a capa/)).toBe(field('cover_file'))
   })

@@ -8,12 +8,15 @@ import { collectiveProfileAction } from '../../src/server/collective-manage.serv
 import { eventManageAction } from '../../src/server/events-manage.server'
 import { profileAction } from '../../src/server/account-settings.server'
 import type { SupabaseServerClient } from '../../src/server/supabase.server'
+import { sessionCookie } from './session-cookie'
 
 const origin = 'https://circuitone-dev.magalz.space'
 const SUPABASE = 'https://odphoxozclrshqjgwbqk.supabase.co'
 const C = '05000000-0000-4000-8000-000000000001'
 const E = '0a000000-0000-4000-8000-000000000005'
 const P = '02000000-0000-4000-8000-000000000001'
+/** Sessão do titular: as ações com envio de arquivo conferem o cookie antes de ler o corpo. */
+const SESSION = sessionCookie('A')
 const OLD = (id: string, name: string, ext = 'png') => `${id}/${name}.${ext}`
 
 const PNG = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3, 4])
@@ -69,22 +72,17 @@ describe('boundedMultipart / boundedBody', () => {
 // ---- Funções do Storage ----
 
 describe('publicImageUrl', () => {
-  beforeEach(() => vi.stubEnv('SUPABASE_URL', SUPABASE + '/'))
-  afterEach(() => vi.unstubAllEnvs())
-
-  it('monta a URL pública do bucket público, sem barra duplicada', () => {
-    expect(publicImageUrl(OLD(P, 'foto'))).toBe(`${SUPABASE}/storage/v1/object/public/public-images/${P}/foto.png`)
+  it('monta a URL relativa da rota /img (o bucket é privado), sem depender do Supabase', () => {
+    expect(publicImageUrl(OLD(P, 'foto'))).toBe(`/img/${P}/foto.png`)
     expect(publicImageUrl(OLD(P, 'foto', 'webp'))).toMatch(/foto\.webp$/)
   })
 
-  it('sem caminho, sem Supabase ou com caminho fora do formato das constraints: nulo', () => {
+  it('sem caminho ou com caminho fora do formato das constraints: nulo', () => {
     expect(publicImageUrl(null)).toBeNull()
     expect(publicImageUrl(undefined)).toBeNull()
     expect(publicImageUrl('')).toBeNull()
     for (const bad of [`${P}/sub/foto.png`, `${P}/foto.gif`, `${P}/foto.pdf`, '../etc/passwd', `${'0A000000-0000-4000-8000-000000000001'}/foto.png`, `${P}/foto.png?x=1`, `${P}/%2e%2e.png`])
       expect(publicImageUrl(bad)).toBeNull()
-    vi.stubEnv('SUPABASE_URL', '')
-    expect(publicImageUrl(OLD(P, 'foto'))).toBeNull()
   })
 })
 
@@ -136,7 +134,7 @@ describe('storeUpload / removeStored', () => {
     const second = await storeUpload(client, 'image', P, prepared)
     expect(first).toMatch(new RegExp(`^${P}/[0-9a-f-]{36}\\.png$`))
     expect(second).not.toBe(first)
-    expect(uploads[0]).toMatchObject({ bucket: 'public-images', path: first, size: PNG.length, options: { contentType: 'image/png', upsert: false, cacheControl: '31536000' } })
+    expect(uploads[0]).toMatchObject({ bucket: 'public-images', path: first, size: PNG.length, options: { contentType: 'image/png', upsert: false, cacheControl: '300' } })
     await storeUpload(client, 'document', P, { ...prepared, bytes: PDF, extension: 'pdf', contentType: 'application/pdf', size: PDF.length })
     expect(uploads[2]).toMatchObject({ bucket: 'private-documents', options: { contentType: 'application/pdf', upsert: false } })
     expect(uploads[2].path).toMatch(/\.pdf$/)
@@ -253,7 +251,7 @@ const outcome = async (promise: Promise<unknown> | unknown): Promise<Outcome> =>
 
 describe('collectiveProfileAction: imagem do coletivo', () => {
   const path = `/coletivo/${C}/perfil`
-  const send = (fields: Record<string, string | File>) => outcome(collectiveProfileAction(multipart(path, fields), C))
+  const send = (fields: Record<string, string | File>) => outcome(collectiveProfileAction(multipart(path, fields, { Cookie: SESSION }), C))
 
   it('envia o arquivo, grava a referência e só então apaga a imagem anterior', async () => {
     rpcAnswers.set_collective_image = ok(OLD(C, 'antiga'))
@@ -292,7 +290,8 @@ describe('collectiveProfileAction: imagem do coletivo', () => {
       expect(result).toMatchObject({ ok: false, status: 422, error: expect.stringMatching(text), fields: { arquivo: expect.stringMatching(text) } })
     }
     expect(await send({ intent: 'upload-image' })).toMatchObject({ ok: false, status: 422, fields: { arquivo: 'Escolha um arquivo para enviar.' } })
-    expect(calls).toEqual([])
+    expect(rpcCalls()).toEqual([])
+    expect(calls.some((call) => call.path.startsWith('/storage'))).toBe(false)
   })
 
   it('falha do Storage vira indisponibilidade e a referência não é gravada', async () => {
@@ -303,7 +302,7 @@ describe('collectiveProfileAction: imagem do coletivo', () => {
 
   it('remover: caminho nulo no banco e depois apaga o objeto', async () => {
     rpcAnswers.set_collective_image = ok(OLD(C, 'atual'))
-    const result = await outcome(collectiveProfileAction(new Request(origin + path, { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'intent=remove-image' }), C))
+    const result = await outcome(collectiveProfileAction(new Request(origin + path, { method: 'POST', headers: { Origin: origin, Cookie: SESSION, 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'intent=remove-image' }), C))
     expect(result).toMatchObject({ ok: true, message: expect.stringContaining('Imagem removida') })
     expect(rpcBody('set_collective_image')).toEqual({ target: C, object_path: null })
     expect(removedPaths()).toEqual([OLD(C, 'atual')])
@@ -312,14 +311,15 @@ describe('collectiveProfileAction: imagem do coletivo', () => {
   it('a edição de texto continua urlencoded e não mexe no Storage', async () => {
     rpcAnswers.edit_collective = () => new Response(null, { status: 204 })
     const body = new URLSearchParams({ version: '4', description: 'Nova', youtube: '' })
-    const result = await outcome(collectiveProfileAction(new Request(origin + path, { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/x-www-form-urlencoded' }, body }), C))
+    const result = await outcome(collectiveProfileAction(new Request(origin + path, { method: 'POST', headers: { Origin: origin, Cookie: SESSION, 'Content-Type': 'application/x-www-form-urlencoded' }, body }), C))
     expect(result).toMatchObject({ ok: true, message: 'Perfil público atualizado.' })
     expect(calls.some((call) => call.path.startsWith('/storage'))).toBe(false)
   })
 
   it('multipart grande demais: 413 sem tocar no banco', async () => {
     expect(await send({ intent: 'upload-image', arquivo: upload(new Uint8Array(5_300_000)) })).toMatchObject({ ok: false, status: 413 })
-    expect(calls).toEqual([])
+    expect(rpcCalls()).toEqual([])
+    expect(calls.some((call) => call.path.startsWith('/storage'))).toBe(false)
   })
 })
 
@@ -328,7 +328,7 @@ describe('eventManageAction: capa do evento', () => {
   const fields = (extra: Record<string, string | File> = {}) => ({
     intent: 'update', version: '3', name: 'Festa', kind: 'festa', style: 'techno', starts_at: '2030-05-10T20:00', state_code: 'PE', city: 'Recife', venue: 'Pátio', is_free: 'on', ...extra,
   })
-  const send = (extra: Record<string, string | File> = {}) => outcome(eventManageAction(multipart(path, fields(extra)), C, E))
+  const send = (extra: Record<string, string | File> = {}) => outcome(eventManageAction(multipart(path, fields(extra), { Cookie: SESSION }), C, E))
   const payload = () => rpcBody('update_event').payload as Record<string, unknown>
 
   beforeEach(() => {
@@ -390,7 +390,7 @@ describe('eventManageAction: capa do evento', () => {
 
   it('publicar e cancelar continuam urlencoded (sem multipart)', async () => {
     rpcAnswers.publish_event = () => new Response(null, { status: 204 })
-    const request = new Request(origin + path, { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'intent=publish&version=3' })
+    const request = new Request(origin + path, { method: 'POST', headers: { Origin: origin, Cookie: SESSION, 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'intent=publish&version=3' })
     expect(await outcome(eventManageAction(request, C, E))).toMatchObject({ ok: true })
   })
 })
@@ -504,7 +504,7 @@ describe('profileAction: fotos e documentos (ponta a ponta)', () => {
   it('remoção recusada pelo banco não apaga o objeto', async () => {
     rpcAnswers.get_my_profile = ok(artistRow())
     rpcAnswers.detach_profile_image = dbError('22023', 'Imagem indisponível')
-    expect(await send({ intent: 'remove-gallery', imagem: '03000000-0000-4000-8000-000000000001' })).toMatchObject({ ok: false, status: 400, message: 'Imagem indisponível' })
+    expect(await send({ intent: 'remove-gallery', imagem: '03000000-0000-4000-8000-000000000001' })).toMatchObject({ ok: false, status: 400, message: expect.stringContaining('Esta imagem não está mais disponível') })
     expect(storageCalls('DELETE')).toEqual([])
   })
 

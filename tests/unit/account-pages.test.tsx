@@ -257,7 +257,7 @@ describe('EditProfile: fotos e documentos (W11)', () => {
     inRouter(<EditProfile perfil={perfil({ images: [image(0), image(1), image(2), image(3, 5_000_000)] })} taxonomia={taxonomia} />)
     const panel = screen.getByRole('heading', { name: 'fotos' }).closest('section')!
     const main = within(panel).getByRole('img', { name: 'Foto principal de Artista sintético público' })
-    expect(main.getAttribute('src')).toBe(`https://synthetic.supabase.test/storage/v1/object/public/public-images/${ID}/img0.png`)
+    expect(main.getAttribute('src')).toBe(`/img/${ID}/img0.png`)
     expect(within(panel).getByText('galeria (3/10)')).toBeTruthy()
     const gallery = within(panel).getAllByRole('img').filter((img) => img.getAttribute('alt')?.includes('galeria'))
     expect(gallery.map((img) => img.getAttribute('src')!.split('/').pop())).toEqual(['img1.png', 'img2.png', 'img3.png'])
@@ -354,9 +354,46 @@ describe('Security', () => {
     expect(screen.getByRole('button', { name: 'enviar confirmação' })).toBeTruthy()
   })
 
+  const formOf = (intent: string) => document.querySelector(`input[name="intent"][value="${intent}"]`)!.closest('form') as HTMLFormElement
+
+  it('e-mail e exclusão pedem a senha atual (campo com rótulo próprio, senha oculta e sem valor devolvido)', () => {
+    inRouter(
+      <Security
+        seguranca={seguranca()}
+        result={fail('change-email', { atual: 'Senha atual incorreta.' }, { values: { email: 'novo@example.invalid' } })}
+      />,
+    )
+    const email = within(formOf('change-email'))
+    const field = email.getByLabelText(/Senha atual/) as HTMLInputElement
+    expect(field.name).toBe('atual')
+    expect(field.type).toBe('password')
+    expect(field.value).toBe('')
+    expect(field.getAttribute('autocomplete')).toBe('current-password')
+    expect(field.getAttribute('aria-required')).toBe('true')
+    expect(field.getAttribute('aria-invalid')).toBe('true')
+    expect(field.getAttribute('aria-describedby')).toBeTruthy()
+    expect(document.getElementById(field.getAttribute('aria-describedby')!)!.textContent).toBe('[erro] Senha atual incorreta.')
+    expect((email.getByLabelText(/Novo e-mail/) as HTMLInputElement).value).toBe('novo@example.invalid')
+
+    const deletion = within(formOf('request-deletion')).getByLabelText(/Senha atual/) as HTMLInputElement
+    expect(deletion).toMatchObject({ name: 'atual', type: 'password' })
+    expect(deletion.getAttribute('autocomplete')).toBe('current-password')
+    expect(deletion.getAttribute('aria-invalid')).toBe('false')
+    // Cada formulário mostra só os próprios erros.
+    expect(within(formOf('request-deletion')).queryByText(/Senha atual incorreta/)).toBeNull()
+    expect(within(formOf('change-password')).queryByText(/Senha atual incorreta/)).toBeNull()
+  })
+
+  it('exclusão: erro de senha atual junto do campo', () => {
+    inRouter(<Security seguranca={seguranca()} result={fail('request-deletion', { atual: 'Informe a senha atual.', confirmacao: 'Digite EXCLUIR MINHA CONTA para confirmar.' })} />)
+    const form = within(formOf('request-deletion'))
+    expect(form.getByText('[erro] Informe a senha atual.')).toBeTruthy()
+    expect(form.getByText('[erro] Digite EXCLUIR MINHA CONTA para confirmar.')).toBeTruthy()
+  })
+
   it('senha: campos com autocomplete correto e erros junto dos campos, sem devolver valores', () => {
     inRouter(<Security seguranca={seguranca()} result={fail('change-password', { atual: 'Senha atual incorreta.', conf: 'As senhas não coincidem.' })} />)
-    expect(screen.getByLabelText(/Senha atual/).getAttribute('autocomplete')).toBe('current-password')
+    expect(within(formOf('change-password')).getByLabelText(/Senha atual/).getAttribute('autocomplete')).toBe('current-password')
     expect(screen.getByLabelText(/^\$ Nova senha/).getAttribute('autocomplete')).toBe('new-password')
     expect(screen.getByText('[erro] Senha atual incorreta.')).toBeTruthy()
     expect(screen.getByText('[erro] As senhas não coincidem.')).toBeTruthy()
@@ -549,7 +586,8 @@ describe('módulos de rota', () => {
       action: () => data<ActionResult>(fail('change-password', { atual: 'Senha atual incorreta.' }), { status: 400 }),
     })
     const user = userEvent.setup()
-    await user.type(await screen.findByLabelText(/Senha atual/), 'x')
+    const passwordForm = (await screen.findByRole('button', { name: 'alterar senha' })).closest('form') as HTMLFormElement
+    await user.type(within(passwordForm).getByLabelText(/Senha atual/), 'x')
     await user.click(screen.getByRole('button', { name: 'alterar senha' }))
     expect(await screen.findByText('[erro] Senha atual incorreta.')).toBeTruthy()
   })

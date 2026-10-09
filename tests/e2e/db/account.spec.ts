@@ -336,10 +336,14 @@ for (const [label, account, notice, profile] of [
   })
 }
 
+/** Painel da página de segurança (cada um tem o próprio campo "Senha atual": e-mail, senha e exclusão). */
+const securityPanel = (page: Page, title: string) => page.locator('section', { has: page.getByRole('heading', { level: 2, name: title, exact: true }) })
+
 test('senha: atual errada é recusada pelo Auth e a sessão continua válida', async ({ page }) => {
   await login(page, accounts.member.email)
   await open(page, '/painel/seguranca')
-  await page.getByLabel(/Senha atual/).fill('senha-errada-qualquer')
+  const passwordPanel = securityPanel(page, 'alterar senha')
+  await passwordPanel.getByLabel(/Senha atual/).fill('senha-errada-qualquer')
   await page.getByLabel(/Nova senha/).fill('nova-senha-segura-123')
   await page.getByLabel(/Confirmar nova senha/).fill('nova-senha-segura-123')
   await page.getByRole('button', { name: 'alterar senha' }).click()
@@ -354,7 +358,7 @@ test('senha: atual errada é recusada pelo Auth e a sessão continua válida', a
 test('senha e e-mail: validações locais antes de qualquer chamada ao Auth', async ({ page }) => {
   await login(page, accounts.member.email)
   await open(page, '/painel/seguranca')
-  await page.getByLabel(/Senha atual/).fill(fixturePassword)
+  await securityPanel(page, 'alterar senha').getByLabel(/Senha atual/).fill(fixturePassword)
   await page.getByLabel(/Nova senha/).fill('curta')
   await page.getByLabel(/Confirmar nova senha/).fill('outra')
   await page.getByRole('button', { name: 'alterar senha' }).click()
@@ -363,13 +367,35 @@ test('senha e e-mail: validações locais antes de qualquer chamada ao Auth', as
   await expect(status(page)).toHaveCount(0)
 
   await expect(page.getByText(accounts.member.email, { exact: true })).toBeVisible()
+  const emailPanel = securityPanel(page, 'alterar e-mail')
+  await emailPanel.getByLabel(/Senha atual/).fill(fixturePassword)
   await page.getByLabel(/Novo e-mail/).fill('sem-arroba')
   await page.getByRole('button', { name: 'enviar confirmação' }).click()
   await expect(page.getByText('[erro] Informe um e-mail válido.')).toBeVisible()
   await page.getByLabel(/Novo e-mail/).fill(accounts.member.email.toUpperCase())
+  await emailPanel.getByLabel(/Senha atual/).fill(fixturePassword)
   await page.getByRole('button', { name: 'enviar confirmação' }).click()
   await expect(page.getByText('[erro] Este já é o e-mail da conta.')).toBeVisible()
   await expect(status(page)).toHaveCount(0)
+})
+
+test('e-mail: trocar exige a senha atual (vazia ou errada é recusada, e o e-mail da conta não muda)', async ({ page }) => {
+  await login(page, accounts.member.email)
+  await open(page, '/painel/seguranca')
+  const emailPanel = securityPanel(page, 'alterar e-mail')
+  await emailPanel.getByLabel(/Novo e-mail/).fill('troca-sem-senha@example.invalid')
+  await page.getByRole('button', { name: 'enviar confirmação' }).click()
+  await expect(emailPanel.getByText('[erro] Informe a senha atual.')).toBeVisible()
+  // O e-mail digitado volta ao campo; a senha nunca volta.
+  await expect(emailPanel.getByLabel(/Novo e-mail/)).toHaveValue('troca-sem-senha@example.invalid')
+  await expect(emailPanel.getByLabel(/Senha atual/)).toHaveValue('')
+  await emailPanel.getByLabel(/Senha atual/).fill('senha-errada-qualquer')
+  await page.getByRole('button', { name: 'enviar confirmação' }).click()
+  await expect(emailPanel.getByText('[erro] Senha atual incorreta.')).toBeVisible()
+  await expect(status(page)).toHaveCount(0)
+  // Nada foi pedido ao Auth: não há e-mail pendente de confirmação.
+  await page.goto('/painel/seguranca')
+  await expect(page.getByText(/Aguardando confirmação do novo e-mail/)).toHaveCount(0)
 })
 
 test('exclusão da conta exige a confirmação digitada; sem ela a conta continua ativa', async ({ page }) => {
@@ -378,6 +404,13 @@ test('exclusão da conta exige a confirmação digitada; sem ela a conta continu
   await page.getByLabel(/Digite EXCLUIR MINHA CONTA/).fill('excluir')
   await page.getByRole('button', { name: 'solicitar exclusão da conta' }).click()
   await expect(page.getByText('[erro] Digite EXCLUIR MINHA CONTA para confirmar.')).toBeVisible()
+  await expect(page.getByText('[erro] Informe a senha atual.')).toBeVisible()
+  // Confirmação certa, mas senha errada: a exclusão também é recusada.
+  const deletion = securityPanel(page, 'excluir conta')
+  await deletion.getByLabel(/Digite EXCLUIR MINHA CONTA/).fill('EXCLUIR MINHA CONTA')
+  await deletion.getByLabel(/Senha atual/).fill('senha-errada-qualquer')
+  await page.getByRole('button', { name: 'solicitar exclusão da conta' }).click()
+  await expect(deletion.getByText('[erro] Senha atual incorreta.')).toBeVisible()
   await page.goto('/painel')
   await expect(page.getByRole('heading', { level: 1 })).toContainText('olá, Membro')
   await expect(page.getByText('A exclusão da sua conta está em análise.')).toHaveCount(0)

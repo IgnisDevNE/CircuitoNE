@@ -1,10 +1,10 @@
 import { data, redirect } from 'react-router'
 import type { Json } from '../types/database.generated'
 import {
-  CONFIRM_DELETE_ACCOUNT,
   CONFIRM_DELETE_PROFILE,
   parseAccountForm,
   parseConfirmation,
+  parseDeletionForm,
   parseEmailForm,
   parseMfaCode,
   parsePasswordForm,
@@ -17,8 +17,8 @@ import {
   type MfaEnrollment,
 } from '../lib/account-forms'
 import { GALLERY_MAX, DOCUMENT_MAX_BYTES } from '../lib/uploads'
-import { boundedBody, readAccountSession, type UploadedFiles } from './auth.server'
-import { ActionFailure, UPLOAD_TIMEOUT_MS } from './mutation.server'
+import { boundedBody, hasAuthCookie, readAccountSession, type UploadedFiles } from './auth.server'
+import { ActionFailure, knownFailure, UPLOAD_TIMEOUT_MS } from './mutation.server'
 import { readUpload, removeStored, returnedPath, storeUpload } from './storage.server'
 import { confirmationUrl } from './registration.server'
 import { loadEnvironmentFlags } from './environment.server'
@@ -130,11 +130,14 @@ const fail = (
 
 type RpcError = { code?: string; message?: string }
 
-/** Erros de RPC: nossas mensagens (22023/55000) são mostradas; o resto vira texto genérico. */
+/**
+ * Erros de RPC: recusa (42501) vira 403 genérico; as mensagens que o banco levanta de propósito (22023/55000) só chegam à
+ * tela se estiverem na lista compartilhada de `mutation.server.ts` (já traduzidas); o resto vira texto genérico.
+ */
 function rpcFailure(intent: FormIntent, error: RpcError): Outcome {
   if (error.code === '42501') return fail(intent, {}, { message: 'Esta operação não é permitida para a sua conta.', status: 403 })
-  if ((error.code === '22023' || error.code === '55000') && error.message)
-    return fail(intent, {}, { message: error.message, status: error.code === '55000' ? 409 : 400 })
+  const known = error.code === '22023' || error.code === '55000' ? knownFailure(error) : undefined
+  if (known) return fail(intent, known.fields ?? {}, { message: known.message, status: known.status })
   return fail(intent, {}, { message: UNAVAILABLE, status: 503 })
 }
 
@@ -158,14 +161,17 @@ export async function accountAction(
     request.headers.get('sec-fetch-site') === 'cross-site'
   )
     return deny(403, 'Origem recusada.')
+  // Sem cookie de sessão, nem o corpo nem o Auth são consultados (um visitante não faz o servidor receber um upload).
+  if (!hasAuthCookie(request)) return redirect('/entrar', { headers, status: 303 })
   let outcome: Outcome
   try {
-    const { form, files } = await boundedBody(request, options)
     const client = createSupabaseServerClient(request, headers, options.uploadLimit ? { timeoutMs: UPLOAD_TIMEOUT_MS } : {})
+    // A sessão é validada antes de ler o corpo.
     const session = await readAccountSession(client, request, headers)
     if (session.kind === 'error') return deny(503, session.message)
     if (session.kind === 'anonymous') return redirect('/entrar', { headers, status: 303 })
     if (session.account.state !== 'active') return deny(403, 'Esta conta não pode realizar esta operação.')
+    const { form, files } = await boundedBody(request, options)
     outcome = await handle({ client, form, files, request })
   } catch (error) {
     if (error instanceof Response) return deny(error.status, error.status === 413 ? 'Dados grandes demais.' : 'Formato de envio não aceito.')
@@ -394,15 +400,31 @@ function authFailure(intent: FormIntent, error: AuthFailure): Outcome {
   return fail(intent, {}, { message: UNAVAILABLE, status: 503 })
 }
 
+/**
+ * Reconfere a senha atual (campo `atual`) antes de uma operação sensível: troca de senha, de e-mail e pedido de exclusão.
+ * Devolve o resultado de falha a mostrar, ou `null` quando a senha confere.
+ */
+async function rejectedPassword(
+  intent: FormIntent,
+  email: string,
+  current: string,
+  verify: PasswordVerifier,
+  values?: FormValues,
+): Promise<Outcome | null> {
+  const check = await verify(email, current)
+  if (check === 'wrong') return fail(intent, { atual: 'Senha atual incorreta.' }, { values })
+  if (check === 'limited') return fail(intent, {}, { message: RATE_LIMITED, status: 429, values })
+  if (check === 'unavailable') return fail(intent, {}, { message: UNAVAILABLE, status: 503, values })
+  return null
+}
+
 export async function changePassword(client: SupabaseServerClient, form: URLSearchParams, verify: PasswordVerifier): Promise<Outcome> {
   const parsed = parsePasswordForm(form)
   if (!parsed.ok) return fail('change-password', parsed.errors)
   const { data: user } = await client.auth.getUser()
   if (!user.user?.email) return fail('change-password', {}, { message: UNAVAILABLE, status: 503 })
-  const check = await verify(user.user.email, parsed.payload.current)
-  if (check === 'wrong') return fail('change-password', { atual: 'Senha atual incorreta.' })
-  if (check === 'limited') return fail('change-password', {}, { message: RATE_LIMITED, status: 429 })
-  if (check === 'unavailable') return fail('change-password', {}, { message: UNAVAILABLE, status: 503 })
+  const rejected = await rejectedPassword('change-password', user.user.email, parsed.payload.current, verify)
+  if (rejected) return rejected
   const { error } = await client.auth.updateUser({ password: parsed.payload.next })
   if (error) {
     if (error.code === 'same_password') return fail('change-password', { nova: 'A nova senha deve ser diferente da atual.' })
@@ -412,11 +434,14 @@ export async function changePassword(client: SupabaseServerClient, form: URLSear
   return ok('change-password', 'Senha alterada.')
 }
 
-export async function changeEmail(client: SupabaseServerClient, form: URLSearchParams): Promise<Outcome> {
+export async function changeEmail(client: SupabaseServerClient, form: URLSearchParams, verify: PasswordVerifier): Promise<Outcome> {
   const { data: user } = await client.auth.getUser()
-  if (!user.user) return fail('change-email', {}, { message: UNAVAILABLE, status: 503 })
-  const parsed = parseEmailForm(form, user.user.email ?? null)
+  if (!user.user?.email) return fail('change-email', {}, { message: UNAVAILABLE, status: 503 })
+  const parsed = parseEmailForm(form, user.user.email)
   if (!parsed.ok) return fail('change-email', parsed.errors, { values: parsed.values })
+  // Trocar o e-mail muda como a conta é recuperada: exige a senha atual, como a troca de senha.
+  const rejected = await rejectedPassword('change-email', user.user.email, parsed.payload.current, verify, { email: parsed.payload.email })
+  if (rejected) return rejected
   const { error } = await client.auth.updateUser({ email: parsed.payload.email }, { emailRedirectTo: confirmationUrl() })
   if (error) {
     // Não confirma se o endereço já pertence a outra conta.
@@ -522,9 +547,14 @@ export async function cancelMfa(client: SupabaseServerClient, form: URLSearchPar
 }
 
 /** Pedido de exclusão (RN-34): confirmação digitada; o layout passa a mostrar o aviso de exclusão pendente. */
-export async function requestDeletion(client: SupabaseServerClient, form: URLSearchParams): Promise<Outcome> {
-  const confirmation = parseConfirmation(form, CONFIRM_DELETE_ACCOUNT)
-  if (!confirmation.ok) return fail('request-deletion', confirmation.errors)
+export async function requestDeletion(client: SupabaseServerClient, form: URLSearchParams, verify: PasswordVerifier): Promise<Outcome> {
+  const parsed = parseDeletionForm(form)
+  if (!parsed.ok) return fail('request-deletion', parsed.errors)
+  const { data: user } = await client.auth.getUser()
+  if (!user.user?.email) return fail('request-deletion', {}, { message: UNAVAILABLE, status: 503 })
+  // A exclusão também exige a senha atual: uma sessão esquecida aberta não basta para apagar a conta.
+  const rejected = await rejectedPassword('request-deletion', user.user.email, parsed.payload.current, verify)
+  if (rejected) return rejected
   const { error } = await client.rpc('request_account_deletion')
   if (error) return rpcFailure('request-deletion', error)
   return { redirectTo: '/painel' }
@@ -538,7 +568,7 @@ export const securityAction = (request: Request) =>
         case 'change-password':
           return changePassword(client, form, passwordVerifier(current))
         case 'change-email':
-          return changeEmail(client, form)
+          return changeEmail(client, form, passwordVerifier(current))
         case 'mfa-enroll':
           return enrollMfa(client)
         case 'mfa-verify':
@@ -550,7 +580,7 @@ export const securityAction = (request: Request) =>
         case 'mfa-cancel':
           return cancelMfa(client, form)
         case 'request-deletion':
-          return requestDeletion(client, form)
+          return requestDeletion(client, form, passwordVerifier(current))
         default:
           return unknownIntent()
       }

@@ -51,19 +51,17 @@ describe('mapCollectiveRow', () => {
     beforeEach(() => vi.stubEnv('SUPABASE_URL', 'https://synthetic.supabase.test'))
     afterEach(() => vi.unstubAllEnvs())
 
-    it('image_path vira a URL pública do bucket public-images', () => {
+    it('image_path vira a URL da rota /img', () => {
       expect(mapCollectiveRow({ ...row, image_path: `${row.id}/capa.png` }).imagem).toBe(
-        `https://synthetic.supabase.test/storage/v1/object/public/public-images/${row.id}/capa.png`,
+        `/img/${row.id}/capa.png`,
       )
     })
 
-    it('sem imagem, caminho fora do formato das constraints ou sem Supabase configurado: imagem neutra', () => {
+    it('sem imagem, caminho fora do formato das constraints: imagem neutra', () => {
       expect(mapCollectiveRow({ ...row, image_path: null }).imagem).toBe(COLLECTIVE_IMAGE_FALLBACK)
       expect(mapCollectiveRow(row).imagem).toBe(COLLECTIVE_IMAGE_FALLBACK)
       expect(mapCollectiveRow({ ...row, image_path: '../../segredo.png' }).imagem).toBe(COLLECTIVE_IMAGE_FALLBACK)
       expect(mapCollectiveRow({ ...row, image_path: `${row.id}/capa.svg` }).imagem).toBe(COLLECTIVE_IMAGE_FALLBACK)
-      vi.stubEnv('SUPABASE_URL', '')
-      expect(mapCollectiveRow({ ...row, image_path: `${row.id}/capa.png` }).imagem).toBe(COLLECTIVE_IMAGE_FALLBACK)
     })
   })
 

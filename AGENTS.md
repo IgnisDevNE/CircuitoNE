@@ -2,7 +2,7 @@
 
 Hub da cena eletrônica do Nordeste. React Router 8 (Framework, SSR) + React 19 + Vite 8 + Tailwind CSS v4, com Supabase (Postgres, Auth, RLS, RPCs). A aplicação fica em `src/`.
 
-**Fase atual: PoC concluída (W1–W12).** O ambiente dev (`circuitone-dev.magalz.space` → Supabase `CircuitoNE-dev`) roda com dados sintéticos e todas as telas estão ligadas ao banco; não há mais protótipo nem dados de mentira no código. Produção serve só a página de espera. O plano e o status das tarefas estão em [`docs/plan.md`](docs/plan.md).
+**Fase atual: PoC concluída (W1–W20).** O ambiente dev (`circuitone-dev.magalz.space` → Supabase `CircuitoNE-dev`) roda com dados sintéticos e todas as telas estão ligadas ao banco; não há mais protótipo nem dados de mentira no código. Produção serve só a página de espera. O plano e o status das tarefas estão em [`docs/plan.md`](docs/plan.md).
 
 ## Fluxo de trabalho
 

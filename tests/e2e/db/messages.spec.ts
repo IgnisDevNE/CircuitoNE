@@ -310,12 +310,14 @@ test('envio otimista: a mensagem aparece na hora, com o campo livre, e a real a 
     await expect(log(page).getByText(text, { exact: true })).toHaveCount(1)
   } finally {
     release()
-    await page.unroute('**/api/chat/enviar')
+    await page.unroute('**/api/chat/enviar').catch(() => {})
     await markNewConversationRead()
   }
 })
 
 test('falha ao enviar: "mensagem não enviada" embaixo da mensagem; "tentar de novo" reenvia com a mesma chave e a mensagem fica uma só', async ({ page }) => {
+  // Cada teste tem o seu contexto: a sessão da candidata do teste anterior não vem junto.
+  await login(page, accounts.applicant.email)
   await page.goto(`/painel/mensagens/${newConversation}`)
   const field = page.getByRole('textbox', { name: `Mensagem para ${activeArtist}` })
   const requestIds: string[] = []
@@ -363,7 +365,7 @@ test('falha ao enviar: "mensagem não enviada" embaixo da mensagem; "tentar de n
     await expect(log(page).getByText(text, { exact: true })).toHaveCount(1)
     await expect(log(page).getByText(discarded, { exact: true })).toHaveCount(0)
   } finally {
-    await page.unroute('**/api/chat/enviar')
+    await page.unroute('**/api/chat/enviar').catch(() => {})
     await markNewConversationRead()
   }
 })

@@ -234,7 +234,7 @@ test('envio otimista na janela: a mensagem aparece na hora; se o envio falhar, "
     await expect(log(page).getByText(quick, { exact: true })).toHaveCount(1)
   } finally {
     release()
-    await page.unroute('**/api/chat/enviar')
+    await page.unroute('**/api/chat/enviar').catch(() => {})
     // Restaura o que o dashboard.spec.ts afirma (1 não lida, da conversa 5): a fixture-active lê as mensagens novas.
     const messages = await rpcAs<{ id: string }[]>(accounts.active.email, 'get_recent_messages', { target: newConversation })
     await rpcAs(accounts.active.email, 'mark_conversation_read', { target: newConversation, last_message: messages[messages.length - 1].id })

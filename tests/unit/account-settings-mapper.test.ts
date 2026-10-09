@@ -68,8 +68,8 @@ describe('mapMyProfile', () => {
       const image = (position: number, path: string, size = 1234) => ({ id: `03000000-0000-4000-8000-00000000000${position}`, position, object_path: path, size_bytes: size, alt_text: '' })
       const mapped = mapMyProfile(profile({ images: [image(0, `${owner}/principal.png`), image(1, `${owner}/g1.webp`, 5_000_000), image(2, 'fora/do-formato.png')] }))!
       expect(mapped.imagens).toEqual([
-        { id: '03000000-0000-4000-8000-000000000000', posicao: 0, url: `https://synthetic.supabase.test/storage/v1/object/public/public-images/${owner}/principal.png`, bytes: 1234 },
-        { id: '03000000-0000-4000-8000-000000000001', posicao: 1, url: `https://synthetic.supabase.test/storage/v1/object/public/public-images/${owner}/g1.webp`, bytes: 5_000_000 },
+        { id: '03000000-0000-4000-8000-000000000000', posicao: 0, url: `/img/${owner}/principal.png`, bytes: 1234 },
+        { id: '03000000-0000-4000-8000-000000000001', posicao: 1, url: `/img/${owner}/g1.webp`, bytes: 5_000_000 },
         { id: '03000000-0000-4000-8000-000000000002', posicao: 2, url: null, bytes: 1234 },
       ])
       for (const bad of [{ position: 11 }, { position: -1 }, { position: '1' }, { size_bytes: 0 }, { size_bytes: 1.5 }, { id: '' }])

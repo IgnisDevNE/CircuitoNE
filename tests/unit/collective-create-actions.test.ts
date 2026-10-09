@@ -169,6 +169,15 @@ describe('newCollectiveAction', () => {
     expect(await createOutcome(collectiveFields())).toMatchObject({ ok: false, status, error: expected })
   })
 
+  it('CNPJ com dígito verificador errado aponta o campo "cnpj"', async () => {
+    reply = dbError(400, '22023', 'CNPJ inválido')
+    expect(await createOutcome(collectiveFields())).toMatchObject({
+      ok: false,
+      status: 422,
+      fields: { cnpj: 'CNPJ inválido: confira os dígitos verificadores.' },
+    })
+  })
+
   it('sessão expirada, texto desconhecido do banco e resposta sem identificador não vazam nem fingem sucesso', async () => {
     reply = dbError(401, 'PGRST301', 'JWT expired')
     expect(await createOutcome(collectiveFields())).toMatchObject({ ok: false, status: 401 })

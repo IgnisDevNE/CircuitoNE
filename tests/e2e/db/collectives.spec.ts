@@ -79,8 +79,11 @@ test('perfil mostra nome, descrição, membros e eventos publicados separados em
 
   const members = page.locator('section', { has: page.getByRole('heading', { name: /^membros \(/ }) })
   await expect(members.getByRole('heading', { name: 'membros (2)' })).toBeVisible()
-  await expect(members.getByText('Membro sintético ativo')).toBeVisible()
-  await expect(members.getByText('Pessoa sintética ativa')).toBeVisible()
+  // Sem perfil de artista publicado, a página pública mostra só o primeiro nome do cadastro (nunca o nome civil completo).
+  await expect(members.getByText('Membro', { exact: true })).toBeVisible()
+  await expect(members.getByText('Pessoa', { exact: true })).toBeVisible()
+  await expect(members.getByText('sintético')).toHaveCount(0)
+  await expect(members.getByText('sintética')).toHaveCount(0)
   await expect(members.getByRole('link')).toHaveCount(0)
 
   const upcoming = page.locator('section', { has: page.getByRole('heading', { name: 'próximos eventos' }) })

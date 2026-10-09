@@ -109,7 +109,25 @@ test("real SSR document and data routes preserve session cookies, privacy and ac
       const response = await handler(new Request(origin + path, { headers: { Cookie } }));
       assert.equal(response.status, 200);
       assert.match(response.headers.get("cache-control"), /no-store/);
+      assert.equal(response.headers.get("x-content-type-options"), "nosniff");
       const body = await response.text();
+      if (path === "/painel") {
+        // Documento: CSP com nonce por requisição e o script inline de hidratação carrega o mesmo nonce.
+        const csp = response.headers.get("content-security-policy");
+        const nonce = csp.match(/script-src 'self' 'nonce-([^']+)'/)[1];
+        assert.ok(nonce.length >= 16);
+        assert.match(csp, /frame-ancestors 'none'/);
+        assert.equal(response.headers.get("x-frame-options"), "DENY");
+        assert.equal(response.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
+        assert.equal(response.headers.get("cross-origin-opener-policy"), "same-origin");
+        assert.ok(response.headers.get("permissions-policy"));
+        const inline = [...body.matchAll(/<script(?![^>]*src=)[^>]*>/g)].map((match) => match[0]);
+        assert.ok(inline.length > 0);
+        for (const tag of inline) assert.ok(tag.includes(`nonce="${nonce}"`), tag);
+        const next = await handler(new Request(origin + path, { headers: { Cookie } }));
+        assert.notEqual(next.headers.get("content-security-policy").match(/'nonce-([^']+)'/)[1], nonce);
+        await next.text();
+      }
       assert.match(body, /Identidade SSR sintética/);
       assert.doesNotMatch(body, /Ana Ribeiro|synthetic-refresh|synthetic-only-password/);
     }

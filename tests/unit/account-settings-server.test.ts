@@ -26,6 +26,7 @@ import {
 import type { ActionResult } from '../../src/lib/account-forms'
 import { mapMyProfile } from '../../src/server/mappers/account-settings'
 import { loginAction } from '../../src/server/auth.server'
+import { knownFailure, rpcFailure as mutationRpcFailure } from '../../src/server/mutation.server'
 import type { SupabaseServerClient } from '../../src/server/supabase.server'
 
 type Result = { data: unknown; error: unknown }
@@ -194,9 +195,35 @@ describe('saveAccount', () => {
     })
   })
 
+  it('mensagens do banco só chegam à tela pela lista compartilhada (traduzidas); o resto é genérico', () => {
+    const listed = [
+      ['22023', 'Dados da conta inválidos', 400],
+      ['22023', 'Imagem inválida', 400],
+      ['22023', 'A galeria aceita até 10 imagens', 409],
+      ['55000', 'Proprietário requer transferência ou encerramento', 409],
+      ['55000', 'Transfira a propriedade ou solicite encerramento ao suporte', 409],
+    ] as const
+    for (const [code, message, status] of listed) {
+      const failure = knownFailure({ code, message })
+      expect(failure, message).toMatchObject({ status })
+      expect(failure!.message).not.toBe(message)
+      expect(mutationRpcFailure({ code, message }).message).toBe(failure!.message)
+    }
+    // A lista também vale para as ações de coletivo: o mesmo texto com um código inesperado não passa.
+    expect(knownFailure({ code: 'XX000', message: 'Imagem inválida' })).toBeUndefined()
+    expect(knownFailure({ code: '22023', message: 'qualquer coisa do banco' })).toBeUndefined()
+    expect(knownFailure({ code: '22023', message: 'toString' })).toBeUndefined()
+    expect(knownFailure({ code: '22023' })).toBeUndefined()
+  })
+
   it('erros do banco: mensagem própria (22023), 403 (42501) ou genérico (503); sem sucesso falso', async () => {
     const base = { get_my_account_details: ok(account()) }
-    expect(failed(await saveAccount(fakeClient({ rpc: { ...base, update_my_account_details: failure('22023', 'Dados da conta inválidos') } }).client, form(valid)))).toMatchObject({ message: 'Dados da conta inválidos', status: 400 })
+    expect(failed(await saveAccount(fakeClient({ rpc: { ...base, update_my_account_details: failure('22023', 'Dados da conta inválidos') } }).client, form(valid)))).toMatchObject({ message: expect.stringContaining('dados da conta são inválidos'), status: 400 })
+    // Mensagem que o banco levanta mas que a tela não conhece (ou um detalhe interno) nunca é repassada.
+    for (const [code, message] of [['22023', 'violates check constraint "account_details_name_check"'], ['55000', 'detalhe interno do banco'], ['22023', '__proto__'], ['22023', 'constructor']]) {
+      const leaked = failed(await saveAccount(fakeClient({ rpc: { ...base, update_my_account_details: failure(code, message) } }).client, form(valid)))
+      expect(leaked).toMatchObject({ status: 503, message: 'Serviço temporariamente indisponível. Tente novamente.' })
+    }
     expect(failed(await saveAccount(fakeClient({ rpc: { ...base, update_my_account_details: failure('42501', 'Conta indisponível') } }).client, form(valid)))).toMatchObject({ status: 403 })
     const unknown = failed(await saveAccount(fakeClient({ rpc: { ...base, update_my_account_details: failure('XX000', 'detalhe interno do banco') } }).client, form(valid)))
     expect(unknown).toMatchObject({ status: 503 })
@@ -231,7 +258,7 @@ describe('saveProfile / saveProfessional / removeProfile', () => {
 
   it('erro do banco no perfil mostra a mensagem própria', async () => {
     const { client } = fakeClient({ rpc: { update_my_profile: failure('22023', 'Estilo musical inválido') } })
-    expect(failed(await saveProfile(client, artist(), form(profileForm)))).toMatchObject({ intent: 'save-profile', message: 'Estilo musical inválido', status: 400 })
+    expect(failed(await saveProfile(client, artist(), form(profileForm)))).toMatchObject({ intent: 'save-profile', message: expect.stringContaining('Estilo musical inválido'), status: 400 })
   })
 
   it('dados profissionais: cachê em centavos; integrante não tem; erros por campo', async () => {
@@ -300,23 +327,40 @@ describe('segurança: senha e e-mail', () => {
     expect(failed(await changePassword(broken.client, form(pass), verifier('ok')))).toMatchObject({ status: 503 })
   })
 
-  it('e-mail: pede confirmação sem trocar nada na hora', async () => {
+  it('e-mail: pede confirmação sem trocar nada na hora, depois de conferir a senha atual', async () => {
     const { client, auth } = fakeClient()
-    const outcome = succeeded(await changeEmail(client, form({ email: 'novo@example.invalid' })))
+    const verify = verifier('ok')
+    const outcome = succeeded(await changeEmail(client, form({ email: 'novo@example.invalid', atual: 'senha-atual-1' }), verify))
+    expect(verify).toHaveBeenCalledWith('a@example.invalid', 'senha-atual-1')
     expect(outcome.message).toContain('novo@example.invalid')
     expect(outcome.message).toContain('só muda depois da confirmação')
     // O link do e-mail volta pelo callback do app (/auth/confirmar), que cria a sessão e redireciona.
     expect(auth.updateUser).toHaveBeenCalledWith({ email: 'novo@example.invalid' }, { emailRedirectTo: 'https://circuitone-dev.magalz.space/auth/confirmar' })
   })
 
+  it('e-mail: sem a senha atual ou com senha errada, nada é pedido ao Auth e o e-mail digitado volta ao campo', async () => {
+    const missing = fakeClient()
+    const verify = verifier('ok')
+    expect(failed(await changeEmail(missing.client, form({ email: 'novo@example.invalid' }), verify))).toMatchObject({ intent: 'change-email', errors: { atual: 'Informe a senha atual.' }, values: { email: 'novo@example.invalid' } })
+    expect(verify).not.toHaveBeenCalled()
+    const wrong = fakeClient()
+    const result = failed(await changeEmail(wrong.client, form({ email: 'novo@example.invalid', atual: 'errada-123' }), verifier('wrong')))
+    expect(result).toMatchObject({ errors: { atual: 'Senha atual incorreta.' }, values: { email: 'novo@example.invalid' }, status: 400 })
+    expect(JSON.stringify(result)).not.toContain('errada-123')
+    expect(wrong.auth.updateUser).not.toHaveBeenCalled()
+    expect(failed(await changeEmail(fakeClient().client, form({ email: 'novo@example.invalid', atual: 'x' }), verifier('limited')))).toMatchObject({ status: 429 })
+    expect(failed(await changeEmail(fakeClient().client, form({ email: 'novo@example.invalid', atual: 'x' }), verifier('unavailable')))).toMatchObject({ status: 503 })
+  })
+
   it('e-mail: inválido, igual ao atual, já usado (sem confirmar existência) e limite de envio', async () => {
     const same = fakeClient()
-    expect(failed(await changeEmail(same.client, form({ email: 'A@example.invalid' }))).errors.email).toBe('Este já é o e-mail da conta.')
-    expect(failed(await changeEmail(same.client, form({ email: 'x' }))).errors.email).toBe('Informe um e-mail válido.')
+    const withPassword = (email: string) => form({ email, atual: 'senha-atual-1' })
+    expect(failed(await changeEmail(same.client, withPassword('A@example.invalid'), verifier('ok'))).errors.email).toBe('Este já é o e-mail da conta.')
+    expect(failed(await changeEmail(same.client, withPassword('x'), verifier('ok'))).errors.email).toBe('Informe um e-mail válido.')
     expect(same.auth.updateUser).not.toHaveBeenCalled()
-    const taken = failed(await changeEmail(fakeClient({ updateUser: { error: { code: 'email_exists', status: 422 } } }).client, form({ email: 'outro@example.invalid' })))
+    const taken = failed(await changeEmail(fakeClient({ updateUser: { error: { code: 'email_exists', status: 422 } } }).client, withPassword('outro@example.invalid'), verifier('ok')))
     expect(taken.message).not.toMatch(/já (está|foi)|cadastrad|existe/i)
-    expect(failed(await changeEmail(fakeClient({ updateUser: { error: { code: 'over_email_send_rate_limit', status: 429 } } }).client, form({ email: 'outro@example.invalid' })))).toMatchObject({ status: 429 })
+    expect(failed(await changeEmail(fakeClient({ updateUser: { error: { code: 'over_email_send_rate_limit', status: 429 } } }).client, withPassword('outro@example.invalid'), verifier('ok')))).toMatchObject({ status: 429 })
   })
 })
 
@@ -397,21 +441,44 @@ describe('segurança: MFA TOTP', () => {
 })
 
 describe('requestDeletion', () => {
-  const confirm = { confirmacao: 'EXCLUIR MINHA CONTA' }
+  const confirm = { confirmacao: 'EXCLUIR MINHA CONTA', atual: 'senha-atual-1' }
+  const verifier = (check: Awaited<ReturnType<PasswordVerifier>>) => vi.fn<PasswordVerifier>(async () => check)
 
-  it('exige a confirmação digitada; só então chama o RPC e leva ao painel', async () => {
+  it('exige a confirmação digitada e a senha atual; só então chama o RPC e leva ao painel', async () => {
     const wrong = fakeClient({ rpc: {} })
-    expect(failed(await requestDeletion(wrong.client, form({ confirmacao: 'excluir' })))).toMatchObject({ intent: 'request-deletion', errors: { confirmacao: expect.stringContaining('EXCLUIR MINHA CONTA') } })
+    const verify = verifier('ok')
+    expect(failed(await requestDeletion(wrong.client, form({ confirmacao: 'excluir', atual: '' }), verify))).toMatchObject({
+      intent: 'request-deletion',
+      errors: { confirmacao: expect.stringContaining('EXCLUIR MINHA CONTA'), atual: 'Informe a senha atual.' },
+    })
+    expect(verify).not.toHaveBeenCalled()
     expect(wrong.rpc).not.toHaveBeenCalled()
     const good = fakeClient({ rpc: { request_account_deletion: ok() } })
-    expect(await requestDeletion(good.client, form(confirm))).toEqual({ redirectTo: '/painel' })
+    expect(await requestDeletion(good.client, form(confirm), verify)).toEqual({ redirectTo: '/painel' })
+    expect(verify).toHaveBeenCalledWith('a@example.invalid', 'senha-atual-1')
     expect(good.rpc).toHaveBeenCalledWith('request_account_deletion')
   })
 
+  it('senha atual errada, limite de tentativas ou checagem indisponível: nenhum pedido de exclusão', async () => {
+    for (const [check, expected] of [
+      ['wrong', { status: 400, errors: { atual: 'Senha atual incorreta.' } }],
+      ['limited', { status: 429 }],
+      ['unavailable', { status: 503 }],
+    ] as const) {
+      const { client, rpc } = fakeClient({ rpc: { request_account_deletion: ok() } })
+      expect(failed(await requestDeletion(client, form(confirm), verifier(check)))).toMatchObject({ intent: 'request-deletion', ...expected })
+      expect(rpc).not.toHaveBeenCalled()
+    }
+  })
+
   it('proprietário de coletivo recebe a orientação do banco (55000); outros erros são genéricos', async () => {
-    const owner = failed(await requestDeletion(fakeClient({ rpc: { request_account_deletion: failure('55000', 'Transfira a propriedade ou solicite encerramento ao suporte') } }).client, form(confirm)))
-    expect(owner).toMatchObject({ status: 409, message: 'Transfira a propriedade ou solicite encerramento ao suporte' })
-    expect(failed(await requestDeletion(fakeClient({ rpc: { request_account_deletion: failure('XX000', 'detalhe') } }).client, form(confirm)))).toMatchObject({ status: 503 })
+    const owner = failed(await requestDeletion(fakeClient({ rpc: { request_account_deletion: failure('55000', 'Transfira a propriedade ou solicite encerramento ao suporte') } }).client, form(confirm), verifier('ok')))
+    expect(owner).toMatchObject({ status: 409, message: expect.stringContaining('transfira a propriedade') })
+    expect(failed(await requestDeletion(fakeClient({ rpc: { request_account_deletion: failure('XX000', 'detalhe') } }).client, form(confirm), verifier('ok')))).toMatchObject({ status: 503 })
+    // Texto do banco fora da lista nunca chega à tela, mesmo com um código de erro esperado.
+    const unlisted = failed(await requestDeletion(fakeClient({ rpc: { request_account_deletion: failure('55000', 'detalhe interno: tabela private.x') } }).client, form(confirm), verifier('ok')))
+    expect(unlisted).toMatchObject({ status: 503 })
+    expect(JSON.stringify(unlisted)).not.toContain('private.x')
   })
 })
 
@@ -505,7 +572,52 @@ describe('ações: origem, corpo e sessão', () => {
     expect(unwrapData(await accountDataAction(new Request(origin + '/painel/dados', { method: 'GET', headers: { Cookie: cookie } }))).status).toBe(405)
     expect(unwrapData(await accountDataAction(post('/painel/dados', 'x'.repeat(5000), { Cookie: cookie }))).status).toBe(413)
     expect(unwrapData(await accountDataAction(post('/painel/dados', 'a=1', { Cookie: cookie, 'Content-Type': 'application/json' }))).status).toBe(415)
+    expect(rpcCalls()).toEqual([])
+  })
+
+  /** POST cujo corpo é um fluxo que registra se alguém o leu (o servidor não pode consumir upload de quem não tem sessão). */
+  const trackedUpload = (extra: Record<string, string>) => {
+    const state = { pulls: 0 }
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        state.pulls++
+        controller.enqueue(new Uint8Array(1024))
+      },
+    }, { highWaterMark: 0 })
+    const request = new Request(origin + '/painel/perfil/' + ID, {
+      method: 'POST',
+      headers: { Origin: origin, 'Content-Type': 'multipart/form-data; boundary=zzz', ...extra },
+      body,
+      duplex: 'half',
+    } as RequestInit)
+    return { request, state }
+  }
+
+  it('sem cookie de sessão: redireciona para /entrar sem ler o corpo nem chamar o Auth', async () => {
+    const { request, state } = trackedUpload({})
+    const response = (await profileAction(request, ID)) as Response
+    expect(response.status).toBe(303)
+    expect(response.headers.get('location')).toBe('/entrar')
+    expect(state.pulls).toBe(0)
     expect(calls).toEqual([])
+  })
+
+  it('cookie de sessão que o Auth não reconhece: redireciona sem ler o corpo', async () => {
+    const cookie = await signIn()
+    session = null
+    const { request, state } = trackedUpload({ Cookie: cookie })
+    const response = (await profileAction(request, ID)) as Response
+    expect(response.status).toBe(303)
+    expect(response.headers.get('location')).toBe('/entrar')
+    expect(state.pulls).toBe(0)
+  })
+
+  it('conta restrita também responde antes de ler o corpo', async () => {
+    const cookie = await signIn()
+    session = { id: 'A', name: 'Pessoa A sintética', state: 'suspended', reason: null }
+    const restricted = trackedUpload({ Cookie: cookie })
+    expect(unwrapData(await profileAction(restricted.request, ID)).status).toBe(403)
+    expect(restricted.state.pulls).toBe(0)
   })
 
   it('visitante é levado para /entrar sem escrever nada', async () => {
@@ -626,15 +738,32 @@ describe('ações de segurança de ponta a ponta', () => {
     expect(calls.some((call) => call.method === 'PUT')).toBe(false)
   })
 
-  it('exclusão de conta: confirmação digitada, RPC e redirecionamento ao painel', async () => {
+  it('exclusão de conta: confirmação digitada e senha atual, RPC e redirecionamento ao painel', async () => {
     const cookie = await signIn()
     rpcAnswers = { request_account_deletion: null }
-    const denied = unwrapData(await securityAction(post('/painel/seguranca', new URLSearchParams({ intent: 'request-deletion', confirmacao: 'sim' }), { Cookie: cookie })))
+    const denied = unwrapData(await securityAction(post('/painel/seguranca', new URLSearchParams({ intent: 'request-deletion', confirmacao: 'sim', atual: 'synthetic-password' }), { Cookie: cookie })))
     expect(denied.status).toBe(400)
     expect(rpcCalls()).toEqual([])
-    const response = (await securityAction(post('/painel/seguranca', new URLSearchParams({ intent: 'request-deletion', confirmacao: 'EXCLUIR MINHA CONTA' }), { Cookie: cookie }))) as Response
+    const noPassword = unwrapData(await securityAction(post('/painel/seguranca', new URLSearchParams({ intent: 'request-deletion', confirmacao: 'EXCLUIR MINHA CONTA' }), { Cookie: cookie })))
+    expect(noPassword).toMatchObject({ status: 400, body: { errors: { atual: 'Informe a senha atual.' } } })
+    const wrongPassword = unwrapData(await securityAction(post('/painel/seguranca', new URLSearchParams({ intent: 'request-deletion', confirmacao: 'EXCLUIR MINHA CONTA', atual: 'senha-errada-1' }), { Cookie: cookie })))
+    expect(wrongPassword).toMatchObject({ status: 400, body: { errors: { atual: 'Senha atual incorreta.' } } })
+    expect(rpcCalls()).toEqual([])
+    const response = (await securityAction(post('/painel/seguranca', new URLSearchParams({ intent: 'request-deletion', confirmacao: 'EXCLUIR MINHA CONTA', atual: 'synthetic-password' }), { Cookie: cookie }))) as Response
     expect(response.status).toBe(303)
     expect(response.headers.get('location')).toBe('/painel')
     expect(rpcCalls()).toEqual(['request_account_deletion'])
+  })
+
+  it('troca de e-mail exige a senha atual conferida pelo Auth', async () => {
+    const cookie = await signIn()
+    const change = (atual: string) => new URLSearchParams({ intent: 'change-email', email: 'novo@example.invalid', atual })
+    const wrong = unwrapData(await securityAction(post('/painel/seguranca', change('senha-errada-1'), { Cookie: cookie })))
+    expect(wrong).toMatchObject({ status: 400, body: { ok: false, intent: 'change-email', errors: { atual: 'Senha atual incorreta.' }, values: { email: 'novo@example.invalid' } } })
+    expect(calls.some((call) => call.method === 'PUT')).toBe(false)
+    const right = unwrapData(await securityAction(post('/painel/seguranca', change('synthetic-password'), { Cookie: cookie })))
+    expect(right).toMatchObject({ status: 200, body: { ok: true, intent: 'change-email' } })
+    expect(JSON.parse(calls.find((call) => call.method === 'PUT')!.body)).toMatchObject({ email: 'novo@example.invalid' })
+    expect(JSON.stringify(right.body)).not.toContain('synthetic-password')
   })
 })

@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { createHmac } from 'node:crypto'
 import { describe, expect, it, vi } from 'vitest'
-import { createHandler, type Publisher } from '../../supabase/functions/send-sms/handler.ts'
+import { createHandler, readBody, type Publisher } from '../../supabase/functions/send-sms/handler.ts'
 import {
   buildMessage,
   isAllowedDestination,
@@ -185,6 +185,35 @@ describe('handler', () => {
     expect((await call(huge)).status).toBe(413)
   })
 
+  it('refuses a chunked body without Content-Length once it passes 16 KiB, without reading the rest', async () => {
+    const { spy } = setup()
+    let pulls = 0
+    const stream = new ReadableStream<Uint8Array>(
+      {
+        pull(controller) {
+          pulls++
+          controller.enqueue(new Uint8Array(4 * 1024).fill(120))
+        },
+      },
+      { highWaterMark: 0 },
+    )
+    const request = new Request('https://x.invalid/functions/v1/send-sms', { method: 'POST', body: stream, duplex: 'half', headers: { 'transfer-encoding': 'chunked' } } as RequestInit)
+    expect(request.headers.get('content-length')).toBeNull()
+    const response = await createHandler({ keys, allowedPrefixes: ['+55'], publish: spy, now: () => NOW })(request)
+    expect(response.status).toBe(413)
+    expect(await errorOf(response)).toEqual({ http_code: 413, message: 'Corpo grande demais.' })
+    // 16 KiB cabem; o quinto pedaço de 4 KiB estoura o limite e a leitura para ali (nada de ler o fluxo inteiro).
+    expect(pulls).toBe(5)
+    expect(spy).not.toHaveBeenCalled()
+  })
+
+  it('counts bytes, not characters: multibyte text past 16 KiB is refused even with fewer characters', async () => {
+    const { call } = setup()
+    const euros = '€'.repeat(6000) // 6.000 caracteres, 18.000 bytes
+    expect(euros.length).toBeLessThan(16 * 1024)
+    expect((await call(euros)).status).toBe(413)
+  })
+
   it('maps SNS failures and exceptions to a hook error without logging code, phone or secrets', async () => {
     const rejected = setup(async () => ({ ok: false, code: 'InvalidParameter', status: 400 }))
     const response = await rejected.call(payload())
@@ -198,5 +227,49 @@ describe('handler', () => {
     expect((await thrown.call(payload())).status).toBe(502)
     const logged = JSON.stringify([...rejected.log.mock.calls, ...thrown.log.mock.calls])
     expect(logged).not.toMatch(/5581999900001|123456|whsec/)
+  })
+})
+
+describe('readBody', () => {
+  const requestOf = (body: BodyInit | null, headers: Record<string, string> = {}) => new Request('https://x.invalid/', { method: 'POST', body, headers })
+
+  it('reads text up to the limit in bytes and decodes UTF-8', async () => {
+    expect(await readBody(requestOf('olá, código 123456 — ok'))).toBe('olá, código 123456 — ok')
+    expect(await readBody(requestOf(null))).toBe('')
+    expect(await readBody(requestOf('x'.repeat(16 * 1024)))).toHaveLength(16 * 1024)
+    expect(await readBody(requestOf('x'.repeat(16 * 1024 + 1)))).toBeNull()
+  })
+
+  it('the limit is in bytes: the boundary falls inside multibyte characters', async () => {
+    // 5.461 euros = 16.383 bytes (cabe); mais um = 16.386 (não cabe), embora tenha só 5.462 caracteres.
+    expect(await readBody(requestOf('€'.repeat(5461)))).toHaveLength(5461)
+    expect(await readBody(requestOf('€'.repeat(5462)))).toBeNull()
+    expect(await readBody(requestOf('€€€€'))).toBe('€€€€')
+    expect(await readBody(requestOf('€'.repeat(4)), 11)).toBeNull()
+    expect(await readBody(requestOf('€'.repeat(3)), 9)).toBe('€€€')
+  })
+
+  it('does not trust a small or missing Content-Length', async () => {
+    const big = new Uint8Array(20 * 1024).fill(97)
+    expect(await readBody(requestOf(big, { 'content-length': '10' }))).toBeNull()
+    expect(await readBody(requestOf(big, { 'content-length': 'abc' }))).toBeNull()
+    // Um Content-Length maior que o limite recusa sem ler nada.
+    let pulled = false
+    const stream = new ReadableStream<Uint8Array>({ pull() { pulled = true } }, { highWaterMark: 0 })
+    const declared = new Request('https://x.invalid/', { method: 'POST', body: stream, duplex: 'half', headers: { 'content-length': String(1024 * 1024) } } as RequestInit)
+    expect(await readBody(declared)).toBeNull()
+    expect(pulled).toBe(false)
+  })
+
+  it('joins chunks split anywhere, including inside a multibyte character', async () => {
+    const bytes = new TextEncoder().encode('código: €uro')
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        for (let index = 0; index < bytes.length; index += 3) controller.enqueue(bytes.slice(index, index + 3))
+        controller.close()
+      },
+    })
+    const request = new Request('https://x.invalid/', { method: 'POST', body: stream, duplex: 'half' } as RequestInit)
+    expect(await readBody(request)).toBe('código: €uro')
   })
 })

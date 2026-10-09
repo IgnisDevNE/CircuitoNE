@@ -24,11 +24,35 @@ export type HandlerDeps = {
 /** O corpo do hook tem poucos centenas de bytes; acima disso, não é o Auth. */
 const MAX_BODY = 16 * 1024
 
-async function readBody(request: Request): Promise<string | null> {
+/**
+ * Lê o corpo como fluxo e para ao passar de `MAX_BODY` BYTES, qualquer que seja o `Content-Length` (ausente, falso ou com
+ * `Transfer-Encoding: chunked`): o que passa do limite nunca é acumulado. Conta bytes, não caracteres (UTF-8 de vários
+ * bytes não escapa do limite). `null` = grande demais.
+ */
+export async function readBody(request: Request, limit = MAX_BODY): Promise<string | null> {
   const declared = Number(request.headers.get('content-length') ?? '0')
-  if (declared > MAX_BODY) return null
-  const text = await request.text()
-  return text.length > MAX_BODY ? null : text
+  if (declared > limit) return null
+  const reader = request.body?.getReader()
+  if (!reader) return ''
+  const chunks: Uint8Array[] = []
+  let size = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    size += value.byteLength
+    if (size > limit) {
+      await reader.cancel().catch(() => undefined)
+      return null
+    }
+    chunks.push(value)
+  }
+  const bytes = new Uint8Array(size)
+  let offset = 0
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return new TextDecoder().decode(bytes)
 }
 
 type HookPayload = { user?: { phone?: unknown; new_phone?: unknown; phone_change?: unknown }; sms?: { otp?: unknown } }

@@ -87,15 +87,13 @@ describe('loadEditCollective', () => {
     expect(data.mfa).toBe('confirmada')
   })
 
-  it('imagem enviada: URL pública do bucket; sem imagem ou sem Supabase configurado, nula', async () => {
+  it('imagem enviada: URL da rota /img; sem imagem, nula', async () => {
     vi.stubEnv('SUPABASE_URL', 'https://synthetic.supabase.test')
     try {
       const withImage = fakeClient({ rpc: { list_my_collectives: ok([mine({ state: 'pending' })]), get_collective_status: ok(status({ state: 'pending' }, { image_path: `${C}/capa.png` })) } })
-      expect((await loadEditCollective(withImage.client, C)).coletivo.imagem).toBe(`https://synthetic.supabase.test/storage/v1/object/public/public-images/${C}/capa.png`)
+      expect((await loadEditCollective(withImage.client, C)).coletivo.imagem).toBe(`/img/${C}/capa.png`)
       const without = fakeClient({ rpc: { list_my_collectives: ok([mine({ state: 'pending' })]), get_collective_status: ok(status({ state: 'pending' })) } })
       expect((await loadEditCollective(without.client, C)).coletivo.imagem).toBeNull()
-      vi.stubEnv('SUPABASE_URL', '')
-      expect((await loadEditCollective(withImage.client, C)).coletivo.imagem).toBeNull()
     } finally {
       vi.unstubAllEnvs()
     }

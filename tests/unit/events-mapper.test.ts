@@ -83,19 +83,17 @@ describe('mapEventListRow', () => {
     beforeEach(() => vi.stubEnv('SUPABASE_URL', 'https://synthetic.supabase.test'))
     afterEach(() => vi.unstubAllEnvs())
 
-    it('cover_path vira a URL pública do bucket public-images', () => {
-      expect(mapEventListRow({ ...listRow, cover_path: path }).capa).toBe(`https://synthetic.supabase.test/storage/v1/object/public/public-images/${path}`)
+    it('cover_path vira a URL da rota /img', () => {
+      expect(mapEventListRow({ ...listRow, cover_path: path }).capa).toBe(`/img/${path}`)
     })
 
     it('a capa enviada vale mais que o link externo', () => {
-      expect(mapEventListRow({ ...listRow, cover_path: path, cover_url: 'https://img.example.invalid/capa.jpg' }).capa).toContain('/public-images/')
+      expect(mapEventListRow({ ...listRow, cover_path: path, cover_url: 'https://img.example.invalid/capa.jpg' }).capa).toBe(`/img/${path}`)
     })
 
-    it('caminho fora do formato ou sem Supabase configurado cai no link ou na capa neutra', () => {
+    it('caminho fora do formato cai no link ou na capa neutra', () => {
       expect(mapEventListRow({ ...listRow, cover_path: '../x.png', cover_url: 'https://img.example.invalid/capa.jpg' }).capa).toBe('https://img.example.invalid/capa.jpg')
       expect(mapEventListRow({ ...listRow, cover_path: '../x.png' }).capa).toBe(EVENT_COVER_FALLBACK)
-      vi.stubEnv('SUPABASE_URL', '')
-      expect(mapEventListRow({ ...listRow, cover_path: path }).capa).toBe(EVENT_COVER_FALLBACK)
     })
   })
 

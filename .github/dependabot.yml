@@ -5,6 +5,8 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 3
+    cooldown:
+      default-days: 7
     ignore:
       - dependency-name: 'library/node'
         versions: ['>=25']
@@ -13,6 +15,8 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 3
+    cooldown:
+      default-days: 7
     groups:
       react:
         patterns: ['react', 'react-dom', '@types/react', '@types/react-dom']
@@ -28,6 +32,8 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 3
+    cooldown:
+      default-days: 7
     groups:
       codeql:
         patterns: ['github/codeql-action*']

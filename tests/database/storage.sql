@@ -39,9 +39,14 @@ declare n integer;
 begin perform set_config('storage.allow_delete_query','true',true);
   delete from storage.objects where bucket_id=bucket and (object_name is null or name=object_name); get diagnostics n=row_count; return n; end $$;
 grant execute on function pg_temp.touch(text,text),pg_temp.drop_object(text,text) to anon,authenticated;
+-- O papel atual enxerga o objeto de public-images? (a leitura do bucket privado passa pela política de select)
+create function pg_temp.sees(object_name text) returns boolean language sql as $$
+  select exists(select from storage.objects where bucket_id='public-images' and name=object_name)
+$$;
+grant execute on function pg_temp.sees(text) to anon,authenticated;
 
 -- Buckets: configuração esperada.
-select pg_temp.assert_true((select public and file_size_limit=5000000 and allowed_mime_types=array['image/jpeg','image/png','image/webp'] from storage.buckets where id='public-images'),'Bucket público incorreto');
+select pg_temp.assert_true((select not public and file_size_limit=5000000 and allowed_mime_types=array['image/jpeg','image/png','image/webp'] from storage.buckets where id='public-images'),'Bucket de imagens deve ser privado');
 select pg_temp.assert_true((select not public and file_size_limit=10000000 and allowed_mime_types=array['application/pdf'] from storage.buckets where id='private-documents'),'Bucket privado incorreto');
 
 insert into auth.users(id,email,email_confirmed_at,phone,phone_confirmed_at)
@@ -123,16 +128,16 @@ select pg_temp.actor(3);
 select pg_temp.expect_error(format($$select pg_temp.put('public-images',%L)$$,current_setting('test.event')||'/membro.png'),'42501');
 select pg_temp.actor(5);
 select pg_temp.expect_error(format($$select pg_temp.put('public-images',%L)$$,current_setting('test.event')||'/estranho.png'),'42501');
--- Dono listando: vê só o que pode escrever; estranho não vê nada.
+-- Dono listando: vê o que pode escrever; estranho só vê o que é público (aqui, a capa do coletivo aprovado) e nada de rascunho.
 select pg_temp.actor(1);
 select pg_temp.assert_true((select count(*) from storage.objects where bucket_id='public-images' and name like current_setting('test.artist1')||'/%')=3,'Titular não lista as próprias imagens');
 select pg_temp.actor(5);
-select pg_temp.assert_true((select count(*) from storage.objects where bucket_id='public-images')=0,'Estranho lista imagens alheias');
--- Anônimo não lista nem escreve (a leitura pública passa pelo bucket público, não por RLS).
+select pg_temp.assert_true((select array_agg(name) from storage.objects where bucket_id='public-images')=array[current_setting('test.c')||'/capa.png'],'Estranho lista imagens alheias além das visíveis');
+-- Anônimo só lê o que é visível a qualquer um e não escreve.
 reset role;
 set local role anon;
 select set_config('request.jwt.claims','{"role":"anon"}',true);
-select pg_temp.assert_true((select count(*) from storage.objects)=0,'Anônimo lista objetos');
+select pg_temp.assert_true((select array_agg(name) from storage.objects)=array[current_setting('test.c')||'/capa.png'],'Anônimo lista objetos além dos visíveis');
 select pg_temp.expect_error($$select pg_temp.put('public-images',gen_random_uuid()::text||'/anonimo.png')$$,'42501');
 reset role;
 set local role authenticated;
@@ -285,6 +290,38 @@ select pg_temp.assert_true((select count(*) from public.profile_images where pro
 reset role;
 set local role authenticated;
 
+-- ---- Leitura de public-images (bucket privado; select por visibilidade da entidade) ----
+select pg_temp.actor(2);
+select pg_temp.put('public-images',current_setting('test.artist2')||'/rascunho.png');
+select pg_temp.actor(1);
+-- Estado: artista 1 publicado; artista 2 não publicado; coletivo c aprovado; coletivo pendente; capa do evento em rascunho.
+reset role;
+set local role anon;
+select set_config('request.jwt.claims','{"role":"anon"}',true);
+select pg_temp.assert_true(pg_temp.sees(current_setting('test.artist1')||'/outra.jpg'),'Anônimo não lê imagem de artista publicado');
+select pg_temp.assert_true(pg_temp.sees(current_setting('test.c')||'/capa.png'),'Anônimo não lê imagem de coletivo aprovado');
+select pg_temp.assert_true(not pg_temp.sees(current_setting('test.artist2')||'/rascunho.png'),'Anônimo leu imagem de artista não publicado');
+select pg_temp.assert_true(not pg_temp.sees(current_setting('test.pending')||'/capa.png'),'Anônimo leu imagem de coletivo pendente');
+select pg_temp.assert_true(not pg_temp.sees(current_setting('test.event')||'/capa.png'),'Anônimo leu capa de evento em rascunho');
+select pg_temp.assert_true(not pg_temp.sees(gen_random_uuid()::text||'/inexistente.png') and not pg_temp.sees('foto-solta.png'),'Caminho fora do padrão visível');
+reset role;
+set local role authenticated;
+-- Conta comum (sem relação com as entidades): a mesma visão do anônimo.
+select pg_temp.actor(5);
+select pg_temp.assert_true(pg_temp.sees(current_setting('test.artist1')||'/outra.jpg') and pg_temp.sees(current_setting('test.c')||'/capa.png'),'Conta comum não lê imagens públicas');
+select pg_temp.assert_true(not pg_temp.sees(current_setting('test.artist2')||'/rascunho.png') and not pg_temp.sees(current_setting('test.pending')||'/capa.png')
+  and not pg_temp.sees(current_setting('test.event')||'/capa.png'),'Conta comum leu imagem não pública');
+-- Titulares e editores leem os próprios rascunhos; membro comum não lê a capa do rascunho.
+select pg_temp.actor(2);
+select pg_temp.assert_true(pg_temp.sees(current_setting('test.artist2')||'/rascunho.png'),'Titular não lê a própria imagem não publicada');
+select pg_temp.assert_true(pg_temp.sees(current_setting('test.event')||'/capa.png'),'Editor não lê capa do evento em rascunho');
+select pg_temp.assert_true(not pg_temp.sees(current_setting('test.pending')||'/capa.png'),'Editor leu imagem de coletivo pendente alheio');
+select pg_temp.actor(3);
+select pg_temp.assert_true(not pg_temp.sees(current_setting('test.event')||'/capa.png'),'Membro comum leu capa de evento em rascunho');
+select pg_temp.actor(1);
+select pg_temp.assert_true(pg_temp.sees(current_setting('test.pending')||'/capa.png'),'Proprietário não lê imagem do coletivo pendente');
+select pg_temp.assert_true(pg_temp.sees(current_setting('test.event')||'/capa.png'),'Proprietário não lê capa do evento em rascunho');
+
 -- ---- Documentos (set_professional_document) ----
 select pg_temp.actor(1);
 select pg_temp.assert_true(public.set_professional_document(current_setting('test.artist1')::uuid,'presskit',current_setting('test.artist1')||'/presskit.pdf') is null,'Primeiro presskit não deveria substituir nada');
@@ -333,7 +370,7 @@ select pg_temp.assert_true(public.set_professional_document(current_setting('tes
 reset role;
 set local role anon;
 select set_config('request.jwt.claims','{"role":"anon"}',true);
-select pg_temp.assert_true((select count(*) from public.professional_details)=0,'Anônimo leu dados profissionais');
+select pg_temp.expect_error('select count(*) from public.professional_details','42501');
 reset role;
 set local role authenticated;
 
@@ -377,10 +414,61 @@ reset role;
 update public.collectives set state='approved' where id=current_setting('test.c')::uuid;
 set local role authenticated;
 
+-- ---- Capa do evento: publicado exige publish_events; cancelado não aceita escrita (como update_event) ----
+select pg_temp.actor(1);
+select pg_temp.put('public-images',current_setting('test.event2')||'/capa.png');
+select pg_temp.actor(2);
+-- Rascunho: quem edita eventos escreve.
+select pg_temp.assert_true(pg_temp.touch('public-images',current_setting('test.event2')||'/capa.png')=1,'Editor não atualiza capa de rascunho');
+select pg_temp.actor(1);
+select public.publish_event(current_setting('test.event2')::uuid,1);
+select pg_temp.actor(2);
+-- Publicado sem publish_events: o editor lê (evento público), mas não envia, não atualiza e não remove.
+select pg_temp.assert_true(pg_temp.sees(current_setting('test.event2')||'/capa.png'),'Capa de evento publicado deveria ser legível');
+select pg_temp.expect_error(format($$select pg_temp.put('public-images',%L)$$,current_setting('test.event2')||'/nova.png'),'42501');
+select pg_temp.assert_true(pg_temp.touch('public-images',current_setting('test.event2')||'/capa.png')=0,'Editor sem publicar atualizou capa de evento publicado');
+select pg_temp.assert_true(pg_temp.drop_object('public-images',current_setting('test.event2')||'/capa.png')=0,'Editor sem publicar removeu capa de evento publicado');
+select pg_temp.actor(3);
+select pg_temp.expect_error(format($$select pg_temp.put('public-images',%L)$$,current_setting('test.event2')||'/membro.png'),'42501');
+-- Com publish_events (o proprietário tem todos os poderes), continua valendo.
+select pg_temp.actor(1);
+select pg_temp.assert_true(pg_temp.touch('public-images',current_setting('test.event2')||'/capa.png')=1,'Proprietário não atualiza capa de evento publicado');
+select pg_temp.put('public-images',current_setting('test.event2')||'/extra.png');
+-- Concede publish_events ao perfil do editor: volta a escrever.
+reset role;
+insert into private.collective_role_permissions(collective_id,role_id,permission) values(current_setting('test.c')::uuid,'a9000000-0000-4000-8000-000000000001','publish_events');
+set local role authenticated;
+select pg_temp.actor(2);
+select pg_temp.assert_true(pg_temp.touch('public-images',current_setting('test.event2')||'/capa.png')=1,'Editor com publish_events não atualiza capa de evento publicado');
+reset role;
+delete from private.collective_role_permissions where collective_id=current_setting('test.c')::uuid and role_id='a9000000-0000-4000-8000-000000000001' and permission='publish_events';
+set local role authenticated;
+-- Cancelado: ninguém escreve, nem o proprietário; a capa continua legível (evento cancelado já publicado tem detalhe público).
+select pg_temp.actor(1);
+select public.cancel_event(current_setting('test.event2')::uuid,2);
+select pg_temp.expect_error(format($$select pg_temp.put('public-images',%L)$$,current_setting('test.event2')||'/depois.png'),'42501');
+select pg_temp.assert_true(pg_temp.touch('public-images',current_setting('test.event2')||'/capa.png')=0,'Proprietário atualizou capa de evento cancelado');
+select pg_temp.assert_true(pg_temp.drop_object('public-images',current_setting('test.event2')||'/extra.png')=0,'Proprietário removeu capa de evento cancelado');
+select pg_temp.actor(2);
+select pg_temp.expect_error(format($$select pg_temp.put('public-images',%L)$$,current_setting('test.event2')||'/depois.png'),'42501');
+select pg_temp.assert_true(pg_temp.touch('public-images',current_setting('test.event2')||'/capa.png')=0,'Editor atualizou capa de evento cancelado');
+select pg_temp.assert_true(pg_temp.sees(current_setting('test.event2')||'/capa.png'),'Capa de evento cancelado (já publicado) deveria ser legível');
+reset role;
+set local role anon;
+select set_config('request.jwt.claims','{"role":"anon"}',true);
+select pg_temp.assert_true(pg_temp.sees(current_setting('test.event2')||'/capa.png'),'Anônimo não lê capa de evento publicado/cancelado');
+reset role;
+set local role authenticated;
+
 -- ---- Capa do evento: sem RPC nova; update_event aceita cover_path sob o id do evento ----
 select pg_temp.actor(1);
-select public.update_event(current_setting('test.event')::uuid,1,jsonb_build_object('cover_path',current_setting('test.event')||'/capa.png','cover_bytes',1000));
-select pg_temp.assert_true((public.get_event(current_setting('test.event')::uuid)->>'cover_path')=current_setting('test.event')||'/capa.png','Capa do evento não gravada');
+-- A capa só vale se o objeto existe em `public-images` (verified_upload); sem o objeto, o caminho forjado é recusado.
+select pg_temp.expect_error(format($$select public.update_event(%L,1,jsonb_build_object('cover_path',%L,'cover_bytes',1000))$$,current_setting('test.event'),current_setting('test.event')||'/capa-verificada.png'),'22023');
+select pg_temp.put('public-images',current_setting('test.event')||'/capa-verificada.png',1234);
+-- `cover_bytes` vem do objeto, não do payload.
+select public.update_event(current_setting('test.event')::uuid,1,jsonb_build_object('cover_path',current_setting('test.event')||'/capa-verificada.png','cover_bytes',1));
+select pg_temp.assert_true((public.get_event(current_setting('test.event')::uuid)->>'cover_path')=current_setting('test.event')||'/capa-verificada.png','Capa do evento não gravada');
+select pg_temp.assert_true((public.get_event(current_setting('test.event')::uuid)->>'cover_bytes')::integer=1234,'Tamanho da capa deve vir do objeto');
 select pg_temp.expect_error(format($$select public.update_event(%L,2,jsonb_build_object('cover_path',%L,'cover_bytes',1000))$$,current_setting('test.event'),current_setting('test.event2')||'/capa.png'),'22023');
 select pg_temp.expect_error(format($$select public.update_event(%L,2,jsonb_build_object('cover_url','https://example.invalid/capa.png'))$$,current_setting('test.event')),'22023');
 select public.update_event(current_setting('test.event')::uuid,2,jsonb_build_object('cover_path',null,'cover_bytes',null,'cover_url','https://example.invalid/capa.png'));

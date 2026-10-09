@@ -121,7 +121,7 @@ test('foto principal: envia, aparece na página pública do artista, substitui e
     await expect(main.getByRole('status')).toHaveText('Foto principal atualizada.')
     const editorImage = main.getByRole('img', { name: `Foto principal de ${artistName}` })
     const firstSrc = (await editorImage.getAttribute('src'))!
-    expect(firstSrc.startsWith(`${supabaseUrl()}/storage/v1/object/public/public-images/${activeArtist}/`)).toBe(true)
+    expect(firstSrc.startsWith(`/img/${activeArtist}/`)).toBe(true)
     expect(firstSrc).toMatch(/\.png$/)
     await loaded(editorImage)
 
@@ -132,7 +132,15 @@ test('foto principal: envia, aparece na página pública do artista, substitui e
     await loaded(publicImage)
     await visitor.page.goto('/artistas')
     await expect(visitor.page.getByRole('img', { name: `Foto de ${artistName}` })).toHaveAttribute('src', firstSrc)
-    expect((await request.get(firstSrc)).status()).toBe(200)
+    // O bucket é privado: a imagem passa pela rota /img do app (visitante, sem cookies) e chega como imagem, com cache privado curto.
+    const served = await request.get(firstSrc)
+    expect(served.status()).toBe(200)
+    expect(served.headers()['content-type']).toBe('image/png')
+    expect(served.headers()['cache-control']).toBe('private, max-age=300')
+    expect(served.headers()['x-content-type-options']).toBe('nosniff')
+    // O endereço antigo do bucket público não serve mais a imagem.
+    const oldPublicUrl = `${supabaseUrl()}/storage/v1/object/public/public-images/${firstSrc.slice('/img/'.length)}`
+    expect((await request.get(oldPublicUrl)).status()).not.toBe(200)
 
     // Substituir: o novo arquivo vale e o antigo some do Storage (e do endereço público).
     await main.getByLabel(/Trocar a foto principal/).setInputFiles(png(PNG_BLUE, 'outra.png'))
@@ -146,6 +154,24 @@ test('foto principal: envia, aparece na página pública do artista, substitui e
     expect((await request.get(firstSrc)).status()).not.toBe(200)
     expect((await request.get(secondSrc)).status()).toBe(200)
     expect(await objectCount('public-images', activeArtist)).toBe(1)
+
+    // Despublicar o perfil: o visitante deixa de receber a imagem (404 na rota /img), o dono ainda a vê no painel; ao publicar de novo, volta.
+    try {
+      await open(page, profilePath(activeArtist))
+      await page.getByRole('checkbox', { name: /Perfil público/ }).uncheck()
+      await page.getByRole('button', { name: 'salvar perfil' }).click()
+      await expect(page.getByRole('status')).toHaveText('Perfil atualizado.')
+      const hidden = await request.get(secondSrc)
+      expect(hidden.status()).toBe(404)
+      expect(await hidden.text()).toBe('Not found')
+      expect((await getAs(page, secondSrc)).status()).toBe(200)
+    } finally {
+      await open(page, profilePath(activeArtist))
+      await page.getByRole('checkbox', { name: /Perfil público/ }).check()
+      await page.getByRole('button', { name: 'salvar perfil' }).click()
+      await expect(page.getByRole('status')).toHaveText('Perfil atualizado.')
+    }
+    expect((await request.get(secondSrc)).status()).toBe(200)
 
     // Remover: volta a foto neutra e o objeto é apagado.
     await main.getByRole('button', { name: 'Remover a foto principal', exact: true }).click()
@@ -373,7 +399,7 @@ test('imagem do coletivo: envia, aparece na página e na lista públicas, substi
   await expect(page.getByRole('status')).toHaveText('Imagem do coletivo atualizada.')
   const current = area.getByRole('img', { name: /Imagem atual de Organização sintética 1/ })
   const firstSrc = (await current.getAttribute('src'))!
-  expect(firstSrc.startsWith(`${supabaseUrl()}/storage/v1/object/public/public-images/${collectiveId}/`)).toBe(true)
+  expect(firstSrc.startsWith(`/img/${collectiveId}/`)).toBe(true)
   await loaded(current)
   // A versão do cadastro não muda com a imagem (independente da edição de texto).
   await expect(page.getByText(/versão \d+/)).toBeVisible()
@@ -435,7 +461,7 @@ test('capa do evento: envia no formulário de gestão, aparece na agenda e na p�
     await expect(page.getByRole('status')).toHaveText('Alterações salvas.')
     const preview = page.getByRole('img', { name: /Capa enviada do evento/ })
     const firstSrc = (await preview.getAttribute('src'))!
-    expect(firstSrc.startsWith(`${supabaseUrl()}/storage/v1/object/public/public-images/${eventId}/`)).toBe(true)
+    expect(firstSrc.startsWith(`/img/${eventId}/`)).toBe(true)
     await loaded(preview)
     const row = await rpcAs<{ cover_path: string; cover_bytes: number; cover_url: string | null }>(email, 'get_event', { target: eventId })
     expect(row.cover_bytes).toBe(PNG_RED.length)

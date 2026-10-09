@@ -40,6 +40,25 @@ test('catálogo lista somente coletivos e produtoras aprovados', async ({ page }
   await expect(collective.getByText('[Música]')).toBeVisible()
 })
 
+test('filtro por estado: as duas fixtures são de PE; outro estado mostra a mensagem de nenhum resultado e limpar volta à lista', async ({ page }) => {
+  await page.goto('/coletivos')
+  // O filtro é do cliente: espera a hidratação para não clicar antes de ele existir.
+  await expect.poll(() => page.locator('main').first().evaluate((main) => Object.keys(main).some((key) => key.startsWith('__reactFiber')))).toBe(true)
+  const chips = page.getByRole('group', { name: 'Filtrar por estado' })
+  await expect(chips.getByRole('button')).toHaveText(['todos', 'AL', 'BA', 'CE', 'MA', 'PB', 'PE', 'PI', 'RN', 'SE'])
+  await expect(chips.getByRole('button', { name: 'todos' })).toHaveAttribute('aria-pressed', 'true')
+  const names = () => page.locator('main li h3').allTextContents()
+  await chips.getByRole('button', { name: 'PE' }).click()
+  await expect(chips.getByRole('button', { name: 'PE' })).toHaveAttribute('aria-pressed', 'true')
+  expect(await names()).toEqual([collectiveName(1), collectiveName(6)])
+  await chips.getByRole('button', { name: 'CE' }).click()
+  await expect(page.getByText('Nenhum coletivo ou produtora encontrado para o estado escolhido.')).toBeVisible()
+  expect(await names()).toEqual([])
+  await chips.getByRole('button', { name: 'CE' }).click()
+  await expect(chips.getByRole('button', { name: 'todos' })).toHaveAttribute('aria-pressed', 'true')
+  expect(await names()).toEqual([collectiveName(1), collectiveName(6)])
+})
+
 test('navega do catálogo ao perfil', async ({ page }) => {
   await page.goto('/coletivos')
   await page.getByRole('link', { name: new RegExp(collectiveName(1)) }).click()

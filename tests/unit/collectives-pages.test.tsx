@@ -1,5 +1,6 @@
 import type { ComponentProps } from 'react'
 import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, data, MemoryRouter, RouterProvider, useLoaderData } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { CollectiveProfile } from '../../src/pages/public/CollectiveProfile'
@@ -98,6 +99,48 @@ describe('CollectivesHub', () => {
     hub([])
     expect(screen.getByText('Nenhum coletivo ou produtora cadastrado ainda.')).toBeTruthy()
     expect(screen.queryAllByRole('heading', { level: 3 })).toHaveLength(0)
+  })
+
+  describe('filtro por estado', () => {
+    const lista = [
+      coletivo(1),
+      coletivo(2, { cidade: 'Fortaleza', estado: 'CE' }),
+      coletivo(3, { tipo: 'produtora', cidade: 'Olinda', estado: 'PE' }),
+    ]
+    const names = () => screen.queryAllByRole('heading', { level: 3 }).map((h) => h.textContent)
+    const chips = () => within(screen.getByRole('group', { name: 'Filtrar por estado' }))
+
+    it('oferece "todos" e os 9 estados do Nordeste, com "todos" ativo e a lista inteira', () => {
+      hub(lista)
+      expect(chips().getAllByRole('button').map((b) => b.textContent)).toEqual(['todos', 'AL', 'BA', 'CE', 'MA', 'PB', 'PE', 'PI', 'RN', 'SE'])
+      expect(chips().getByRole('button', { name: 'todos' }).getAttribute('aria-pressed')).toBe('true')
+      expect(names()).toHaveLength(3)
+    })
+
+    it('filtra pela UF escolhida; escolher a mesma UF de novo ou "todos" limpa o filtro', async () => {
+      const user = userEvent.setup()
+      hub(lista)
+      await user.click(chips().getByRole('button', { name: 'PE' }))
+      expect(names()).toEqual(['Organização sintética 1', 'Organização sintética 3'])
+      expect(chips().getByRole('button', { name: 'PE' }).getAttribute('aria-pressed')).toBe('true')
+      expect(chips().getByRole('button', { name: 'todos' }).getAttribute('aria-pressed')).toBe('false')
+      await user.click(chips().getByRole('button', { name: 'CE' }))
+      expect(names()).toEqual(['Organização sintética 2'])
+      await user.click(chips().getByRole('button', { name: 'CE' }))
+      expect(names()).toHaveLength(3)
+      await user.click(chips().getByRole('button', { name: 'PE' }))
+      await user.click(chips().getByRole('button', { name: 'todos' }))
+      expect(names()).toHaveLength(3)
+    })
+
+    it('estado sem coletivos mostra a mensagem de nenhum resultado, diferente do vazio sem cadastros', async () => {
+      const user = userEvent.setup()
+      hub(lista)
+      await user.click(chips().getByRole('button', { name: 'BA' }))
+      expect(screen.getByText('Nenhum coletivo ou produtora encontrado para o estado escolhido.')).toBeTruthy()
+      expect(screen.queryByText('Nenhum coletivo ou produtora cadastrado ainda.')).toBeNull()
+      expect(names()).toHaveLength(0)
+    })
   })
 })
 

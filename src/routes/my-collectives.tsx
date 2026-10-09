@@ -1,7 +1,8 @@
-import { useNavigation } from 'react-router'
+import { useNavigation, useSearchParams } from 'react-router'
 import { LoadError } from '../components/ui/LoadError'
 import { MyCollectives } from '../pages/app/MyCollectives'
 import { loadMyCollectivesPage, myCollectivesAction } from '../server/collective-area.server'
+import { CREATED_PARAM } from '../lib/collective-forms'
 import { revalidateAfterSubmit } from '../lib/revalidate'
 import { supabaseLoader, supabaseRouteHeaders } from '../server/supabase.server'
 import type { Route } from './+types/my-collectives'
@@ -16,7 +17,8 @@ export const meta = () => [{ title: 'Meus Coletivos · CIRCUITO NE' }]
 
 export default function MyCollectivesRoute({ loaderData, actionData }: Route.ComponentProps) {
   const busy = useNavigation().state !== 'idle'
-  return <MyCollectives {...loaderData} feedback={actionData ?? null} busy={busy} />
+  const [params] = useSearchParams()
+  return <MyCollectives {...loaderData} feedback={actionData ?? null} criado={params.has(CREATED_PARAM)} busy={busy} />
 }
 
 export function ErrorBoundary() {

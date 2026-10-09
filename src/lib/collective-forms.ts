@@ -13,6 +13,8 @@ export const ACTIVITY_MAX = 200
 export const ROLE_NAME_MAX = 100
 export const REASON_MAX = 2000
 export const CLOSE_CONFIRMATION = 'ENCERRAR'
+/** Parâmetro de "meus coletivos" depois de criar um coletivo que ainda precisa de análise (a tela mostra o aviso). */
+export const CREATED_PARAM = 'criado'
 
 const length = (value: string) => [...value].length
 /** O navegador envia quebras de linha como CRLF; o banco conta caracteres. */
@@ -60,6 +62,22 @@ export function parseCollectiveForm(form: URLSearchParams, producer: boolean): P
   return { ok: true, payload: { name, description, activity, city, state_code: state, cnpj } }
 }
 
+/** Cor de destaque (só vale com "usar esta cor") e redes sociais, como o formulário de perfil público e o de criação os enviam. */
+function parseColorAndSocial(form: URLSearchParams, fields: Fields) {
+  const useColor = form.has('use_color')
+  const color = (form.get('color') ?? '').trim()
+  if (useColor && !/^#[0-9a-fA-F]{6}$/.test(color)) fields.color = 'Escolha uma cor válida.'
+  const social: Record<string, string> = {}
+  for (const key of SOCIAL_FIELDS) {
+    const value = (form.get(key) ?? '').trim()
+    if (!value) continue
+    const url = normalizeUrl(value)
+    if (url) social[SOCIAL_DB_KEY[key] ?? key] = url
+    else fields[key] = 'Informe o endereço completo, começando por https://'
+  }
+  return { color: useColor ? color.toLowerCase() : null, social }
+}
+
 export type CollectiveProfilePayload = {
   description: string
   color: string | null
@@ -72,19 +90,33 @@ export function parseCollectiveProfileForm(form: URLSearchParams): Parsed<Collec
   const description = multiline(form.get('description') ?? '')
   if (!description) fields.description = 'Descreva o coletivo.'
   else if (length(description) > DESCRIPTION_MAX) fields.description = `A descrição pode ter até ${DESCRIPTION_MAX.toLocaleString('pt-BR')} caracteres.`
-  const useColor = form.has('use_color')
-  const color = (form.get('color') ?? '').trim()
-  if (useColor && !/^#[0-9a-fA-F]{6}$/.test(color)) fields.color = 'Escolha uma cor válida.'
-  const social: Record<string, string> = {}
-  for (const key of SOCIAL_FIELDS) {
-    const value = (form.get(key) ?? '').trim()
-    if (!value) continue
-    const url = normalizeUrl(value)
-    if (url) social[SOCIAL_DB_KEY[key] ?? key] = url
-    else fields[key] = 'Informe o endereço completo, começando por https://'
-  }
+  const { color, social } = parseColorAndSocial(form, fields)
   if (Object.keys(fields).length) return { ok: false, fields }
-  return { ok: true, payload: { description, color: useColor ? color.toLowerCase() : null, social_links: social } }
+  return { ok: true, payload: { description, color, social_links: social } }
+}
+
+export type NewCollectivePayload = Omit<CollectivePayload, 'cnpj'> & {
+  kind: 'collective' | 'producer'
+  color: string | null
+  social_links: Record<string, string>
+  /** Só vai para produtora ou quando informado; o banco exige CNPJ da produtora. */
+  cnpj?: string
+}
+
+/**
+ * `/painel/coletivos/novo` (`create_collective`): tipo, cadastro, cor e redes de uma vez. As regras do cadastro são as de
+ * `parseCollectiveForm` (a produtora exige CNPJ); o tipo vem do campo `kind`.
+ */
+export function parseNewCollectiveForm(form: URLSearchParams): Parsed<NewCollectivePayload> {
+  const kind = form.get('kind')
+  const valid = kind === 'collective' || kind === 'producer'
+  const base = parseCollectiveForm(form, kind === 'producer')
+  const fields: Fields = base.ok ? {} : { ...base.fields }
+  if (!valid) fields.kind = 'Escolha se é um coletivo ou uma produtora.'
+  const { color, social } = parseColorAndSocial(form, fields)
+  if (!base.ok || !valid || Object.keys(fields).length) return { ok: false, fields }
+  const { cnpj, ...rest } = base.payload
+  return { ok: true, payload: { ...rest, kind, color, social_links: social, ...(cnpj ? { cnpj } : {}) } }
 }
 
 export type RolePayload = { role_name: string; permissions: Permissao[] }

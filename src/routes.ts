@@ -17,6 +17,7 @@ export default [
   layout('./routes/layouts/app.tsx', [
     route('painel', './routes/dashboard.tsx'),
     route('painel/coletivos', './routes/my-collectives.tsx'),
+    route('painel/coletivos/novo', './routes/collective-new.tsx'),
     route('painel/dados', './routes/account-data.tsx'),
     route('painel/dados/nova-atuacao', './routes/new-profile.tsx'),
     route('painel/perfil/:atuacaoId', './routes/profile-edit.tsx'),

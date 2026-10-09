@@ -141,8 +141,18 @@ describe('Dashboard real', () => {
     dash({ perfis: [], coletivos: [], proximos: [] })
     expect(screen.getByText('Nenhuma atuação cadastrada.')).toBeTruthy()
     expect(screen.getByText('Você ainda não participa de coletivos.')).toBeTruthy()
+    // Sem coletivo: criar um ou pedir para entrar em um existente.
+    const meus = screen.getByRole('heading', { name: 'meus coletivos' }).closest('section')!
+    expect(within(meus).getByRole('link', { name: 'criar um coletivo' }).getAttribute('href')).toBe('/painel/coletivos/novo')
+    expect(within(meus).getByRole('link', { name: 'pedir para entrar' }).getAttribute('href')).toBe('/painel/coletivos#solicitar-acesso')
     expect(screen.getByText('Nenhum evento com as suas atuações na line-up.')).toBeTruthy()
     expect(screen.getByRole('status').textContent).toBe('Nenhuma mensagem não lida.')
+  })
+
+  it('com coletivos, o painel não oferece criar nem pedir entrada (isso fica em "meus coletivos")', () => {
+    dash()
+    expect(screen.queryByRole('link', { name: 'criar um coletivo' })).toBeNull()
+    expect(screen.queryByRole('link', { name: 'pedir para entrar' })).toBeNull()
   })
 
   it('singular de mensagens', () => {

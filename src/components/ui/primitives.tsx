@@ -10,8 +10,11 @@ export function Panel({
   bodyClassName,
   neon = true,
   actions,
+  id,
 }: {
   title?: string
+  /** Âncora da seção (links `#id`). */
+  id?: string
   children: ReactNode
   className?: string
   bodyClassName?: string
@@ -20,6 +23,7 @@ export function Panel({
 }) {
   return (
     <section
+      id={id}
       className={cx(
         'relative bg-[var(--color-surface)]/70 backdrop-blur-sm',
         neon ? 'neon-border' : 'border border-[var(--color-line)]',

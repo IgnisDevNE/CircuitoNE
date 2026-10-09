@@ -4,12 +4,14 @@ import type { ActionResult } from '../../lib/action-result'
 import { fmtData } from '../../lib/utils'
 import type { ColetivoSituacao } from '../../server/mappers/account'
 import type { MyCollectivesData, SituacaoPedido } from '../../server/mappers/collective-area'
-import { Badge, Button, Empty, Panel } from '../../components/ui/primitives'
+import { Badge, btnClass, Button, Empty, LinkButton, Panel } from '../../components/ui/primitives'
 import { Select, Textarea } from '../../components/ui/form'
 
 export interface MyCollectivesProps extends MyCollectivesData {
   /** Resultado da última operação; só existe depois de o banco responder. */
   feedback?: ActionResult | null
+  /** Acabou de criar um coletivo que ainda está em análise (a criação redireciona para cá). */
+  criado?: boolean
   busy?: boolean
 }
 
@@ -28,11 +30,20 @@ const PEDIDO: Record<SituacaoPedido, { label: string; tone: 'ok' | 'warn' | 'neu
   cancelled: { label: 'cancelado', tone: 'neutral' },
 }
 
-export function MyCollectives({ coletivos, perfis, pedidos, disponiveis, feedback, busy = false }: MyCollectivesProps) {
+export function MyCollectives({ coletivos, perfis, pedidos, disponiveis, feedback, criado = false, busy = false }: MyCollectivesProps) {
   const livres = disponiveis.filter((c) => !c.pendente)
   return (
     <div className="space-y-6">
-      <h1 className="font-display text-2xl font-bold text-glow">$ coletivos_e_produtoras</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-display text-2xl font-bold text-glow">$ coletivos_e_produtoras</h1>
+        <LinkButton to="/painel/coletivos/novo" variant="solid" size="sm">+ criar coletivo/produtora</LinkButton>
+      </div>
+
+      {criado && !feedback && (
+        <p role="status" className="font-mono text-sm text-[var(--color-ok)]">
+          Cadastro enviado. O coletivo/produtora aparece abaixo como "em análise"; as funções internas abrem depois da aprovação.
+        </p>
+      )}
 
       {feedback && (
         <p role={feedback.ok ? 'status' : 'alert'} className={`font-mono text-sm ${feedback.ok ? 'text-[var(--color-ok)]' : 'text-[var(--accent-text)]'}`}>
@@ -41,7 +52,13 @@ export function MyCollectives({ coletivos, perfis, pedidos, disponiveis, feedbac
       )}
 
       {coletivos.length === 0 ? (
-        <Empty>Você ainda não faz parte de nenhum coletivo/produtora.</Empty>
+        <Empty>
+          <p>Você ainda não faz parte de nenhum coletivo/produtora.</p>
+          <div className="mt-4 flex flex-wrap justify-center gap-3">
+            <LinkButton to="/painel/coletivos/novo" variant="solid" size="sm">criar um coletivo ou produtora</LinkButton>
+            <a href="#solicitar-acesso" className={btnClass('outline', 'sm')}>pedir para entrar em um coletivo</a>
+          </div>
+        </Empty>
       ) : (
         <ul aria-label="Meus coletivos" className="grid gap-4 md:grid-cols-2">
           {coletivos.map((c) => {
@@ -104,7 +121,7 @@ export function MyCollectives({ coletivos, perfis, pedidos, disponiveis, feedbac
         )}
       </Panel>
 
-      <Panel title="solicitar acesso">
+      <Panel title="solicitar acesso" id="solicitar-acesso">
         {livres.length === 0 ? (
           <Empty>Nenhum coletivo ou produtora aprovado disponível para novos pedidos.</Empty>
         ) : (

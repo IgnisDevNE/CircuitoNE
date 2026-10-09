@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { PERMISSIONS } from '../../src/lib/collective-access'
-import { parseCloseForm, parseCollectiveForm, parseCollectiveProfileForm, parseRoleForm } from '../../src/lib/collective-forms'
+import { parseCloseForm, parseCollectiveForm, parseCollectiveProfileForm, parseNewCollectiveForm, parseRoleForm } from '../../src/lib/collective-forms'
 import { mapCollectiveRoles, mapMemberRoster, mfaState } from '../../src/server/mappers/collective-manage'
 import { mapExplorePerfis, mapRestrictedDetails } from '../../src/server/mappers/explore'
 
@@ -33,6 +33,60 @@ describe('parseCollectiveForm', () => {
     )
     expect(result).toMatchObject({ ok: false, fields: { name: expect.any(String), description: expect.any(String), activity: expect.any(String), city: expect.any(String), state_code: 'Escolha o estado.' } })
     expect(parseCollectiveForm(form({ ...valid, name: 'n'.repeat(200), description: 'd'.repeat(10000) }), false)).toMatchObject({ ok: true })
+  })
+})
+
+describe('parseNewCollectiveForm', () => {
+  const valid = { kind: 'collective', name: ' Coletivo ', description: 'Texto\r\nlinha', activity: 'Música', city: 'Recife', state_code: 'PE', cnpj: '' }
+
+  it('monta o payload de create_collective: tipo, cadastro, cor e redes (o site vira "website")', () => {
+    expect(
+      parseNewCollectiveForm(form({ ...valid, instagram: 'https://instagram.com/x', site: 'https://site.example.invalid', use_color: 'on', color: '#AABBCC' })),
+    ).toEqual({
+      ok: true,
+      payload: {
+        kind: 'collective',
+        name: 'Coletivo',
+        description: 'Texto\nlinha',
+        activity: 'Música',
+        city: 'Recife',
+        state_code: 'PE',
+        color: '#aabbcc',
+        social_links: { instagram: 'https://instagram.com/x', website: 'https://site.example.invalid' },
+      },
+    })
+  })
+
+  it('sem "usar esta cor" a cor vai nula; CNPJ de coletivo é opcional, mas normalizado quando informado', () => {
+    expect(parseNewCollectiveForm(form({ ...valid, color: '#aabbcc' }))).toMatchObject({ ok: true, payload: { color: null } })
+    const withCnpj = parseNewCollectiveForm(form({ ...valid, cnpj: '12.345.678/0001-95' }))
+    expect(withCnpj).toMatchObject({ ok: true, payload: { cnpj: '12345678000195' } })
+    const without = parseNewCollectiveForm(form(valid))
+    expect(without.ok && 'cnpj' in without.payload).toBe(false)
+  })
+
+  it('produtora exige CNPJ no campo "cnpj"; com CNPJ válido passa', () => {
+    expect(parseNewCollectiveForm(form({ ...valid, kind: 'producer' }))).toEqual({ ok: false, fields: { cnpj: 'Produtora exige CNPJ.' } })
+    expect(parseNewCollectiveForm(form({ ...valid, kind: 'producer', cnpj: '12345678000195' }))).toMatchObject({ ok: true, payload: { kind: 'producer', cnpj: '12345678000195' } })
+  })
+
+  it('o tipo é obrigatório e só aceita coletivo ou produtora', () => {
+    const { kind: _kind, ...semTipo } = valid
+    expect(parseNewCollectiveForm(form(semTipo))).toEqual({ ok: false, fields: { kind: 'Escolha se é um coletivo ou uma produtora.' } })
+    expect(parseNewCollectiveForm(form({ ...valid, kind: 'clube' }))).toMatchObject({ ok: false, fields: { kind: expect.any(String) } })
+  })
+
+  it('junta os erros de cadastro, cor e redes num só retorno', () => {
+    const result = parseNewCollectiveForm(form({ ...valid, name: '', city: 'Fortaleza', use_color: 'on', color: 'vermelho', instagram: 'instagram.com/x' }))
+    expect(result).toEqual({
+      ok: false,
+      fields: {
+        name: 'Informe o nome.',
+        city: 'Escolha uma cidade de PE da lista.',
+        color: 'Escolha uma cor válida.',
+        instagram: 'Informe o endereço completo, começando por https://',
+      },
+    })
   })
 })
 

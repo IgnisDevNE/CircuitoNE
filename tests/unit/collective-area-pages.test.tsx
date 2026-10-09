@@ -249,6 +249,37 @@ describe('MyCollectives', () => {
   }
   const page = (extra: Partial<ComponentProps<typeof MyCollectives>> = {}) => inRouter(<MyCollectives {...props} {...extra} />)
 
+  it('o botão de criar coletivo/produtora está sempre no topo, com ou sem coletivos', () => {
+    const { unmount } = page()
+    expect(screen.getByRole('link', { name: '+ criar coletivo/produtora' }).getAttribute('href')).toBe('/painel/coletivos/novo')
+    unmount()
+    page({ coletivos: [] })
+    expect(screen.getByRole('link', { name: '+ criar coletivo/produtora' }).getAttribute('href')).toBe('/painel/coletivos/novo')
+  })
+
+  it('sem coletivos: oferece criar um ou pedir para entrar, e o segundo vai ao formulário de solicitação', () => {
+    page({ coletivos: [] })
+    const empty = screen.getByText('Você ainda não faz parte de nenhum coletivo/produtora.').closest('div')!
+    expect(within(empty).getByRole('link', { name: 'criar um coletivo ou produtora' }).getAttribute('href')).toBe('/painel/coletivos/novo')
+    const ask = within(empty).getByRole('link', { name: 'pedir para entrar em um coletivo' })
+    expect(ask.getAttribute('href')).toBe('#solicitar-acesso')
+    expect(document.getElementById('solicitar-acesso')).toBe(screen.getByRole('heading', { name: 'solicitar acesso' }).closest('section'))
+  })
+
+  it('com coletivos, o estado vazio não aparece', () => {
+    page()
+    expect(screen.queryByText('Você ainda não faz parte de nenhum coletivo/produtora.')).toBeNull()
+  })
+
+  it('depois de criar um coletivo em análise, avisa (só se não houver outro resultado de operação)', () => {
+    const { unmount } = page({ criado: true })
+    expect(screen.getByRole('status').textContent).toContain('em análise')
+    unmount()
+    page({ criado: true, feedback: { ok: false, error: 'Falhou.' } })
+    expect(screen.queryByRole('status')).toBeNull()
+    expect(screen.getByRole('alert').textContent).toBe('[erro] Falhou.')
+  })
+
   it('lista os coletivos: aprovado leva ao dashboard; os demais, à situação, com o selo do estado', () => {
     page()
     const list = screen.getByRole('list', { name: 'Meus coletivos' })

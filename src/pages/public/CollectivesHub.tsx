@@ -1,21 +1,29 @@
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { Badge, Empty, SectionHeading } from '../../components/ui/primitives'
 import { DuotoneImage } from '../../components/ui/DuotoneImage'
 import { AccentScope } from '../../components/ui/AccentScope'
+import { UfFilter } from '../../components/ui/UfFilter'
+import type { Estado } from '../../data/types'
 import type { CollectiveListData } from '../../server/mappers/collectives'
 
+/** Hub: a lista vem do banco (ordem alfabética); o filtro de UF é feito no cliente. */
 export function CollectivesHub({ coletivos }: CollectiveListData) {
+  const [uf, setUf] = useState<Estado | null>(null)
+  const filtrados = uf ? coletivos.filter((c) => c.estado === uf) : coletivos
   return (
     <div>
-      <SectionHeading prompt="ls" sub="Coletivos e produtoras que movimentam a cena — organização, curadoria e estrutura.">coletivos/</SectionHeading>
+      <SectionHeading prompt="ls" sub="Coletivos e produtoras que movimentam a cena — organização, curadoria e estrutura. Filtre por estado.">coletivos/</SectionHeading>
+
+      <UfFilter value={uf} onChange={setUf} />
 
       {/* Os cartões são h3: o h2 oculto mantém a ordem dos títulos (h1, h2, h3) para quem navega por eles. */}
       <h2 className="sr-only">Coletivos e produtoras</h2>
-      {coletivos.length === 0 ? (
-        <Empty>Nenhum coletivo ou produtora cadastrado ainda.</Empty>
+      {filtrados.length === 0 ? (
+        <Empty>{coletivos.length === 0 ? 'Nenhum coletivo ou produtora cadastrado ainda.' : 'Nenhum coletivo ou produtora encontrado para o estado escolhido.'}</Empty>
       ) : (
         <ul className="grid gap-4 md:grid-cols-2">
-          {coletivos.map((c) => (
+          {filtrados.map((c) => (
             <li key={c.id}>
               <AccentScope color={c.corPredominante}>
                 <Link to={`/coletivos/${c.id}`} className="group flex h-full flex-col overflow-hidden border border-[var(--color-line)] transition-colors hover:border-[var(--accent)]">

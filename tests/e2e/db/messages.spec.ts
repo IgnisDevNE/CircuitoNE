@@ -1,4 +1,5 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test'
+import { expectNoViolations, settleAnimations } from './a11y'
 import { rpcAs } from './rpc'
 import { accounts, login, panelNav } from './session'
 
@@ -20,6 +21,9 @@ const seeded = 'Mensagem exclusivamente sintética 1 👋'
 
 test.describe.configure({ mode: 'serial' })
 
+// Conversa que a candidata cria no teste "visitante vê ... logado compõe": os testes de envio otimista seguintes a reaproveitam.
+let newConversation = ''
+
 let errors: string[]
 test.beforeEach(({ page }) => {
   errors = []
@@ -36,6 +40,9 @@ async function logout(page: Page, context: BrowserContext) {
 
 const list = (page: Page) => page.getByRole('navigation', { name: 'Conversas' })
 const log = (page: Page) => page.getByRole('log')
+// A conversa 1 na central do membro: "Artista sintético público" como a atuação "Interlocutor sintético". A conversa 5 (da atuação
+// excluída dele) também tem o artista como interlocutor, mas aparece como "como Atuação excluída".
+const withActive = (page: Page) => list(page).getByRole('link', { name: new RegExp(activeArtist) }).filter({ hasText: `como ${memberProfile}` })
 const unreadLink = (page: Page) => panelNav(page).getByRole('link', { name: /^Mensagens/ })
 const unreadCount = async (page: Page) => Number(/\((\d+)\)/.exec((await unreadLink(page).textContent()) ?? '')?.[1] ?? 0)
 
@@ -45,11 +52,25 @@ test('lista as conversas das atuações e abre uma com as mensagens semeadas, ta
   await page.goto('/painel/mensagens')
   await expect(page).toHaveTitle('Mensagens · CIRCUITO NE')
   await expect(page.getByRole('heading', { level: 1, name: '$ central_de_mensagens' })).toBeVisible()
-  // Só as conversas em que uma atuação da conta é ponta: as do coletivo 1 (conversa 2) ficam na área do coletivo.
-  await expect(list(page).getByRole('link', { name: /Organização/ })).toHaveCount(0)
+  // Tudo o que a conta lê: as atuações (conversas 1 e 5) e o coletivo 1, de que ela é dona (conversa 2, que também fica na área do coletivo).
+  // O coletivo 3 está suspenso e o 5 encerrado: as conversas deles não entram.
+  await expect(list(page).getByRole('link')).toHaveCount(3)
   await expect(list(page).getByRole('link', { name: /Atuação excluída/ })).toContainText('1 não lida')
-  const first = list(page).getByRole('link', { name: new RegExp(memberProfile) })
-  await expect(first).toContainText(seeded)
+  await expect(list(page).getByRole('link', { name: /Atuação excluída/ })).toContainText(`como ${activeArtist}`)
+  const viaCollective = list(page).getByRole('link').filter({ hasText: 'como Organização sintética 1 (coletivo)' })
+  await expect(viaCollective).toHaveCount(1)
+  await expect(viaCollective).toContainText(memberProfile)
+  await expect(viaCollective).toContainText('bloqueada')
+  const first = list(page).getByRole('link').filter({ hasText: seeded })
+  await expect(first).toContainText(`como ${activeArtist}`)
+  // Filtro por identidade: "todas" mais uma opção por atuação ou coletivo presente.
+  const filter = page.getByRole('combobox', { name: 'Mostrar conversas de' })
+  await expect(filter.getByRole('option')).toHaveText(['todas', `${activeArtist} (atuação)`, 'Organização sintética 1 (coletivo)'])
+  await filter.selectOption({ label: 'Organização sintética 1 (coletivo)' })
+  await expect(list(page).getByRole('link')).toHaveCount(1)
+  await expect(viaCollective).toBeVisible()
+  await filter.selectOption({ label: 'todas' })
+  await expect(list(page).getByRole('link')).toHaveCount(3)
   await first.click()
   await expect(page).toHaveURL(new RegExp(`/painel/mensagens/${conversationId(1)}$`))
   await expect(log(page).getByText(seeded)).toBeVisible()
@@ -83,9 +104,11 @@ test('envia uma mensagem como texto puro, que continua lá depois de recarregar'
   const text = `Teste ${Date.now()} <b>negrito</b> <img src=x onerror="window.__pwned=1"> **md**`
   await page.getByRole('textbox', { name: `Mensagem para ${memberProfile}` }).fill(text)
   await page.getByRole('button', { name: 'enviar', exact: true }).click()
-  await expect(page.getByRole('status').filter({ hasText: 'Mensagem enviada.' })).toBeVisible()
+  // Envio otimista: a mensagem entra na conversa na hora e o campo fica livre; "enviando…" some quando a mensagem real chega.
   await expect(log(page).getByText(text, { exact: true })).toBeVisible()
   await expect(page.getByRole('textbox', { name: `Mensagem para ${memberProfile}` })).toHaveValue('')
+  await expect(log(page).getByRole('status')).toHaveCount(0)
+  await expect(log(page).getByText(text, { exact: true })).toHaveCount(1)
   expect(await log(page).locator('b, img').count()).toBe(0)
   expect(await page.evaluate(() => (window as unknown as { __pwned?: number }).__pwned)).toBeUndefined()
   await page.reload()
@@ -97,7 +120,7 @@ test('envia uma mensagem como texto puro, que continua lá depois de recarregar'
 test('a outra pessoa vê a mensagem como não lida; ao abrir, a contagem cai e a conversa deixa de ter não lidas', async ({ page }) => {
   await login(page, accounts.member.email)
   await page.goto('/painel/mensagens')
-  const conversation = list(page).getByRole('link', { name: new RegExp(activeArtist) })
+  const conversation = withActive(page)
   await expect(conversation).toContainText('não lida')
   const before = await unreadCount(page)
   expect(before).toBeGreaterThan(0)
@@ -140,7 +163,7 @@ test('conversa bloqueada recusa o envio mesmo com a tela aberta; só quem bloque
     await expect(page.getByText(/Conversa bloqueada: ninguém envia mensagens/)).toBeVisible()
     await expect(page.getByRole('textbox', { name: `Mensagem para ${activeArtist}` })).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'desbloquear' })).toHaveCount(0)
-    await expect(list(page).getByRole('link', { name: new RegExp(activeArtist) })).toContainText('bloqueada')
+    await expect(withActive(page)).toContainText('bloqueada')
 
     await logout(page, context)
     await login(page, accounts.active.email)
@@ -236,6 +259,7 @@ test('visitante vê "Entrar para enviar mensagem"; logado compõe, envia e cai n
   await expect(log(page).getByText(text, { exact: true })).toBeVisible()
   await expect(list(page).getByRole('link', { name: new RegExp(activeArtist) })).toBeVisible()
   const conversation = page.url().split('/').pop()!
+  newConversation = conversation
 
   // A destinatária vê a conversa nova como não lida.
   await logout(page, context)
@@ -249,6 +273,99 @@ test('visitante vê "Entrar para enviar mensagem"; logado compõe, envia e cai n
   await rpcAs(accounts.active.email, 'mark_conversation_read', { target: conversation, last_message: messages[messages.length - 1].id })
   await page.goto('/painel')
   await expect(unreadLink(page)).toHaveText('Mensagens (1)')
+})
+
+/** Devolve à fixture-active a contagem que as demais suítes afirmam (1 não lida, da conversa 5): lê a conversa que a candidata criou. */
+async function markNewConversationRead() {
+  const messages = await rpcAs<{ id: string }[]>(accounts.active.email, 'get_recent_messages', { target: newConversation })
+  await rpcAs(accounts.active.email, 'mark_conversation_read', { target: newConversation, last_message: messages[messages.length - 1].id })
+}
+
+test('envio otimista: a mensagem aparece na hora, com o campo livre, e a real a substitui quando o servidor responde', async ({ page, context }) => {
+  await logout(page, context)
+  await login(page, accounts.applicant.email)
+  await page.goto(`/painel/mensagens/${newConversation}`)
+  const field = page.getByRole('textbox', { name: `Mensagem para ${activeArtist}` })
+  // O envio fica retido na rede até o teste liberar: o que aparece antes disso é só o lado do navegador.
+  let release!: () => void
+  const held = new Promise<void>((resolve) => (release = resolve))
+  await page.route('**/api/chat/enviar', async (route) => {
+    await held
+    await route.continue()
+  })
+  const text = `Otimista ${Date.now()}`
+  try {
+    await field.fill(text)
+    await page.getByRole('button', { name: 'enviar', exact: true }).click()
+    const bubble = log(page).getByRole('listitem').filter({ hasText: text })
+    await expect(bubble).toBeVisible()
+    await expect(bubble.getByRole('status')).toHaveText('enviando…')
+    await expect(field).toHaveValue('')
+    await expect(field).toBeFocused()
+    release()
+    await expect(bubble.getByRole('status')).toHaveCount(0)
+    await expect(log(page).getByText(text, { exact: true })).toHaveCount(1)
+    await expect(list(page).getByRole('link', { name: new RegExp(activeArtist) })).toContainText(text)
+    await page.reload()
+    await expect(log(page).getByText(text, { exact: true })).toHaveCount(1)
+  } finally {
+    release()
+    await page.unroute('**/api/chat/enviar')
+    await markNewConversationRead()
+  }
+})
+
+test('falha ao enviar: "mensagem não enviada" embaixo da mensagem; "tentar de novo" reenvia com a mesma chave e a mensagem fica uma só', async ({ page }) => {
+  await page.goto(`/painel/mensagens/${newConversation}`)
+  const field = page.getByRole('textbox', { name: `Mensagem para ${activeArtist}` })
+  const requestIds: string[] = []
+  let failNext = true
+  await page.route('**/api/chat/enviar', async (route) => {
+    requestIds.push(new URLSearchParams(route.request().postData() ?? '').get('request_id') ?? '')
+    if (failNext) {
+      failNext = false
+      return route.abort('failed')
+    }
+    return route.continue()
+  })
+  const send = async (text: string) => {
+    await field.fill(text)
+    await page.getByRole('button', { name: 'enviar', exact: true }).click()
+    return log(page).getByRole('listitem').filter({ hasText: text })
+  }
+  try {
+    const text = `Falha ${Date.now()}`
+    const bubble = await send(text)
+    // A mensagem fica na conversa e o aviso aparece embaixo dela; o campo já está livre para a próxima.
+    await expect(bubble.getByRole('alert')).toContainText('mensagem não enviada')
+    await expect(bubble.getByRole('alert')).toContainText('Sem conexão')
+    await expect(field).toHaveValue('')
+    await settleAnimations(page)
+    await expectNoViolations(page, 'conversa com mensagem não enviada')
+    await bubble.getByRole('button', { name: /tentar de novo/ }).click()
+    await expect(bubble.getByRole('alert')).toHaveCount(0)
+    await expect(bubble.getByRole('status')).toHaveCount(0)
+    await expect(page.getByText('mensagem não enviada')).toHaveCount(0)
+    await expect(log(page).getByText(text, { exact: true })).toHaveCount(1)
+    expect(requestIds).toHaveLength(2)
+    expect(requestIds[1]).toBe(requestIds[0])
+
+    // Descartar: a mensagem some da tela e nada é enviado.
+    failNext = true
+    const discarded = `Descartada ${Date.now()}`
+    const failed = await send(discarded)
+    await expect(failed.getByRole('alert')).toContainText('mensagem não enviada')
+    await failed.getByRole('button', { name: /descartar/ }).click()
+    await expect(log(page).getByText(discarded, { exact: true })).toHaveCount(0)
+    expect(requestIds).toHaveLength(3)
+
+    await page.reload()
+    await expect(log(page).getByText(text, { exact: true })).toHaveCount(1)
+    await expect(log(page).getByText(discarded, { exact: true })).toHaveCount(0)
+  } finally {
+    await page.unroute('**/api/chat/enviar')
+    await markNewConversationRead()
+  }
 })
 
 test('o destinatário inválido da nova conversa responde 404', async ({ page, context }) => {

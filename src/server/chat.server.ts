@@ -122,8 +122,8 @@ export async function chatAction(request: Request, route: string | undefined): P
       async (client, form) => {
         if (route === 'enviar') {
           // Só aceita o par "de quem envia > interlocutor" que o formulário traz; o RPC confere cada ponta.
-          const { conversation } = await sendFrom(client, form)
-          return { message: MESSAGE_SENT, extra: { conversation_id: conversation } }
+          const { conversation, message } = await sendFrom(client, form)
+          return { message: MESSAGE_SENT, extra: { conversation_id: conversation, ...(message ? { message_id: message } : {}) } }
         }
         const target = formId(form, 'conversation', 'Conversa inválida.')
         await callRpc(client.rpc('mark_conversation_read', { target, last_message: formId(form, 'last', 'Mensagem inválida.') }))

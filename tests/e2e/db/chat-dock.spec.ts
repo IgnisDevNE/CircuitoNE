@@ -181,6 +181,66 @@ test('a janela aberta marca como lida e traz respostas pela atualização perió
   await expect(unreadLink(page)).toHaveText(baseline > 0 ? `Mensagens (${baseline})` : 'Mensagens')
 })
 
+test('envio otimista na janela: a mensagem aparece na hora; se o envio falhar, "mensagem não enviada" e "tentar de novo" reenvia com a mesma chave', async ({ page }) => {
+  await login(page, accounts.member.email)
+  await page.goto(`/artistas/${activeProfile}`)
+  await openLink(page).click()
+  await expect(log(page).getByText(newText, { exact: true })).toBeVisible()
+
+  // `hold`: o envio fica retido na rede até o teste liberar; `fail`: a conexão cai uma vez; `pass`: segue normalmente.
+  let mode: 'hold' | 'fail' | 'pass' = 'hold'
+  let release!: () => void
+  const held = new Promise<void>((resolve) => (release = resolve))
+  const requestIds: string[] = []
+  await page.route('**/api/chat/enviar', async (route) => {
+    requestIds.push(new URLSearchParams(route.request().postData() ?? '').get('request_id') ?? '')
+    if (mode === 'hold') await held
+    if (mode === 'fail') {
+      mode = 'pass'
+      return route.abort('failed')
+    }
+    return route.continue()
+  })
+  const send = async (text: string) => {
+    await field(page).fill(text)
+    await dialog(page).getByRole('button', { name: 'enviar', exact: true }).click()
+    return log(page).getByRole('listitem').filter({ hasText: text })
+  }
+  try {
+    // Sem esperar o servidor: o balão está na conversa, marcado, e o campo livre.
+    const quick = `Janela rápida ${Date.now()}`
+    const first = await send(quick)
+    await expect(first).toBeVisible()
+    await expect(first.getByRole('status')).toHaveText('enviando…')
+    await expect(field(page)).toHaveValue('')
+    release()
+    await expect(first.getByRole('status')).toHaveCount(0)
+    await expect(log(page).getByText(quick, { exact: true })).toHaveCount(1)
+
+    mode = 'fail'
+    const text = `Janela falha ${Date.now()}`
+    const bubble = await send(text)
+    await expect(bubble.getByRole('alert')).toContainText('mensagem não enviada')
+    await expect(field(page)).toHaveValue('')
+    const failedId = requestIds[requestIds.length - 1]
+    await bubble.getByRole('button', { name: /tentar de novo/ }).click()
+    await expect(bubble.getByRole('alert')).toHaveCount(0)
+    await expect(page.getByText('mensagem não enviada')).toHaveCount(0)
+    await expect(log(page).getByText(text, { exact: true })).toHaveCount(1)
+    expect(requestIds[requestIds.length - 1]).toBe(failedId)
+
+    await page.reload()
+    await expect(log(page).getByText(text, { exact: true })).toHaveCount(1)
+    await expect(log(page).getByText(quick, { exact: true })).toHaveCount(1)
+  } finally {
+    release()
+    await page.unroute('**/api/chat/enviar')
+    // Restaura o que o dashboard.spec.ts afirma (1 não lida, da conversa 5): a fixture-active lê as mensagens novas.
+    const messages = await rpcAs<{ id: string }[]>(accounts.active.email, 'get_recent_messages', { target: newConversation })
+    await rpcAs(accounts.active.email, 'mark_conversation_read', { target: newConversation, last_message: messages[messages.length - 1].id })
+  }
+})
+
 test('o coletivo também abre a janela (como o coletivo ou como uma atuação)', async ({ page }) => {
   await login(page, accounts.applicant.email)
   await page.goto(`/coletivos/${collectiveId}`)

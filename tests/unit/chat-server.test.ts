@@ -307,7 +307,8 @@ describe('chatAction (POST /api/chat/enviar e /lida)', () => {
     expect(response.status).toBe(200)
     expect(response.headers.get('content-type')).toContain('application/json')
     expect(response.headers.get('cache-control')).toContain('no-store')
-    expect(body).toEqual({ ok: true, message: 'Mensagem enviada.', conversation_id: conv(7) })
+    // O id da mensagem real deixa a tela trocar a mensagem em envio pela confirmada.
+    expect(body).toEqual({ ok: true, message: 'Mensagem enviada.', conversation_id: conv(7), message_id: msgId(1) })
     expect(JSON.parse(seen.find((c) => c.path.endsWith('send_message'))!.body)).toEqual({
       sender_kind: 'profile', sender: ME, recipient_kind: 'profile', recipient: OTHER, body: 'Olá\nmundo', request_id: REQ,
     })

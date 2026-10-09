@@ -27,7 +27,7 @@ export type ChatOpen = {
   inicial: (ChatThread & { conversationId: string }) | null
 }
 
-export type ChatSent = { ok: true; message: string; conversation_id: string }
+export type ChatSent = { ok: true; message: string; conversation_id: string; message_id?: string }
 export type ChatFailure = { error: string }
 
 /** Mensagens novas entram no fim; as já carregadas (inclusive as mais antigas) ficam, sem duplicar. */
@@ -122,4 +122,67 @@ export function parseDock(raw: string | null | undefined): ChatDockState {
   } catch {
     return emptyDock
   }
+}
+
+// ---- Mensagens em envio (otimista) ----
+
+/** `sending`: enviada ao servidor, sem resposta; `sent`: o banco confirmou e a mensagem real ainda não chegou à lista; `failed`: recusada ou sem rede. */
+export type OutgoingStatus = 'sending' | 'sent' | 'failed'
+
+/** Mensagem que o usuário já escreveu e que aparece na conversa antes da resposta do servidor. */
+export type Outgoing = {
+  /** Chave de idempotência do envio (uma por mensagem) e chave do item na tela: reenviar repete o mesmo valor. */
+  requestId: string
+  /** `<remetente>><destinatário>` (`routeKey`): reenviar usa a mesma rota. */
+  via: string
+  /** Texto exatamente como foi enviado: reenviar com o mesmo texto cai na mesma mensagem do banco. */
+  body: string
+  /** Conversa em que aparece; nula na janela do chat enquanto a conversa ainda não existe. */
+  conversationId: string | null
+  status: OutgoingStatus
+  /** Motivo da falha (pt-BR), só com `failed`. */
+  error: string | null
+  /** Tentar de novo só adianta para falha de rede, limite de envio ou indisponibilidade; recusas do banco não mudam sozinhas. */
+  retryable: boolean
+  /** Id da mensagem real, quando o servidor o devolveu: é como a mensagem em envio some quando a real chega. */
+  messageId: string | null
+}
+
+/** Falha de rede (status 0), limite de envio (429) e erro do servidor (5xx) podem passar; as demais recusas (403, 409, 422...) não. */
+export const isRetryable = (status: number) => status === 0 || status === 429 || status >= 500
+
+export const newOutgoing = (draft: Pick<Outgoing, 'requestId' | 'via' | 'body' | 'conversationId'>): Outgoing => ({
+  ...draft,
+  status: 'sending',
+  error: null,
+  retryable: false,
+  messageId: null,
+})
+
+const patch = (list: Outgoing[], requestId: string, change: Partial<Outgoing>) =>
+  list.map((item) => (item.requestId === requestId ? { ...item, ...change } : item))
+
+export const dropOutgoing = (list: Outgoing[], requestId: string): Outgoing[] => list.filter((item) => item.requestId !== requestId)
+
+/** O banco confirmou. Sem o id da mensagem real não há como saber quando ela chegou: o item sai (a lista real é relida em seguida). */
+export const markSent = (list: Outgoing[], requestId: string, messageId: string | null): Outgoing[] =>
+  messageId ? patch(list, requestId, { status: 'sent', messageId, error: null, retryable: false }) : dropOutgoing(list, requestId)
+
+export const markFailed = (list: Outgoing[], requestId: string, error: string, retryable: boolean): Outgoing[] =>
+  patch(list, requestId, { status: 'failed', error, retryable })
+
+/** "Tentar de novo": volta a `sending`, com a mesma chave, rota e texto. Só vale para uma falha que pode passar. */
+export const markRetry = (list: Outgoing[], requestId: string): Outgoing[] =>
+  list.map((item) => (item.requestId === requestId && item.status === 'failed' && item.retryable ? { ...item, status: 'sending', error: null } : item))
+
+const delivered = (item: Outgoing, messages: Mensagem[]) =>
+  item.status === 'sent' && item.messageId !== null && messages.some((message) => message.id === item.messageId)
+
+/** Itens que a tela mostra depois das mensagens reais: tudo o que ainda não tem a mensagem real na lista carregada. */
+export const pendingOutgoing = (list: Outgoing[], messages: Mensagem[]): Outgoing[] => list.filter((item) => !delivered(item, messages))
+
+/** Tira da lista os itens cuja mensagem real já chegou; devolve a mesma lista (mesma referência) quando nada mudou. */
+export const pruneDelivered = (list: Outgoing[], messages: Mensagem[]): Outgoing[] => {
+  const kept = pendingOutgoing(list, messages)
+  return kept.length === list.length ? list : kept
 }

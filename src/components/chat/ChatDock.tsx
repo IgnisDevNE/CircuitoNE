@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import { Link, useRevalidator, useRouteLoaderData } from 'react-router'
-import { fetchChatOpen, fetchChatThread, markChatRead, sendChatMessage } from '../../lib/chat-client'
-import { mergeMessages, type ChatConversa, type ChatOpen, type ChatThread, type ChatWindowState } from '../../lib/chat'
-import { MAX_MESSAGE_LENGTH, parseParty, partyKey, REFRESH_INTERVAL_MS, routeKey } from '../../lib/messages'
+import { fetchChatOpen, fetchChatThread, markChatRead } from '../../lib/chat-client'
+import { mergeMessages, pendingOutgoing, type ChatConversa, type ChatOpen, type ChatThread, type ChatWindowState, type Outgoing } from '../../lib/chat'
+import { MAX_MESSAGE_LENGTH, normalizeText, parseParty, partyKey, REFRESH_INTERVAL_MS, routeKey } from '../../lib/messages'
 import { cx } from '../../lib/utils'
 import type { Lado } from '../../server/mappers/messages'
-import { Bubble } from '../ui/Chat'
+import { Bubble, OutgoingBubble } from '../ui/Chat'
 import { Button } from '../ui/primitives'
 import { useChatDock, type ChatDockApi } from './ChatDockProvider'
+import { useOutgoing } from './useOutgoing'
 
 const fieldClass =
   'w-full bg-[var(--color-bg-elev)] border border-[var(--color-control)] px-3 py-2 font-mono text-sm outline-none focus:border-[var(--accent)]'
@@ -44,20 +45,16 @@ function useChatWindow(win: ChatWindowState, expanded: boolean, onName: (nome: s
   const [pendingRead, setPendingRead] = useState<ReadonlySet<string>>(new Set())
   const [olderBusy, setOlderBusy] = useState(false)
   const [text, setText] = useState('')
-  const [requestId, setRequestId] = useState('')
-  const [sending, setSending] = useState(false)
-  const [sendError, setSendError] = useState<string | null>(null)
+  // Avisos que não são de uma mensagem (por exemplo, falha ao carregar anteriores); falha de envio fica na própria mensagem.
+  const [notice, setNotice] = useState<string | null>(null)
 
   const threadsRef = useRef(threads)
   threadsRef.current = threads
   const openRef = useRef(open)
   openRef.current = open
-  const sendingRef = useRef(false)
+  const conversasRef = useRef(conversas)
+  conversasRef.current = conversas
   const started = useRef(false)
-
-  // A chave de idempotência nasce no navegador e muda a cada texto novo e a cada envio concluído: reenviar o mesmo texto
-  // (clique duplo, nova tentativa depois de uma queda) repete a chave e o banco devolve a mesma mensagem.
-  useEffect(() => setRequestId(crypto.randomUUID()), [])
 
   const current = conversas.find((conversa) => partyKey({ kind: conversa.de.kind, id: conversa.de.id ?? '' }) === via)
   const thread = current ? threads[current.id] : undefined
@@ -131,7 +128,7 @@ function useChatWindow(win: ChatWindowState, expanded: boolean, onName: (nome: s
   const currentId = current?.id
   const hasThread = thread !== undefined
   useEffect(() => {
-    if (expanded && currentId && !hasThread && !sendingRef.current) void refresh(currentId)
+    if (expanded && currentId && !hasThread) void refresh(currentId)
   }, [expanded, currentId, hasThread, refresh])
 
   // Atualização a cada ~15 s, só com a janela expandida e a aba visível (e já ao voltar para a aba).
@@ -170,7 +167,7 @@ function useChatWindow(win: ChatWindowState, expanded: boolean, onName: (nome: s
     const result = await fetchChatThread(currentId, { time: first.cursor, id: first.id })
     setOlderBusy(false)
     if (!result.ok) {
-      setSendError(result.error)
+      setNotice(result.error)
       return
     }
     setThreads((prev) =>
@@ -180,42 +177,45 @@ function useChatWindow(win: ChatWindowState, expanded: boolean, onName: (nome: s
     )
   }, [currentId])
 
-  const changeText = (value: string) => {
-    setText(value)
-    setRequestId(crypto.randomUUID())
-  }
-
-  const send = useCallback(async () => {
-    const target = parseParty(win.para)
-    const sender = open?.remetentes.find((lado) => sideOf(lado) === via)
-    if (sendingRef.current || !text.trim() || !target || !sender || load.status !== 'ready') return
-    sendingRef.current = true
-    setSending(true)
-    setSendError(null)
-    const result = await sendChatMessage({
-      via: routeKey({ kind: sender.kind, id: sender.id ?? '' }, target),
-      body: text,
-      requestId,
-    })
-    if (result.ok) {
-      const id = result.data.conversation_id
-      setText('')
-      setRequestId(crypto.randomUUID())
-      setConversas((prev) => (prev.some((conversa) => conversa.id === id) ? prev : [{ id, de: sender, naoLidas: 0, bloqueada: false, arquivada: false }, ...prev]))
-      await refresh(id)
+  // Envio otimista: a mensagem entra na conversa na hora, o campo fica livre e cada mensagem tem a sua chave de idempotência.
+  // Depois do banco confirmar, a conversa é relida (e o menu recarregado); uma falha deixa a mensagem na tela, marcada.
+  const outgoing = useOutgoing({
+    onSent: (item, sent) => {
+      const id = sent.conversation_id
+      const from = item.via.split('>')[0]
+      const sender = openRef.current?.remetentes.find((lado) => sideOf(lado) === from)
+      setConversas((prev) =>
+        prev.some((conversa) => conversa.id === id) || !sender ? prev : [{ id, de: sender, naoLidas: 0, bloqueada: false, arquivada: false }, ...prev],
+      )
+      void refresh(id)
       // A central de mensagens e o menu passam a refletir a conversa criada ou atualizada.
       void revalidate.current()
-    } else {
-      setSendError(result.error)
-      fail(result.status, result.error)
+    },
+    onFailed: (item, status, error) => {
+      fail(status, error)
       // Bloqueio ou perda de permissão decididos pelo banco: relê a conversa para a janela mostrar o estado real.
-      if (currentId && (result.status === 409 || result.status === 403)) void refresh(currentId)
-    }
-    sendingRef.current = false
-    setSending(false)
-  }, [win.para, open, via, text, requestId, load.status, refresh, fail, currentId])
+      if (status === 409 || status === 403) {
+        const from = item.via.split('>')[0]
+        const id = conversasRef.current.find((conversa) => sideOf(conversa.de) === from)?.id
+        if (id) void refresh(id)
+      }
+    },
+  })
+  const { prune } = outgoing
+  const loaded = thread?.mensagens
+  useEffect(() => prune(loaded ?? []), [prune, loaded])
 
-  return { load, open, conversas, current, thread, via, setVia, text, changeText, sending, sendError, send, retry, loadOlder, olderBusy }
+  const send = useCallback(() => {
+    const target = parseParty(win.para)
+    const sender = open?.remetentes.find((lado) => sideOf(lado) === via)
+    const body = normalizeText(text)
+    if (!body || !target || !sender || load.status !== 'ready') return
+    setNotice(null)
+    outgoing.send({ via: routeKey({ kind: sender.kind, id: sender.id ?? '' }, target), body, conversationId: current?.id ?? null })
+    setText('')
+  }, [win.para, open, via, text, load.status, outgoing, current])
+
+  return { load, open, conversas, current, thread, via, setVia, text, setText, notice, outgoing, send, retry, loadOlder, olderBusy }
 }
 
 /** Rótulo curto da janela: o interlocutor (ou "Nova conversa" até a leitura terminar). */
@@ -254,7 +254,7 @@ function ChatWindow({ win, dock }: { win: ChatWindowState; dock: ChatDockApi }) 
 }
 
 function ExpandedWindow({ win, dock, chat }: { win: ChatWindowState; dock: ChatDockApi; chat: ReturnType<typeof useChatWindow> }) {
-  const { load, open, current, thread, via, text, sending, sendError } = chat
+  const { load, open, current, thread, via, text, notice, outgoing } = chat
   const title = titleOf(win)
   const dialogRef = useRef<HTMLElement>(null)
   const textRef = useRef<HTMLTextAreaElement>(null)
@@ -273,13 +273,20 @@ function ExpandedWindow({ win, dock, chat }: { win: ChatWindowState; dock: ChatD
   const mine = new Set((open?.remetentes ?? []).map(sideOf))
   const isMine = (lado: Lado) => mine.has(sideOf(lado))
   const mensagens = thread?.mensagens ?? []
+  // Mensagens minhas em envio (ou que falharam) por esta atuação, depois das reais; as já entregues saem daqui.
+  const pendentes = pendingOutgoing(
+    outgoing.items.filter((item) => item.via.split('>')[0] === via),
+    mensagens,
+  )
   const lastMessage = mensagens[mensagens.length - 1]
-  const lastIsMine = lastMessage ? isMine(lastMessage.autor) : false
+  const lastIsMine = (lastMessage ? isMine(lastMessage.autor) : false) || pendentes.length > 0
   const lastId = lastMessage?.id
+  const pendingCount = pendentes.length
   useEffect(() => {
     const log = logRef.current
-    if (log && lastId && (nearBottom.current || lastIsMine)) log.scrollTop = log.scrollHeight
-  }, [lastId, lastIsMine, load.status])
+    if (log && (lastId || pendingCount > 0) && (nearBottom.current || lastIsMine)) log.scrollTop = log.scrollHeight
+  }, [lastId, lastIsMine, pendingCount, load.status])
+  const authorOf = (item: Outgoing) => (mine.size > 1 ? open?.remetentes.find((lado) => sideOf(lado) === item.via.split('>')[0])?.nome : undefined)
 
   const blocked = thread?.bloqueada === true || current?.bloqueada === true
   const archived = current?.arquivada === true
@@ -305,7 +312,8 @@ function ExpandedWindow({ win, dock, chat }: { win: ChatWindowState; dock: ChatD
     // Enter envia; Shift+Enter quebra a linha. Durante a composição (IME) o Enter pertence ao método de entrada.
     if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && !readOnly) {
       event.preventDefault()
-      void chat.send()
+      chat.send()
+      textRef.current?.focus()
     }
   }
 
@@ -382,12 +390,15 @@ function ExpandedWindow({ win, dock, chat }: { win: ChatWindowState; dock: ChatD
               }}
               className="min-h-0 flex-1 overflow-y-auto p-3 focus-visible:outline-offset-[-2px]"
             >
-              {mensagens.length === 0 ? (
+              {mensagens.length === 0 && pendentes.length === 0 ? (
                 <p className="font-mono text-xs text-[var(--color-muted)]">Nenhuma mensagem ainda. Escreva a primeira.</p>
               ) : (
                 <ul className="space-y-3">
                   {mensagens.map((mensagem) => (
                     <Bubble key={mensagem.id} mensagem={mensagem} minha={isMine(mensagem.autor)} autor={!isMine(mensagem.autor) || mine.size > 1} reportable={false} />
+                  ))}
+                  {pendentes.map((item) => (
+                    <OutgoingBubble key={item.requestId} item={item} autor={authorOf(item)} onRetry={outgoing.retry} onDiscard={outgoing.discard} />
                   ))}
                 </ul>
               )}
@@ -399,7 +410,8 @@ function ExpandedWindow({ win, dock, chat }: { win: ChatWindowState; dock: ChatD
       <form
         onSubmit={(event) => {
           event.preventDefault()
-          void chat.send()
+          chat.send()
+          textRef.current?.focus()
         }}
         className="shrink-0 space-y-2 border-t border-[var(--color-line)] p-3"
       >
@@ -416,7 +428,7 @@ function ExpandedWindow({ win, dock, chat }: { win: ChatWindowState; dock: ChatD
         {load.status === 'ready' && (open?.remetentes.length ?? 0) === 1 && (
           <p className="font-mono text-xs text-[var(--color-muted)]">Enviando como {open!.remetentes[0].nome}.</p>
         )}
-        {sendError && <p role="alert" className="font-mono text-xs text-[var(--accent-text)]">[erro] {sendError}</p>}
+        {notice && <p role="alert" className="font-mono text-xs text-[var(--accent-text)]">[erro] {notice}</p>}
         {note && <p id={noteId} className="font-mono text-xs text-[var(--color-muted)]">{note}</p>}
         <label htmlFor={textId} className="sr-only">Mensagem para {title}</label>
         <div className="flex gap-2">
@@ -424,7 +436,7 @@ function ExpandedWindow({ win, dock, chat }: { win: ChatWindowState; dock: ChatD
             id={textId}
             ref={textRef}
             value={text}
-            onChange={(event) => chat.changeText(event.target.value)}
+            onChange={(event) => chat.setText(event.target.value)}
             onKeyDown={onTextKeyDown}
             readOnly={readOnly}
             maxLength={MAX_MESSAGE_LENGTH}
@@ -433,7 +445,7 @@ function ExpandedWindow({ win, dock, chat }: { win: ChatWindowState; dock: ChatD
             aria-describedby={cx(hintId, note && noteId)}
             className={cx(fieldClass, 'min-h-12 flex-1 resize-none placeholder:text-[var(--color-muted)]')}
           />
-          <Button type="submit" variant="solid" size="sm" disabled={sending || readOnly || load.status !== 'ready' || !text.trim()}>enviar</Button>
+          <Button type="submit" variant="solid" size="sm" disabled={readOnly || load.status !== 'ready' || !text.trim()}>enviar</Button>
         </div>
         <p id={hintId} className="font-mono text-[0.65rem] text-[var(--color-muted)]">Enter envia · Shift+Enter nova linha · Esc minimiza</p>
       </form>

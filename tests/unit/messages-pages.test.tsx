@@ -40,8 +40,30 @@ const opened = (conversa = item(1, { naoLidas: 2 }), mensagens = [msg(1, other),
   conversa, mensagens, maisAnteriores: false, paginas: 1, ...extra,
 })
 
+/** Envios do compositor: vão para a API JSON (`/api/chat/enviar`), nunca para a ação da rota (que fica para o envio sem JavaScript). */
+let sends: Record<string, string>[]
+let sendHandler: (fields: URLSearchParams) => Response | Promise<Response>
+const sent = (conversation = CONV, messageId?: string) => Response.json({ ok: true, message: 'Mensagem enviada.', conversation_id: conversation, ...(messageId ? { message_id: messageId } : {}) })
+const gate = () => {
+  let release!: (response: Response) => void
+  const promise = new Promise<Response>((resolve) => (release = resolve))
+  return { promise, release }
+}
+
 beforeEach(() => {
   vi.stubGlobal('matchMedia', vi.fn((query: string) => ({ matches: false, media: query, addEventListener: vi.fn(), removeEventListener: vi.fn() })))
+  sends = []
+  sendHandler = () => sent()
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = new URL(String(input), 'http://localhost')
+      if (url.pathname !== '/api/chat/enviar') throw new Error('fetch inesperado: ' + url.pathname)
+      const body = init?.body as URLSearchParams
+      sends.push(Object.fromEntries(body))
+      return sendHandler(body)
+    }),
+  )
 })
 
 type Handler = (formData: FormData, request: Request) => ActionResult | Promise<ActionResult> | Response
@@ -97,6 +119,68 @@ describe('Messages (lista)', () => {
   })
 })
 
+describe('Messages (central da conta com atuações e coletivos)', () => {
+  const asCollective = identityOf([{ kind: 'collective', id: C }])
+  const terceiro: Lado = { kind: 'profile', id: '02000000-0000-4000-8000-000000000009', nome: 'Terceiro' }
+  const mixed = () =>
+    page({
+      conversas: [item(1), item(2, {}, [col, terceiro], asCollective), item(3, { remetentes: [] }, [col, other], asCollective)],
+    })
+
+  it('cada conversa diz por qual atuação ou coletivo ela acontece', async () => {
+    setup(mixed())
+    const list = await screen.findByRole('navigation', { name: 'Conversas' })
+    const links = within(list).getAllByRole('link')
+    expect(links.map((l) => l.querySelector('[data-identity]')?.textContent)).toEqual(['como Minha atuação', 'como Organização 1 (coletivo)', 'como Organização 1 (coletivo)'])
+  })
+
+  it('a área do coletivo não repete a identidade: ali tudo é do coletivo', async () => {
+    setup(page({ conversas: [item(1, {}, [col, other], asCollective)] }), { collective: true, path: `/coletivo/${C}/mensagens` })
+    const list = await screen.findByRole('navigation', { name: 'Conversas' })
+    expect(list.querySelector('[data-identity]')).toBeNull()
+    expect(screen.queryByRole('combobox', { name: 'Mostrar conversas de' })).toBeNull()
+  })
+
+  it('filtra por identidade ("todas" mais uma opção por atuação ou coletivo presente) e volta a mostrar todas', async () => {
+    const user = userEvent.setup()
+    setup(mixed())
+    const select = await screen.findByRole('combobox', { name: 'Mostrar conversas de' })
+    expect(within(select).getAllByRole('option').map((o) => o.textContent)).toEqual(['todas', 'Minha atuação (atuação)', 'Organização 1 (coletivo)'])
+    const titles = () => within(screen.getByRole('navigation', { name: 'Conversas' })).getAllByRole('link').map((l) => l.getAttribute('href')!.split('/').pop())
+    expect(titles()).toEqual([CONV, CONV2, '0d000000-0000-4000-8000-000000000003'])
+    await user.selectOptions(select, 'Organização 1 (coletivo)')
+    expect(titles()).toEqual([CONV2, '0d000000-0000-4000-8000-000000000003'])
+    await user.selectOptions(select, 'Minha atuação (atuação)')
+    expect(titles()).toEqual([CONV])
+    await user.selectOptions(select, 'todas')
+    expect(titles()).toHaveLength(3)
+  })
+
+  it('com uma só identidade o filtro não aparece', async () => {
+    setup(page())
+    await screen.findByRole('navigation', { name: 'Conversas' })
+    expect(screen.queryByRole('combobox', { name: 'Mostrar conversas de' })).toBeNull()
+  })
+
+  it('responde numa conversa de coletivo em nome do coletivo, dizendo por qual identidade vai', async () => {
+    const user = userEvent.setup()
+    const conversa = item(2, {}, [col, terceiro], asCollective)
+    setup(page({ conversas: [item(1), conversa], aberta: opened(conversa, [msg(1, terceiro)]) }), { path: `/painel/mensagens/${CONV2}` })
+    expect(await screen.findByText('Enviando como Organização 1.')).toBeTruthy()
+    await user.type(screen.getByRole('textbox', { name: 'Mensagem para Terceiro' }), 'Pelo coletivo')
+    await user.click(screen.getByRole('button', { name: 'enviar' }))
+    await waitFor(() => expect(sends[0]?.via).toBe(`collective:${C}>profile:${terceiro.id}`))
+  })
+
+  it('lê mas não envia como o coletivo: o compositor dá lugar a uma explicação curta', async () => {
+    const conversa = item(3, { remetentes: [] }, [col, other], asCollective)
+    setup(page({ conversas: [conversa], aberta: opened(conversa, [msg(1, other)]) }), { path: '/painel/mensagens/0d000000-0000-4000-8000-000000000003' })
+    expect(await screen.findByText(/Você pode ler esta conversa, mas não pode enviar mensagens como Organização 1/)).toBeTruthy()
+    expect(screen.queryByRole('textbox', { name: /Mensagem para/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'enviar' })).toBeNull()
+  })
+})
+
 describe('Chat', () => {
   const path = `/painel/mensagens/${CONV}`
 
@@ -136,41 +220,104 @@ describe('Chat', () => {
     expect(submitted).toEqual([])
   })
 
-  it('envia a mensagem com a chave de idempotência e o remetente, e limpa o campo só depois do sucesso', async () => {
+  it('envio otimista: a mensagem aparece na hora como "enviando…" e o campo limpa antes da resposta; a real a substitui', async () => {
     const user = userEvent.setup()
-    const { submitted } = setup(page({ aberta: opened(item(1)) }), {
-      path,
-      action: () => ({ ok: true, message: 'Mensagem enviada.' }),
-    })
+    const real = msg(5, me, 'Olá!')
+    let thread = [msg(1, other)]
+    const { loader, submitted } = setup(() => page({ aberta: opened(item(1), thread) }), { path })
     const box = await screen.findByRole('textbox', { name: 'Mensagem para Interlocutor' })
     const send = screen.getByRole('button', { name: 'enviar' }) as HTMLButtonElement
     expect(send.disabled).toBe(true)
     await user.type(box, 'Olá!')
     expect(send.disabled).toBe(false)
+    const held = gate()
+    sendHandler = () => held.promise
     await user.click(send)
-    await waitFor(() => expect(submitted).toHaveLength(1))
-    expect(submitted[0].fields).toMatchObject({ intent: 'send', body: 'Olá!', via: `profile:${ME}>profile:${OTHER}` })
-    expect(submitted[0].fields.request_id).toMatch(/^[0-9a-f-]{36}$/)
-    expect(await screen.findByRole('status')).toHaveProperty('textContent', 'Mensagem enviada.')
-    await waitFor(() => expect((box as HTMLTextAreaElement).value).toBe(''))
+    // Antes de o servidor responder: balão marcado, campo vazio com o foco, botão desligado de novo.
+    const log = screen.getByRole('log')
+    const bubble = within(log).getByText('Olá!').closest('li')!
+    expect(within(bubble).getByRole('status').textContent).toBe('enviando…')
+    expect((box as HTMLTextAreaElement).value).toBe('')
+    expect(document.activeElement).toBe(box)
+    expect(send.disabled).toBe(true)
+    expect(sends).toHaveLength(1)
+    expect(sends[0]).toMatchObject({ body: 'Olá!', via: `profile:${ME}>profile:${OTHER}` })
+    expect(sends[0].request_id).toMatch(/^[0-9a-f-]{36}$/)
+
+    // O banco confirma: a lista é relida e, quando a mensagem real chega, o balão em envio some (sem duplicar).
+    thread = [msg(1, other), real]
+    const before = loader.mock.calls.length
+    held.release(sent(CONV, real.id))
+    await waitFor(() => expect(loader.mock.calls.length).toBeGreaterThan(before))
+    await waitFor(() => expect(within(screen.getByRole('log')).queryByRole('status')).toBeNull())
+    expect(within(screen.getByRole('log')).getAllByText('Olá!')).toHaveLength(1)
+    // Nada foi enviado como formulário da rota: o envio otimista não navega.
+    expect(submitted.filter((s) => s.intent === 'send')).toEqual([])
   })
 
-  it('recusa do banco: mostra o erro em pt-BR e mantém o texto digitado', async () => {
+  it('várias mensagens seguidas: o campo continua livre e cada uma leva a sua própria chave', async () => {
     const user = userEvent.setup()
-    setup(page({ aberta: opened(item(1)) }), {
-      path,
-      action: () => ({ ok: false, error: 'Esta conversa está bloqueada: ninguém pode enviar mensagens enquanto o bloqueio durar.' }),
-    })
+    setup(page({ aberta: opened(item(1)) }), { path })
+    const box = await screen.findByRole('textbox', { name: 'Mensagem para Interlocutor' })
+    const first = gate()
+    sendHandler = (fields) => (fields.get('body') === 'um' ? first.promise : sent())
+    await user.type(box, 'um')
+    await user.click(screen.getByRole('button', { name: 'enviar' }))
+    await user.type(box, 'dois')
+    await user.click(screen.getByRole('button', { name: 'enviar' }))
+    expect(within(screen.getByRole('log')).getAllByRole('status').map((s) => s.textContent)).toEqual(['enviando…', 'enviando…'])
+    first.release(sent())
+    await waitFor(() => expect(sends).toHaveLength(2))
+    expect(sends.map((s) => s.body)).toEqual(['um', 'dois'])
+    expect(sends[0].request_id).not.toBe(sends[1].request_id)
+  })
+
+  it('recusa do banco: "mensagem não enviada" com o motivo embaixo, sem "tentar de novo", e o campo continua livre', async () => {
+    const user = userEvent.setup()
+    sendHandler = () =>
+      Response.json({ ok: false, error: 'Esta conversa está bloqueada: ninguém pode enviar mensagens enquanto o bloqueio durar.' }, { status: 409 })
+    setup(page({ aberta: opened(item(1)) }), { path })
     const box = await screen.findByRole('textbox', { name: 'Mensagem para Interlocutor' })
     await user.type(box, 'Não some')
     await user.click(screen.getByRole('button', { name: 'enviar' }))
-    expect((await screen.findByRole('alert')).textContent).toContain('[erro] Esta conversa está bloqueada')
-    expect((box as HTMLTextAreaElement).value).toBe('Não some')
+    const alert = await screen.findByRole('alert')
+    expect(alert.textContent).toContain('mensagem não enviada')
+    expect(alert.textContent).toContain('Esta conversa está bloqueada')
+    // O texto continua na conversa (no balão), e o campo está vazio para a próxima mensagem.
+    expect(within(screen.getByRole('log')).getByText('Não some')).toBeTruthy()
+    expect((box as HTMLTextAreaElement).value).toBe('')
+    expect(screen.queryByRole('button', { name: /tentar de novo/ })).toBeNull()
+    await user.click(screen.getByRole('button', { name: /^descartar a mensagem não enviada "Não some"/ }))
+    expect(within(screen.getByRole('log')).queryByText('Não some')).toBeNull()
+    expect(screen.queryByRole('alert')).toBeNull()
   })
 
-  it('recarrega os dados depois de um envio recusado (a conversa pode ter mudado)', async () => {
+  it('falha de rede: "tentar de novo" reenvia com a mesma chave; editar o texto depois não reaproveita a chave de outro texto', async () => {
     const user = userEvent.setup()
-    const { loader } = setup(page({ aberta: opened(item(1)) }), { path, action: () => ({ ok: false, error: 'x' }) })
+    sendHandler = () => {
+      throw new TypeError('Failed to fetch')
+    }
+    setup(page({ aberta: opened(item(1)) }), { path })
+    const box = await screen.findByRole('textbox', { name: 'Mensagem para Interlocutor' })
+    await user.type(box, 'Texto original')
+    await user.click(screen.getByRole('button', { name: 'enviar' }))
+    expect((await screen.findByRole('alert')).textContent).toContain('Sem conexão')
+    sendHandler = () => sent()
+    await user.click(screen.getByRole('button', { name: /^tentar de novo: enviar "Texto original"/ }))
+    await waitFor(() => expect(sends).toHaveLength(2))
+    expect(sends[1]).toEqual(sends[0])
+    // Um texto diferente digitado depois é outra mensagem, com outra chave (sem "Solicitação reutilizada com outros dados").
+    await user.type(box, 'Texto editado')
+    await user.click(screen.getByRole('button', { name: 'enviar' }))
+    await waitFor(() => expect(sends).toHaveLength(3))
+    expect(sends[2].body).toBe('Texto editado')
+    expect(sends[2].request_id).not.toBe(sends[0].request_id)
+  })
+
+  it('recarrega os dados depois de um envio recusado por permissão ou bloqueio (a conversa pode ter mudado)', async () => {
+    const user = userEvent.setup()
+    sendHandler = () => Response.json({ ok: false, error: 'x' }, { status: 403 })
+    const { loader } = setup(page({ aberta: opened(item(1)) }), { path })
     await user.type(await screen.findByRole('textbox', { name: 'Mensagem para Interlocutor' }), 'a')
     const before = loader.mock.calls.length
     await user.click(screen.getByRole('button', { name: 'enviar' }))
@@ -180,12 +327,15 @@ describe('Chat', () => {
   it('duas atuações do titular: escolhe com qual enviar', async () => {
     const both = identityOf([{ kind: 'profile', id: ME }, { kind: 'profile', id: OTHER }])
     const user = userEvent.setup()
-    const { submitted } = setup(page({ aberta: opened(item(1, {}, [me, other], both), []) }), { path })
+    setup(page({ aberta: opened(item(1, {}, [me, other], both), []) }), { path })
     const select = await screen.findByRole('combobox', { name: 'Enviar como' })
     await user.selectOptions(select, 'Interlocutor')
+    sendHandler = () => gate().promise
     await user.type(screen.getByRole('textbox', { name: /Mensagem para/ }), 'Oi')
     await user.click(screen.getByRole('button', { name: 'enviar' }))
-    await waitFor(() => expect(submitted[0].fields.via).toBe(`profile:${OTHER}>profile:${ME}`))
+    await waitFor(() => expect(sends[0]?.via).toBe(`profile:${OTHER}>profile:${ME}`))
+    // A mensagem em envio mostra de qual atuação ela saiu.
+    expect(within(within(screen.getByRole('log')).getByText('Oi').closest('li')!).getByText('Interlocutor')).toBeTruthy()
   })
 
   it('conversa bloqueada: sem campo de envio, com aviso e opção de desbloquear quando fui eu', async () => {
@@ -253,10 +403,23 @@ describe('Chat', () => {
     const user = userEvent.setup()
     const who = identityOf([{ kind: 'collective', id: C }])
     const conversa = item(1, {}, [col, other], who)
-    const { submitted } = setup(page({ conversas: [conversa], aberta: opened(conversa, [msg(1, other)]) }), { collective: true, path: `/coletivo/${C}/mensagens/${CONV}` })
+    setup(page({ conversas: [conversa], aberta: opened(conversa, [msg(1, other)]) }), { collective: true, path: `/coletivo/${C}/mensagens/${CONV}` })
     await user.type(await screen.findByRole('textbox', { name: 'Mensagem para Interlocutor' }), 'Resposta')
     await user.click(screen.getByRole('button', { name: 'enviar' }))
-    await waitFor(() => expect(submitted[0].fields.via).toBe(`collective:${C}>profile:${OTHER}`))
+    await waitFor(() => expect(sends[0]?.via).toBe(`collective:${C}>profile:${OTHER}`))
+  })
+
+  it('sem JavaScript o compositor é um formulário comum para a ação da rota (intent, remetente e texto, sem chave: o servidor gera)', async () => {
+    setup(page({ aberta: opened(item(1)) }), { path })
+    const box = await screen.findByRole('textbox', { name: 'Mensagem para Interlocutor' })
+    const form = box.closest('form')!
+    expect(form.getAttribute('method')).toBe('post')
+    expect(Object.fromEntries([...new FormData(form)].map(([k, v]) => [k, typeof v === 'string' ? v : '']))).toEqual({
+      intent: 'send',
+      via: `profile:${ME}>profile:${OTHER}`,
+      body: '',
+    })
+    expect(box.getAttribute('name')).toBe('body')
   })
 })
 

@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { Badge, Empty, LinkButton, Panel } from '../../components/ui/primitives'
 import { BootLog } from '../../components/ui/anim'
+import { EventSheetLink } from '../../components/ui/EventSheet'
 import { fmtDataHora } from '../../lib/utils'
 import { TIPO_LABEL } from '../../data/types'
 import type { ColetivoSituacao, MeuColetivo, MeuPerfil, ProximoEvento } from '../../server/mappers/account'
@@ -62,14 +63,14 @@ export function Dashboard({ nome, perfis, coletivos, naoLidas, proximos }: Dashb
             <ul className="space-y-2">
               {proximos.map(({ evento, como }) => (
                 <li key={evento.id}>
-                  <Link to={`/eventos/${evento.id}`} className="flex items-center justify-between gap-4 border border-[var(--color-line)] p-3 hover:border-[var(--accent)]">
+                  <EventSheetLink eventId={evento.id} nome={evento.nome} className="flex items-center justify-between gap-4 border border-[var(--color-line)] p-3 hover:border-[var(--accent)]">
                     <span>
                       <span className="block font-display font-bold">{evento.nome}</span>
                       <span className="block font-mono text-xs text-[var(--color-muted)]">{fmtDataHora(evento.inicio)} · {evento.cidade}/{evento.estado}</span>
                       <span className="block font-mono text-xs text-[var(--color-muted)]">como {como.join(', ')}</span>
                     </span>
                     <span aria-hidden className="text-[var(--accent-text)]">→</span>
-                  </Link>
+                  </EventSheetLink>
                 </li>
               ))}
             </ul>

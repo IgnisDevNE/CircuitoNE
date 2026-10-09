@@ -11,6 +11,8 @@ export default [
   route('painel/documentos/:atuacaoId/:tipo', './routes/document.tsx'),
   // Chat flutuante: rotas de recurso JSON (sem tela) que validam a sessão e a origem; ver server/chat.server.ts.
   route('api/chat/*', './routes/api/chat.tsx'),
+  // Painel lateral do evento (abre sobre o painel em vez de navegar): detalhe público em JSON, sem tela.
+  route('api/eventos/:id', './routes/api/event.tsx'),
   // Layout autenticado: valida a sessão no servidor e redireciona visitantes para /entrar.
   layout('./routes/layouts/app.tsx', [
     route('painel', './routes/dashboard.tsx'),

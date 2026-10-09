@@ -4,7 +4,14 @@ import {
   type EventListData,
   type EventPageData,
 } from "./mappers/events";
-import { HttpError, unwrap, type SupabaseServerClient } from "./supabase.server";
+import {
+  createSupabaseServerClient,
+  HttpError,
+  privateHeaders,
+  unavailable,
+  unwrap,
+  type SupabaseServerClient,
+} from "./supabase.server";
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const notFound = () => new HttpError(404, "Evento não encontrado.");
@@ -16,6 +23,21 @@ export async function loadEventList(client: SupabaseServerClient): Promise<Event
     client.rpc("list_events", { period: "future" }),
   ]);
   return { ongoing: mapEventList(unwrap(ongoing)), future: mapEventList(unwrap(future)) };
+}
+
+/**
+ * Detalhe público como JSON (`/api/eventos/:id`, rota de recurso) para o painel lateral do evento nos painéis. Lê como visitante
+ * (a mesma visão da página pública) e nunca lança nem redireciona: falhas viram `{ error }` com o status HTTP correspondente.
+ */
+export async function eventSheetLoader(request: Request, id: string): Promise<Response> {
+  const headers = privateHeaders();
+  try {
+    const client = createSupabaseServerClient(new Request(request.url), headers);
+    return Response.json(await loadEventPage(client, id), { headers });
+  } catch (error) {
+    const failure = error instanceof HttpError ? error : unavailable();
+    return Response.json({ error: failure.message }, { status: failure.status, headers });
+  }
 }
 
 /** Detalhe público: `get_event` + nome/cor do coletivo. UUID inválido ou evento invisível => 404. */

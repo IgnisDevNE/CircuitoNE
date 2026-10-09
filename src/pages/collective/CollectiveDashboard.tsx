@@ -3,6 +3,7 @@ import { collectiveSections, type Permissao } from '../../lib/collective-access'
 import { fmtDataHora } from '../../lib/utils'
 import type { ColetivoArea, EventoGestao, ResumoMensagens } from '../../server/mappers/collective-area'
 import { Badge, Empty, Panel } from '../../components/ui/primitives'
+import { EventSheetLink } from '../../components/ui/EventSheet'
 
 export interface CollectiveDashboardProps {
   coletivo: Pick<ColetivoArea, 'id' | 'nome' | 'dono'>
@@ -16,7 +17,9 @@ export interface CollectiveDashboardProps {
   mensagens: ResumoMensagens | null
 }
 
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+const EVENT_ROW = 'flex items-center justify-between gap-4 border border-[var(--color-line)] p-3 hover:border-[var(--accent)]'
+
+const plural =(n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
 function EventBadges({ evento }: { evento: EventoGestao }) {
   return (
@@ -38,9 +41,9 @@ export function CollectiveDashboard({ coletivo, permissoes, pendentes, eventos, 
           <Empty>{gestao ? 'Nenhum evento cadastrado.' : 'Nenhum evento publicado.'}</Empty>
         ) : (
           <ul className="space-y-2">
-            {eventos.map((evento) => (
-              <li key={evento.id}>
-                <Link to={gestao ? `/coletivo/${coletivo.id}/eventos/${evento.id}` : `/eventos/${evento.id}`} className="flex items-center justify-between gap-4 border border-[var(--color-line)] p-3 hover:border-[var(--accent)]">
+            {eventos.map((evento) => {
+              const content = (
+                <>
                   <span>
                     <span className="flex flex-wrap items-center gap-2">
                       <span className="font-display font-bold">{evento.nome}</span>
@@ -49,9 +52,19 @@ export function CollectiveDashboard({ coletivo, permissoes, pendentes, eventos, 
                     <span className="font-mono text-xs text-[var(--color-muted)]">{fmtDataHora(evento.inicio)}</span>
                   </span>
                   <span aria-hidden className="text-[var(--accent-text)]">→</span>
-                </Link>
-              </li>
-            ))}
+                </>
+              )
+              return (
+                <li key={evento.id}>
+                  {gestao ? (
+                    <Link to={`/coletivo/${coletivo.id}/eventos/${evento.id}`} className={EVENT_ROW}>{content}</Link>
+                  ) : (
+                    // Sem permissão de gestão a página é a pública: abre num painel lateral sem sair do painel do coletivo.
+                    <EventSheetLink eventId={evento.id} nome={evento.nome} className={EVENT_ROW}>{content}</EventSheetLink>
+                  )}
+                </li>
+              )
+            })}
           </ul>
         )}
         {!gestao && (

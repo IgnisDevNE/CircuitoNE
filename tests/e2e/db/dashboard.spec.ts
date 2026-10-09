@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { hydrated } from './a11y'
 import { accounts, login, openPanelMenu, panelNav } from './session'
 
 // Fixtures (identity.sql, collectives.sql, events.sql, messages.sql; o CI não carrega demo.sql):
@@ -68,9 +69,52 @@ test('dashboard mostra os próximos eventos com a atuação na line-up, em andam
   const first = events.getByRole('link', { name: new RegExp(eventName(1)) })
   await expect(first).toHaveAttribute('href', `/eventos/${eventId(1)}`)
   await expect(first).toContainText('como Artista sintético público')
-  await first.click()
+})
+
+test('evento do dashboard abre num painel lateral, sem sair do painel; fecha no X e no Esc devolvendo o foco', async ({ page }) => {
+  await login(page, accounts.active.email)
+  const link = section(page, 'próximos eventos').getByRole('link', { name: new RegExp(eventName(1)) })
+  await hydrated(page)
+  await link.click()
+  const sheet = page.getByRole('dialog', { name: eventName(1) })
+  await expect(sheet).toBeVisible()
+  await expect(sheet.getByRole('heading', { level: 2, name: eventName(1) })).toBeVisible()
+  await expect(sheet.getByRole('link', { name: 'abrir página do evento ↗' })).toHaveAttribute('href', `/eventos/${eventId(1)}`)
+  // O conteúdo da página pública do evento chega no painel (detalhes e line-up) e a URL não muda.
+  await expect(sheet.getByRole('heading', { level: 2, name: 'detalhes' })).toBeVisible()
+  await expect(sheet.getByRole('heading', { level: 2, name: /^line-up \(\d+\)$/ })).toBeVisible()
+  await expect(page).toHaveURL(/\/painel$/)
+  await expect(sheet.getByRole('status')).toHaveText('')
+
+  await sheet.getByRole('button', { name: 'fechar' }).click()
+  await expect(sheet).toHaveCount(0)
+  await expect(link).toBeFocused()
+  await expect(page).toHaveURL(/\/painel$/)
+
+  await link.click()
+  await expect(sheet).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(sheet).toHaveCount(0)
+  await expect(link).toBeFocused()
+  await expect(page).toHaveURL(/\/painel$/)
+})
+
+test('painel do evento: o link "abrir página do evento" leva à página pública, e o link do dashboard continua uma âncora comum', async ({ page, context }) => {
+  await login(page, accounts.active.email)
+  const link = section(page, 'próximos eventos').getByRole('link', { name: new RegExp(eventName(1)) })
+  await hydrated(page)
+  // Com Ctrl/Cmd (abrir em nova aba) o clique não é interceptado: o painel não abre na página atual.
+  const modifier = process.platform === 'darwin' ? 'Meta' : 'Control'
+  const [popup] = await Promise.all([context.waitForEvent('page'), link.click({ modifiers: [modifier] })])
+  await expect(popup).toHaveURL(new RegExp(`/eventos/${eventId(1)}$`))
+  await popup.close()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+
+  await link.click()
+  await page.getByRole('dialog', { name: eventName(1) }).getByRole('link', { name: 'abrir página do evento ↗' }).click()
   await expect(page).toHaveURL(new RegExp(`/eventos/${eventId(1)}$`))
   await expect(page.getByRole('heading', { level: 1, name: eventName(1) })).toBeVisible()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
 })
 
 test('dashboard e menu mostram as mensagens não lidas', async ({ page }) => {

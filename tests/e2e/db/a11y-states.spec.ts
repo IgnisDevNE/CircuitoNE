@@ -217,6 +217,28 @@ test('chat flutuante: enviar pelo teclado, mensagem de estado e janela ao navega
   await expect(page.getByRole('heading', { level: 1 })).toBeFocused()
 })
 
+test('painel lateral do evento aberto no dashboard: sem violações, foco no botão de fechar, fundo inerte e a página de trás não rola', async ({ page }) => {
+  await login(page, accounts.active.email)
+  await hydrated(page)
+  const link = page.getByRole('heading', { level: 2, name: 'próximos eventos' }).locator('xpath=ancestor::section').getByRole('link').first()
+  await link.click()
+  const sheet = page.getByRole('dialog')
+  await expect(sheet).toBeVisible()
+  await expect(sheet.getByRole('heading', { level: 2 }).first()).toBeVisible()
+  await expect(sheet.getByRole('status')).toHaveText('')
+  // Diálogo modal: o foco começa no botão de fechar e o resto da página fica inerte (sem "armadilha" para leitor de tela).
+  await expect(sheet.getByRole('button', { name: 'fechar' })).toBeFocused()
+  await expect(page.locator('body')).toHaveCSS('overflow', 'hidden')
+  await expectAccessible(page, 'painel lateral do evento aberto')
+  // Um Tab a partir do botão de fechar fica dentro do painel (o link "abrir página do evento" vem logo depois).
+  await page.keyboard.press('Tab')
+  await expect(sheet.getByRole('link', { name: 'abrir página do evento ↗' })).toBeFocused()
+  await page.keyboard.press('Escape')
+  await expect(sheet).toHaveCount(0)
+  await expect(link).toBeFocused()
+  await expect(page.locator('body')).not.toHaveCSS('overflow', 'hidden')
+})
+
 test('login por teclado: e-mail e senha aceitam colar e gerenciador de senhas (3.3.8) e o Enter envia', async ({ page }) => {
   await open(page, '/entrar')
   const email = page.getByLabel('E-mail')

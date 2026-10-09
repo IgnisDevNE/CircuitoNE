@@ -1,6 +1,6 @@
 import { data, redirect } from 'react-router'
 import type { ActionResult } from '../lib/action-result'
-import { boundedBody, routePath, type UploadedFiles } from './auth.server'
+import { boundedBody, hasAuthCookie, readAccountSession, routePath, type UploadedFiles } from './auth.server'
 import { createSupabaseServerClient, privateHeaders, type SupabaseServerClient } from './supabase.server'
 
 export type { ActionResult }
@@ -21,6 +21,7 @@ export class ActionFailure extends Error {
 }
 
 export const UNAVAILABLE_MESSAGE = 'Não foi possível concluir a operação. Tente novamente.'
+export const SESSION_EXPIRED_MESSAGE = 'Sua sessão expirou. Entre novamente para continuar.'
 
 /**
  * Mensagens que as funções do banco levantam de propósito (errcode 42501/22023), traduzidas para quem usa a tela.
@@ -99,19 +100,58 @@ const KNOWN_FAILURES: Record<string, ActionFailure> = {
   'Lineup inválido': new ActionFailure(422, 'O lineup é inválido.'),
   'Participação inválida': new ActionFailure(422, 'Uma participação do lineup é inválida.'),
   'Crédito exige texto': new ActionFailure(422, 'Uma participação do lineup é inválida.'),
+  // Dados da conta e das atuações, fotos e documentos, exclusão (usadas por `account-settings.server.ts`).
+  'Dados da conta inválidos': new ActionFailure(400, 'Os dados da conta são inválidos. Revise os campos e tente de novo.'),
+  'Dados da atuação inválidos': new ActionFailure(400, 'Os dados da atuação são inválidos. Revise os campos e tente de novo.'),
+  'Dados profissionais inválidos': new ActionFailure(400, 'Os dados profissionais são inválidos. Revise os campos e tente de novo.'),
+  'Dados profissionais ausentes': new ActionFailure(409, 'Esta atuação ainda não tem dados profissionais.'),
+  'Esta atuação não tem dados profissionais': new ActionFailure(400, 'Esta atuação não tem dados profissionais.'),
+  'Estilo musical inválido': new ActionFailure(400, 'Estilo musical inválido. Escolha uma das opções da lista.'),
+  'Subestilo musical inválido': new ActionFailure(400, 'Subestilo musical inválido. Escolha uma das opções da lista.'),
+  'Classificação inválida': new ActionFailure(400, 'Classificação inválida. Escolha uma das opções da lista.'),
+  'Informe de 1 a 50 estilos': new ActionFailure(400, 'Informe de 1 a 50 estilos.'),
+  'Artista exige ao menos um estilo': new ActionFailure(400, 'Escolha ao menos um estilo.'),
+  'Estilos são exclusivos de artistas': new ActionFailure(400, 'Somente atuações de artista têm estilos.'),
+  'Somente atuações de artista podem ser publicadas': new ActionFailure(400, 'Somente atuações de artista podem ser publicadas.'),
+  'Informe se o celular é WhatsApp e o outro número, se houver': new ActionFailure(400, 'Informe se o celular é WhatsApp e o outro número, se houver.'),
+  'Imagem inválida': new ActionFailure(400, 'A imagem enviada é inválida. Envie outro arquivo.'),
+  'Imagem indisponível': new ActionFailure(400, 'Esta imagem não está mais disponível. Recarregue a página.'),
+  'Arquivo não encontrado ou inválido': new ActionFailure(400, 'O arquivo enviado não foi encontrado ou é inválido. Envie de novo.'),
+  'Documento inválido': new ActionFailure(400, 'O documento enviado é inválido. Envie um PDF.'),
+  'A galeria aceita até 10 imagens': new ActionFailure(409, 'A galeria aceita até 10 imagens. Remova uma para enviar outra.'),
+  'Direção inválida': new ActionFailure(400, 'Direção inválida.'),
+  'Proprietário requer transferência ou encerramento': new ActionFailure(
+    409,
+    'Você é proprietário de um coletivo: transfira a propriedade ou solicite o encerramento ao suporte antes de continuar.',
+  ),
+  'Transfira a propriedade ou solicite encerramento ao suporte': new ActionFailure(
+    409,
+    'Você é proprietário de um coletivo: transfira a propriedade ou solicite o encerramento ao suporte antes de excluir a conta.',
+  ),
+  'Limpeza externa não confirmada': new ActionFailure(409, 'A limpeza dos seus arquivos ainda não foi confirmada. Tente de novo mais tarde.'),
 }
 
-/** SQLSTATE que as funções do banco usam de propósito: recusa (42501), dado inválido (22023), conflito de versão (40001) e limite de envio (54000). */
-const KNOWN_CODES = ['42501', '22023', '40001', '54000']
+/**
+ * SQLSTATE que as funções do banco usam de propósito: recusa (42501), dado inválido (22023), estado que impede a operação
+ * (55000), conflito de versão (40001) e limite de envio (54000).
+ */
+const KNOWN_CODES = ['42501', '22023', '55000', '40001', '54000']
 
 type RpcError = { code?: string; message?: string } | null
 
+/**
+ * A falha esperada que o erro do banco representa (código e mensagem da lista), ou `undefined`. Texto que não está na lista
+ * nunca chega à tela: quem chama usa a mensagem genérica.
+ */
+export function knownFailure(error: { code?: string; message?: string }): ActionFailure | undefined {
+  const known = Object.prototype.hasOwnProperty.call(KNOWN_FAILURES, error.message ?? '') ? KNOWN_FAILURES[error.message!] : undefined
+  return known && error.code && KNOWN_CODES.includes(error.code) ? known : undefined
+}
+
 /** Traduz o erro de um RPC: mensagens conhecidas do banco, sessão expirada (401) ou indisponibilidade. */
 export function rpcFailure(error: NonNullable<RpcError>, status?: number): ActionFailure {
-  if (status === 401) return new ActionFailure(401, 'Sua sessão expirou. Entre novamente para continuar.')
-  const known = error.message ? KNOWN_FAILURES[error.message] : undefined
-  if (known && error.code && KNOWN_CODES.includes(error.code)) return known
-  return new ActionFailure(503, UNAVAILABLE_MESSAGE)
+  if (status === 401) return new ActionFailure(401, SESSION_EXPIRED_MESSAGE)
+  return knownFailure(error) ?? new ActionFailure(503, UNAVAILABLE_MESSAGE)
 }
 
 /** Executa um RPC de escrita e lança `ActionFailure` se o banco recusar; devolve o valor de retorno. */
@@ -156,8 +196,18 @@ export async function runMutation(
   )
     return reply({ ok: false, error: 'Origem recusada.' }, 403)
   try {
+    let client: SupabaseServerClient | undefined
+    if (options.uploadBytes) {
+      // Ações com arquivo: a sessão é conferida antes de ler o corpo, para que um visitante não faça o servidor receber até
+      // dezenas de MB. Sem o cookie de sessão nem se consulta o Auth.
+      if (!hasAuthCookie(request)) throw new ActionFailure(401, SESSION_EXPIRED_MESSAGE)
+      client = createSupabaseServerClient(request, headers, { timeoutMs: UPLOAD_TIMEOUT_MS })
+      const session = await readAccountSession(client, request, headers)
+      if (session.kind === 'error') throw new ActionFailure(503, UNAVAILABLE_MESSAGE)
+      if (session.kind === 'anonymous') throw new ActionFailure(401, SESSION_EXPIRED_MESSAGE)
+    }
     const { form, files } = await boundedBody(request, { limit: options.maxBytes, uploadLimit: options.uploadBytes })
-    const client = createSupabaseServerClient(request, headers, options.uploadBytes ? { timeoutMs: UPLOAD_TIMEOUT_MS } : {})
+    client ??= createSupabaseServerClient(request, headers)
     const outcome = await work(client, form, files)
     // Também o redirecionamento só acontece depois do RPC; os cookies renovados seguem na resposta.
     if (typeof outcome === 'string') return reply({ ok: true, message: outcome }, 200)

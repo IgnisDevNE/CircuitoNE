@@ -8,6 +8,7 @@ import {
   normalizeUrl,
   parseAccountForm,
   parseConfirmation,
+  parseDeletionForm,
   parseEmailForm,
   parseMfaCode,
   parsePasswordForm,
@@ -256,9 +257,27 @@ describe('formulários de segurança', () => {
   })
 
   it('e-mail: formato válido e diferente do atual (sem diferenciar maiúsculas)', () => {
-    expect(parseEmailForm(form({ email: ' novo@example.invalid ' }), 'velho@example.invalid')).toEqual({ ok: true, payload: { email: 'novo@example.invalid' } })
-    expect(parseEmailForm(form({ email: 'sem-arroba' }), null)).toMatchObject({ ok: false, errors: { email: 'Informe um e-mail válido.' } })
-    expect(parseEmailForm(form({ email: 'VELHO@example.invalid' }), 'velho@example.invalid')).toMatchObject({ ok: false, errors: { email: 'Este já é o e-mail da conta.' } })
+    expect(parseEmailForm(form({ email: ' novo@example.invalid ', atual: 'senha-atual-1' }), 'velho@example.invalid')).toEqual({ ok: true, payload: { email: 'novo@example.invalid', current: 'senha-atual-1' } })
+    expect(parseEmailForm(form({ email: 'sem-arroba', atual: 'x' }), null)).toMatchObject({ ok: false, errors: { email: 'Informe um e-mail válido.' } })
+    expect(parseEmailForm(form({ email: 'VELHO@example.invalid', atual: 'x' }), 'velho@example.invalid')).toMatchObject({ ok: false, errors: { email: 'Este já é o e-mail da conta.' } })
+  })
+
+  it('e-mail: a senha atual é obrigatória e nunca volta nos valores devolvidos', () => {
+    const missing = parseEmailForm(form({ email: 'novo@example.invalid' }), 'velho@example.invalid')
+    expect(missing).toEqual({ ok: false, errors: { atual: 'Informe a senha atual.' }, values: { email: 'novo@example.invalid' } })
+    const both = parseEmailForm(form({ email: 'x', atual: 'segredo-1' }), 'velho@example.invalid')
+    expect(JSON.stringify(both)).not.toContain('segredo-1')
+    expect(parseEmailForm(form({ email: 'novo@example.invalid', atual: 'a'.repeat(300) }), null)).toMatchObject({ ok: false, errors: { atual: 'Senha atual incorreta.' } })
+  })
+
+  it('exclusão da conta: confirmação digitada e senha atual, com os dois erros juntos', () => {
+    expect(parseDeletionForm(form({ confirmacao: CONFIRM_DELETE_ACCOUNT, atual: 'senha-atual-1' }))).toEqual({ ok: true, payload: { current: 'senha-atual-1' } })
+    expect(parseDeletionForm(form({ confirmacao: 'excluir' }))).toMatchObject({
+      ok: false,
+      errors: { confirmacao: expect.stringContaining(CONFIRM_DELETE_ACCOUNT), atual: 'Informe a senha atual.' },
+    })
+    expect(parseDeletionForm(form({ confirmacao: CONFIRM_DELETE_ACCOUNT }))).toMatchObject({ ok: false, errors: { atual: 'Informe a senha atual.' } })
+    expect(parseDeletionForm(form({ confirmacao: 'x', atual: 'senha-atual-1' }))).toMatchObject({ ok: false, errors: { confirmacao: expect.any(String) } })
   })
 
   it('código MFA: 6 dígitos (espaços tolerados) e id de fator válido', () => {

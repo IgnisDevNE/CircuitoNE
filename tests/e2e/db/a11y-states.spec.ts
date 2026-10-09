@@ -82,6 +82,9 @@ test('formulários do painel com erro de validação (nenhum dado é gravado)', 
 
   await open(page, '/painel/seguranca')
   await submitInvalid(page, 'enviar confirmação', 'segurança: novo e-mail vazio')
+  // E-mail preenchido e senha atual em branco: o erro fica no campo da senha, que recebe o foco.
+  await page.getByLabel(/Novo e-mail/).fill('novo-a11y@example.invalid')
+  await submitInvalid(page, 'enviar confirmação', 'segurança: senha atual do e-mail vazia')
   await submitInvalid(page, 'alterar senha', 'segurança: senha vazia')
   // Exclusão da conta: a confirmação digitada errada é recusada antes de qualquer efeito.
   await page.getByLabel(/Digite .* para confirmar/).fill('errado')

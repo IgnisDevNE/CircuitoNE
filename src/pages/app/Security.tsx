@@ -41,6 +41,7 @@ function CodeField({ error, label = 'Código do aplicativo' }: { error?: string;
 export function Security({ seguranca, mfaOpcional = false, result, busy }: SecurityProps) {
   const emailErrors = errorsFor(result, 'change-email')
   const passwordErrors = errorsFor(result, 'change-password')
+  const deletionErrors = errorsFor(result, 'request-deletion')
   const enrollment = enrollmentOf(result)
   // O QR só vem na resposta que cria o fator e é grande demais para voltar pelo formulário: a página o guarda
   // para o titular tentar de novo depois de um código errado.
@@ -74,6 +75,15 @@ export function Security({ seguranca, mfaOpcional = false, result, busy }: Secur
             required
             autoComplete="email"
             hint="enviaremos um link de confirmação; o e-mail só muda depois dele"
+          />
+          <Input
+            label="Senha atual"
+            name="atual"
+            type="password"
+            error={emailErrors.atual}
+            required
+            autoComplete="current-password"
+            hint="para confirmar que é você"
           />
           <FormFeedback result={result} intent="change-email" />
           <Button type="submit" variant="solid" disabled={busy}>enviar confirmação</Button>
@@ -162,7 +172,16 @@ export function Security({ seguranca, mfaOpcional = false, result, busy }: Secur
             label={`Digite ${CONFIRM_DELETE_ACCOUNT} para confirmar`}
             name="confirmacao"
             autoComplete="off"
-            error={errorsFor(result, 'request-deletion').confirmacao}
+            error={deletionErrors.confirmacao}
+          />
+          <Input
+            label="Senha atual"
+            name="atual"
+            type="password"
+            error={deletionErrors.atual}
+            required
+            autoComplete="current-password"
+            hint="para confirmar que é você"
           />
           <FormFeedback result={result} intent="request-deletion" />
           <Button type="submit" variant="danger" disabled={busy}>solicitar exclusão da conta</Button>

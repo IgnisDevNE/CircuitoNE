@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { eventCreateAction, eventManageAction } from '../../src/server/events-manage.server'
 import { rpcFailure } from '../../src/server/mutation.server'
+import { ACCOUNT_SESSION, AUTH_USER, sessionCookie } from './session-cookie'
 
 const origin = 'https://circuitone-dev.magalz.space'
 const C = '05000000-0000-4000-8000-000000000001'
@@ -9,6 +10,7 @@ const E = '0a000000-0000-4000-8000-000000000005'
 const NEW_EVENT = '0a000000-0000-4000-8000-000000000099'
 const REQUEST = '0b000000-0000-4000-8000-000000000001'
 const ARTIST = '02000000-0000-4000-8000-000000000001'
+const USER = '01000000-0000-4000-8000-000000000001'
 
 type Sent = { name: string; body: Record<string, unknown> }
 let sent: Sent[]
@@ -25,6 +27,9 @@ beforeEach(() => {
     'fetch',
     vi.fn(async (url: string | Request | URL, init?: RequestInit) => {
       const path = new URL(String(url)).pathname
+      // A sessão é conferida antes de ler o corpo (ações com envio de arquivo); isso não conta como escrita.
+      if (path === '/auth/v1/user') return AUTH_USER(USER)
+      if (path === '/rest/v1/rpc/get_account_session') return ACCOUNT_SESSION(USER)
       if (!path.startsWith('/rest/v1/rpc/')) throw new Error(`HTTP inesperado: ${path}`)
       const name = path.replace('/rest/v1/rpc/', '')
       sent.push({ name, body: init?.body ? JSON.parse(String(init.body)) : {} })
@@ -41,7 +46,7 @@ const post = (path: string, fields: Record<string, string | string[]>, init: { h
   for (const [key, value] of Object.entries(fields)) for (const v of Array.isArray(value) ? value : [value]) body.append(key, v)
   return new Request(origin + path, {
     method: init.method ?? 'POST',
-    headers: { Origin: origin, 'Content-Type': 'application/x-www-form-urlencoded', ...init.headers },
+    headers: { Origin: origin, Cookie: sessionCookie(USER), 'Content-Type': 'application/x-www-form-urlencoded', ...init.headers },
     body: init.body ?? body,
   })
 }
@@ -286,5 +291,54 @@ describe('rpcFailure para eventos', () => {
     expect(rpcFailure({ code: '40001', message: 'Evento alterado; recarregue' }).status).toBe(409)
     expect(rpcFailure({ code: '22023', message: 'Evento alterado; recarregue' }).status).toBe(409)
     expect(rpcFailure({ code: '40P01', message: 'Evento alterado; recarregue' }).status).toBe(503)
+  })
+})
+
+describe('sessão antes do corpo (ações com envio de capa)', () => {
+  /** POST multipart cujo corpo é um fluxo que registra se alguém o leu. */
+  const tracked = (path: string, headers: Record<string, string>) => {
+    const state = { pulls: 0 }
+    const body = new ReadableStream<Uint8Array>(
+      {
+        pull(controller) {
+          state.pulls++
+          controller.enqueue(new Uint8Array(1024))
+        },
+      },
+      { highWaterMark: 0 },
+    )
+    const request = new Request(origin + path, { method: 'POST', headers: { Origin: origin, 'Content-Type': 'multipart/form-data; boundary=zzz', ...headers }, body, duplex: 'half' } as RequestInit)
+    return { request, state }
+  }
+
+  it('visitante (sem cookie de sessão): 401 sem ler o corpo e sem consultar o Auth', async () => {
+    const edit = tracked(`/coletivo/${C}/eventos/${E}`, {})
+    expect(await outcome(eventManageAction(edit.request, C, E))).toMatchObject({ ok: false, status: 401 })
+    expect(edit.state.pulls).toBe(0)
+    const create = tracked(`/coletivo/${C}/eventos/novo`, {})
+    expect(await outcome(eventCreateAction(create.request, C))).toMatchObject({ ok: false, status: 401 })
+    expect(create.state.pulls).toBe(0)
+    expect(vi.mocked(fetch)).not.toHaveBeenCalled()
+    expect(sent).toEqual([])
+  })
+
+  it('cookie que o Auth não reconhece: 401 sem ler o corpo', async () => {
+    vi.mocked(fetch).mockImplementation(async (url) => {
+      const path = new URL(String(url)).pathname
+      if (path === '/auth/v1/user') return Response.json({ code: 'bad_jwt', message: 'invalid JWT' }, { status: 401 })
+      throw new Error(`HTTP inesperado: ${path}`)
+    })
+    const edit = tracked(`/coletivo/${C}/eventos/${E}`, { Cookie: sessionCookie(USER) })
+    expect(await outcome(eventManageAction(edit.request, C, E))).toMatchObject({ ok: false, status: 401 })
+    expect(edit.state.pulls).toBe(0)
+  })
+
+  it('falha do Auth: 503 sem ler o corpo', async () => {
+    vi.mocked(fetch).mockImplementation(async () => {
+      throw new Error('rede')
+    })
+    const edit = tracked(`/coletivo/${C}/eventos/${E}`, { Cookie: sessionCookie(USER) })
+    expect(await outcome(eventManageAction(edit.request, C, E))).toMatchObject({ ok: false, status: 503 })
+    expect(edit.state.pulls).toBe(0)
   })
 })

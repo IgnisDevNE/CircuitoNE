@@ -1,5 +1,5 @@
 # Constrói as imagens do commit atual e recria o pod único "circuitone".
-# Dev: 5186 -> Caddy :8080 -> app :3000. Produção (espera): 5187 -> Caddy :8081.
+# Dev: 5186 -> Caddy :8080 -> app :3000. Produção (espera): 5187 -> Caddy :8081. Roteiro de testes: 5188 -> Caddy :8082.
 # Reiniciar depois de um reboot: podman machine start; podman pod start circuitone
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
@@ -16,7 +16,7 @@ podman build --format docker -f (Join-Path $root 'deploy/Caddy.Dockerfile') -t $
 if ($LASTEXITCODE) { throw 'Falha no build do proxy' }
 
 podman pod rm -f --ignore circuitone | Out-Null
-podman pod create --name circuitone --network podman -p 5186:8080 -p 5187:8081
+podman pod create --name circuitone --network podman -p 5186:8080 -p 5187:8081 -p 5188:8082
 if ($LASTEXITCODE) { throw 'Falha ao criar o pod' }
 
 $hardening = @('--read-only', '--tmpfs', '/tmp', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges')

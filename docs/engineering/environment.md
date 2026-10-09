@@ -18,8 +18,9 @@ Um pod Podman `circuitone` contém o app (`circuitone-app`, Node em `127.0.0.1:3
 
 - `5186 -> :8080` → app de dev (`circuitone-dev.magalz.space`)
 - `5187 -> :8081` → página de espera estática (`circuitone.magalz.space`)
+- `5188 -> :8082` → roteiro de testes para quem vai testar o dev (`uat.magalz.space`, público, sem dados): `deploy/uat/roteiro.html`. Marcações e comentários ficam no navegador de quem testa; o botão "copiar relatório" gera o texto para enviar.
 
-O Cloudflare Tunnel `homelab` aponta os dois hostnames para essas portas da VM `podman-machine-default`. Não alterar as demais rotas do tunnel nem a VM.
+O Cloudflare Tunnel `homelab` aponta os três hostnames para essas portas da VM `podman-machine-default`. Não alterar as demais rotas do tunnel nem a VM.
 
 **Subir ou atualizar** com o commit atual:
 

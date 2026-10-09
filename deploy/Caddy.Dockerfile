@@ -2,6 +2,7 @@ FROM docker.io/library/caddy:2-alpine@sha256:de23def33b17fb5d1290b0f6c2add1d7078
 RUN setcap -r /usr/bin/caddy && chown -R 1000:1000 /data /config
 COPY deploy/Caddyfile /etc/caddy/Caddyfile
 COPY deploy/waiting.html /srv/waiting.html
+COPY deploy/uat/roteiro.html /srv/roteiro.html
 USER 1000:1000
-EXPOSE 8080 8081
+EXPOSE 8080 8081 8082
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s CMD wget -q --spider http://127.0.0.1:8081/healthz || exit 1

@@ -21,7 +21,7 @@ export default function ProfileEditRoute({ loaderData, actionData }: Route.Compo
   const busy = useNavigation().state === 'submitting'
   if (shell?.status !== 'active' || !loaderData.perfil) return null
   // `key`: trocar de atuação descarta o rascunho da anterior.
-  return <EditProfile key={loaderData.perfil.id} perfil={loaderData.perfil} taxonomia={loaderData.taxonomia} result={actionData} busy={busy} />
+  return <EditProfile key={loaderData.perfil.id} perfil={loaderData.perfil} taxonomia={loaderData.taxonomia} mfaOpcional={loaderData.mfaOpcional} result={actionData} busy={busy} />
 }
 
 export function ErrorBoundary() {

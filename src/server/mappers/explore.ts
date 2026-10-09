@@ -55,6 +55,8 @@ export type ExplorePerfisData = {
   perfis: PerfilExplorar[]
   /** Há atuações de outras pessoas sem dados restritos: o leitor não é proprietário elegível com MFA (RN-07). */
   restritoIndisponivel: boolean
+  /** Ambiente dev: a MFA não é exigida para ler dados restritos (o aviso de produção aparece na tela). Preenchido pelo carregador. */
+  mfaOpcional?: boolean
 }
 
 export type ExploreColetivosData = { kind: 'coletivos'; coletivos: ColetivoPublico[] }

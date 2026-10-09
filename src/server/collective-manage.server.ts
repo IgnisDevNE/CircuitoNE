@@ -13,6 +13,7 @@ import {
   type MembroElenco,
   type PerfilAcesso,
 } from './mappers/collective-manage'
+import { loadEnvironmentFlags } from './environment.server'
 import { ActionFailure, callRpc, formId, runMutation } from './mutation.server'
 import { readUpload, removeStored, returnedPath, storeUpload } from './storage.server'
 import { HttpError, unavailable, unwrap, type SupabaseServerClient } from './supabase.server'
@@ -37,10 +38,14 @@ export type EditCollectiveData = {
   /** Membros que podem receber a propriedade (todos, menos o proprietário); o banco confere a elegibilidade. */
   sucessores: MembroElenco[]
   mfa: EstadoMfa
+  /** Ambiente dev: a transferência não exige MFA (`mfa` vem como `confirmada`); a tela traz o aviso de produção. */
+  mfaOpcional: boolean
 }
 
 /** Verificação em duas etapas da sessão atual, como o Auth a enxerga (o banco confere o `aal` do JWT de novo). */
 async function sessionMfa(client: SupabaseServerClient): Promise<EstadoMfa> {
+  // Dev (`mfa_optional`): o banco também aceita a sessão sem segundo fator, então não há o que confirmar.
+  if ((await loadEnvironmentFlags(client)).mfaOptional) return 'confirmada'
   const { data, error } = await client.auth.mfa.getAuthenticatorAssuranceLevel()
   if (error || !data) throw unavailable()
   return mfaState(data.currentLevel, data.nextLevel)
@@ -58,18 +63,21 @@ export async function loadEditCollective(client: SupabaseServerClient, id: strin
   if (!mine.dono) throw noPermission('editar os dados')
   if (mine.situacao === 'suspended') throw new HttpError(403, 'Este coletivo está suspenso: os dados não podem ser editados.')
   const coletivo = mapCollectiveEdit(unwrap(await client.rpc('get_collective_status', { target: id })))
-  if (coletivo.situacao !== 'approved') return { coletivo, aprovado: false, perfis: [], sucessores: [], mfa: 'ativar' }
-  const [perfis, roster, mfa] = await Promise.all([
+  if (coletivo.situacao !== 'approved') return { coletivo, aprovado: false, perfis: [], sucessores: [], mfa: 'ativar', mfaOpcional: false }
+  const [perfis, roster, mfa, flags] = await Promise.all([
     client.rpc('get_collective_roles', { target: id }),
     client.rpc('get_collective_member_roster', { target: id }),
     sessionMfa(client),
+    loadEnvironmentFlags(client),
   ])
+  const mfaOpcional = flags.mfaOptional
   return {
     coletivo,
     aprovado: true,
     perfis: mapCollectiveRoles(unwrap(perfis)),
     sucessores: mapMemberRoster(unwrap(roster)).filter((membro) => !membro.dono),
     mfa,
+    mfaOpcional,
   }
 }
 

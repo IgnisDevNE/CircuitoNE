@@ -131,6 +131,18 @@ describe('loaders', () => {
     expect(s.from).not.toHaveBeenCalled()
   })
 
+  it('flags do dev: sem a flag a MFA continua exigida; com mfa_optional a edição e a segurança avisam', async () => {
+    const tables = { music_styles: ok([{ name: 'techno' }]), music_substyles: ok([]) }
+    const off = fakeClient({ rpc: { get_my_profile: ok(profile()), get_environment_flags: ok([]) }, tables })
+    expect(await loadProfileEdit(off.client, ID)).toMatchObject({ mfaOpcional: false })
+    const on = fakeClient({ rpc: { get_my_profile: ok(profile()), get_environment_flags: ok(['mfa_optional']) }, tables })
+    expect(await loadProfileEdit(on.client, ID)).toMatchObject({ mfaOpcional: true })
+    const other = fakeClient({ rpc: { get_my_profile: ok(profile({ kind: 'services', styles: [] })), get_environment_flags: ok(['auto_approve_collectives']) } })
+    expect(await loadProfileEdit(other.client, ID)).toMatchObject({ mfaOpcional: false })
+    expect(await loadSecurity(fakeClient({ rpc: { get_environment_flags: ok(['mfa_optional']) } }).client)).toMatchObject({ mfaOpcional: true })
+    expect(await loadSecurity(fakeClient({ rpc: { get_environment_flags: failure('PGRST000') } }).client)).toMatchObject({ mfaOpcional: false })
+  })
+
   it('atuação inexistente, de outra conta ou com id inválido: 404 (sem distinguir)', async () => {
     const invalid = fakeClient()
     await expect(loadProfileEdit(invalid.client, 'nao-e-uuid')).rejects.toMatchObject({ status: 404 })
@@ -141,7 +153,7 @@ describe('loaders', () => {
 
   it('conta restrita não vira 404: devolve vazio e o layout mostra o aviso', async () => {
     const restricted = fakeClient({ rpc: { get_my_profile: ok(null), get_account_session: ok({ id: 'A', state: 'suspended' }) } })
-    expect(await loadProfileEdit(restricted.client, ID)).toEqual({ perfil: null, taxonomia: [] })
+    expect(await loadProfileEdit(restricted.client, ID)).toEqual({ perfil: null, taxonomia: [], mfaOpcional: false })
     await expect(loadProfileEdit(fakeClient({ rpc: { get_my_profile: failure('PGRST000') } }).client, ID)).rejects.toMatchObject({ status: 503 })
   })
 
@@ -157,7 +169,7 @@ describe('loaders', () => {
   })
 
   it('segurança: sem sessão é vazio; falha do Auth é 503', async () => {
-    expect(await loadSecurity(fakeClient({ user: null, userError: { name: 'AuthSessionMissingError', status: 400 } }).client)).toEqual({ seguranca: null })
+    expect(await loadSecurity(fakeClient({ user: null, userError: { name: 'AuthSessionMissingError', status: 400 } }).client)).toEqual({ seguranca: null, mfaOpcional: false })
     await expect(loadSecurity(fakeClient({ user: null, userError: { status: 502 } }).client)).rejects.toMatchObject({ status: 503 })
     await expect(loadSecurity(fakeClient({ user: null, userError: { name: 'AuthRetryableFetchError', status: 0 } }).client)).rejects.toMatchObject({ status: 503 })
     await expect(loadSecurity(fakeClient({ factors: null }).client)).rejects.toMatchObject({ status: 503 })

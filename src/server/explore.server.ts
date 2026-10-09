@@ -1,4 +1,5 @@
 import { COLLECTIVE_COLUMNS } from './collectives.server'
+import { loadEnvironmentFlags } from './environment.server'
 import { mapMyProfiles } from './mappers/account'
 import { mapCollectiveList } from './mappers/collectives'
 import {
@@ -30,14 +31,15 @@ export async function loadExplore(client: SupabaseServerClient, kind: string | u
     return { kind, coletivos: mapCollectiveList(rows) }
   }
   const dbKind = PROFILE_DB_KIND[kind]
-  const [profiles, details, mine, styles] = await Promise.all([
+  const [profiles, details, mine, styles, flags] = await Promise.all([
     client.from('profiles').select(EXPLORE_PROFILE_COLUMNS).eq('kind', dbKind).order('name').order('id').limit(EXPLORE_LIMIT),
     client.from('professional_details').select(EXPLORE_DETAIL_COLUMNS).eq('kind', dbKind).limit(EXPLORE_LIMIT),
     client.rpc('list_my_profiles'),
     kind === 'artistas'
       ? client.from('artist_styles').select('profile_id,style,substyle').order('style').order('substyle')
       : Promise.resolve({ data: [], error: null }),
+    loadEnvironmentFlags(client),
   ])
   const owned = new Set(mapMyProfiles(unwrap(mine)).map((profile) => profile.id))
-  return mapExplorePerfis(kind, unwrap(profiles), unwrap(styles), unwrap(details), owned)
+  return { ...mapExplorePerfis(kind, unwrap(profiles), unwrap(styles), unwrap(details), owned), mfaOpcional: flags.mfaOptional }
 }

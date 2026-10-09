@@ -4,10 +4,13 @@ import { CONFIRM_DELETE_ACCOUNT, PASSWORD_MIN, type ActionResult, type MfaEnroll
 import type { SegurancaDados } from '../../server/mappers/account-settings'
 import { Button, Panel } from '../../components/ui/primitives'
 import { Input } from '../../components/ui/form'
+import { MfaDevNotice } from '../../components/ui/MfaDevNotice'
 import { errorsFor, FormFeedback, GeneralFeedback, valueFor } from './account-ui'
 
 export interface SecurityProps {
   seguranca: SegurancaDados
+  /** Ambiente dev: a MFA é opcional; a seção avisa que será exigida em produção. */
+  mfaOpcional?: boolean
   result?: ActionResult
   busy?: boolean
 }
@@ -35,7 +38,7 @@ function CodeField({ error, label = 'Código do aplicativo' }: { error?: string;
   )
 }
 
-export function Security({ seguranca, result, busy }: SecurityProps) {
+export function Security({ seguranca, mfaOpcional = false, result, busy }: SecurityProps) {
   const emailErrors = errorsFor(result, 'change-email')
   const passwordErrors = errorsFor(result, 'change-password')
   const enrollment = enrollmentOf(result)
@@ -93,6 +96,7 @@ export function Security({ seguranca, result, busy }: SecurityProps) {
           <p className="text-sm text-[var(--color-muted)]">
             Use um aplicativo autenticador (TOTP). Proprietários de coletivo precisam dela para acessar o diretório restrito e transferir a propriedade.
           </p>
+          <MfaDevNotice show={mfaOpcional} />
           <FormFeedback result={result} intent={[...MFA_INTENTS]} />
 
           {enrollment ? (

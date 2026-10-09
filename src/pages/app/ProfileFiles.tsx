@@ -4,9 +4,16 @@ import { DOCUMENT_MAX_BYTES, documentPath, formatSize, GALLERY_MAX, IMAGE_MAX_BY
 import type { ImagemPerfil, PerfilEdicao } from '../../server/mappers/account-settings'
 import { Button, Panel } from '../../components/ui/primitives'
 import { FileField } from '../../components/ui/FileField'
+import { MfaDevNotice } from '../../components/ui/MfaDevNotice'
 import { errorsFor, FormFeedback } from './account-ui'
 
-type Props = { perfil: PerfilEdicao; result?: ActionResult; busy?: boolean }
+type Props = {
+  perfil: PerfilEdicao
+  result?: ActionResult
+  busy?: boolean
+  /** Ambiente dev: a MFA não é exigida; o texto sobre quem abre o arquivo deixa de citá-la e traz o aviso. */
+  mfaOpcional?: boolean
+}
 
 const MB = (bytes: number) => (bytes / 1_000_000).toLocaleString('pt-BR')
 
@@ -106,7 +113,7 @@ export function PhotosPanel({ perfil, result, busy }: Props) {
  * Documento privado da atuação (RN-35): presskit em PDF para artista; lista de serviços e equipamentos em PDF para
  * serviços. Visível só para o titular e para proprietários de coletivos aprovados, com MFA (RN-07).
  */
-export function DocumentPanel({ perfil, result, busy }: Props) {
+export function DocumentPanel({ perfil, result, busy, mfaOpcional = false }: Props) {
   const artist = perfil.tipo === 'artista'
   if (!perfil.profissional || (!artist && perfil.tipo !== 'servicos')) return null
   const bytes = artist ? perfil.profissional.presskitPdfBytes : perfil.profissional.listaServicosBytes
@@ -119,8 +126,9 @@ export function DocumentPanel({ perfil, result, busy }: Props) {
         {artist
           ? 'O presskit é um link ou um PDF, nunca os dois: enviar o PDF remove o link informado nos dados profissionais. '
           : ''}
-        PDF de até {MB(DOCUMENT_MAX_BYTES)} MB. Privado: não aparece em nenhuma página pública; só você e proprietários de coletivos aprovados, com MFA, conseguem abri-lo.
+        PDF de até {MB(DOCUMENT_MAX_BYTES)} MB. Privado: não aparece em nenhuma página pública; só você e proprietários de coletivos aprovados{mfaOpcional ? '' : ', com MFA,'} conseguem abri-lo.
       </p>
+      <MfaDevNotice show={mfaOpcional} className="mb-4" />
       {bytes !== null && (
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <a

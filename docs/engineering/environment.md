@@ -45,6 +45,17 @@ podman pod start circuitone
 - Após merge em `main` com mudanças em `supabase/**`, o workflow `db-dev.yml` faz `supabase db push` no `CircuitoNE-dev` e recarrega os seeds (idempotentes). Também pode ser disparado manualmente.
 - Secrets usados: environment GitHub `Homologação` (`SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`).
 
+## Flags do dev (W17)
+
+Para a PoC ser testável no site dev sem painel de administração nem celular com autenticador, duas regras são afrouxadas **só no `CircuitoNE-dev`**. O banco é a autoridade; a UI apenas avisa.
+
+- **Tabela:** `private.environment_flags(name)`, sem políticas e sem acesso para `anon`/`authenticated` (RLS ligada). Nasce vazia em toda parte. `public.get_environment_flags()` devolve os nomes ligados (o app a lê para mostrar o aviso; não é segredo). O app trata qualquer falha dessa leitura como "tudo desligado".
+- **Seed:** `supabase/seeds/dev-flags.sql` insere as duas linhas, é idempotente e só roda com `circuitone.seed_target='odphoxozclrshqjgwbqk'` (o projeto dev; `disposable` é recusado). Está no laço de seeds do `db-dev.yml`, depois de `dev-hide-fixtures`.
+- **`mfa_optional`:** `private.current_mfa()` passa a aceitar a conta verificada (e-mail e celular confirmados) mesmo em sessão `aal1`. Isso libera, sem segundo fator, o que exige MFA em produção: dados profissionais e PDFs privados para proprietário de coletivo aprovado (`professional_reader`), a transferência de propriedade (e o sucessor deixa de precisar de fator verificado) e as funções de administração do site (que continuam restritas a quem está em `private.site_admins`). A UI mostra "Esta parte vai exigir verificação em duas etapas (MFA) quando a aplicação estiver em produção." onde a MFA seria exigida (segurança, edição da atuação e do documento, explorar, edição do coletivo); ativar a MFA continua possível.
+- **`auto_approve_collectives`:** `create_collective` insere o coletivo já `approved` e grava, além de `created`, a ação de auditoria `auto_approved`. Não há UI de administração no dev, então sem isto nenhum coletivo sairia de `pending`.
+- **Produção e CI não carregam o seed**, então a tabela fica vazia: o comportamento é o do PoC original (aal2 + fator verificado, coletivo nasce `pending`). Os testes SQL (`tests/database/dev-flags.sql`) cobrem os dois estados inserindo as linhas dentro da transação.
+- **Desligar:** apague a linha, por exemplo `delete from private.environment_flags where name = 'mfa_optional';` (ou todas). Enquanto `dev-flags` estiver no `db-dev.yml`, o próximo deploy as reinsere; para desligar de vez, remova-o do laço de seeds.
+
 ## Desenvolvimento local
 
 ```sh

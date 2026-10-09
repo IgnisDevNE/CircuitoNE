@@ -6,6 +6,7 @@ import type { ColetivoEdicao, EstadoMfa, MembroElenco, PerfilAcesso } from '../.
 import { Badge, Button, Panel } from '../../components/ui/primitives'
 import { Checkbox, Input, Select, Textarea } from '../../components/ui/form'
 import { LocationFields } from '../../components/ui/LocationFields'
+import { MfaDevNotice } from '../../components/ui/MfaDevNotice'
 
 export interface EditCollectiveProps {
   coletivo: ColetivoEdicao
@@ -16,6 +17,8 @@ export interface EditCollectiveProps {
   sucessores: MembroElenco[]
   /** Verificação em duas etapas da sessão atual: a transferência exige `confirmada`. */
   mfa: EstadoMfa
+  /** Ambiente dev: a transferência não exige MFA; a seção traz o aviso de que produção a exige. */
+  mfaOpcional?: boolean
   /** Resultado da última operação; só existe depois de o banco responder. */
   feedback?: ActionResult | null
   busy?: boolean
@@ -96,7 +99,7 @@ function RoleEditor({ perfil, busy }: { perfil: PerfilAcesso; busy: boolean }) {
 }
 
 /** `/coletivo/:id/editar`: cadastro, perfis de acesso e zona de perigo; só o proprietário (RN-17/19/21). */
-export function EditCollective({ coletivo, aprovado, perfis, sucessores, mfa, feedback, busy = false }: EditCollectiveProps) {
+export function EditCollective({ coletivo, aprovado, perfis, sucessores, mfa, mfaOpcional = false, feedback, busy = false }: EditCollectiveProps) {
   const failed = feedback && !feedback.ok ? feedback : null
   const errors = failed?.fields ?? {}
   const situacao = SITUACAO[coletivo.situacao]
@@ -172,9 +175,12 @@ export function EditCollective({ coletivo, aprovado, perfis, sucessores, mfa, fe
               <h3 className="font-mono text-sm font-bold">Transferir a propriedade</h3>
               <p className="max-w-2xl font-mono text-xs text-[var(--color-muted)]">
                 A pessoa escolhida passa a ser a única responsável pelo coletivo e você vira Membro, sem permissões, até receber um novo perfil dela.
-                Exige a sua sessão confirmada com o segundo fator (aal2) e um membro com verificação em duas etapas, e-mail e celular confirmados.
+                {mfaOpcional
+                  ? 'Exige um membro com e-mail e celular confirmados.'
+                  : 'Exige a sua sessão confirmada com o segundo fator (aal2) e um membro com verificação em duas etapas, e-mail e celular confirmados.'}
               </p>
-              {mfa !== 'confirmada' ? (
+              <MfaDevNotice show={mfaOpcional} />
+              {mfa !== 'confirmada' && !mfaOpcional ? (
                 <p role="note" className="border border-[var(--color-line)] p-3 font-mono text-xs">
                   {MFA_TEXT[mfa]}{' '}
                   <Link to="/painel/seguranca" className="text-[var(--accent-text)] underline">ir para Segurança</Link>

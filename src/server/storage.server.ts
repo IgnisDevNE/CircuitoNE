@@ -53,7 +53,7 @@ export function storageFailure(error: StorageFailure, kind: UploadKind): ActionF
 
 /**
  * Envia o arquivo para `<entidade>/<nome aleatório>.<ext>` e devolve o caminho. O nome é novo a cada envio: nada é
- * sobrescrito e a imagem antiga continua válida até a RPC trocar a referência. O cache longo é seguro pelo mesmo motivo.
+ * sobrescrito e a imagem antiga continua válida até a RPC trocar a referência. O cache é curto (5 minutos) porque a imagem deixa de ser servida ao despublicar.
  */
 export async function storeUpload(
   client: SupabaseServerClient,
@@ -65,7 +65,7 @@ export async function storeUpload(
   const { error } = await client.storage.from(BUCKETS[kind]).upload(path, upload.bytes, {
     contentType: upload.contentType,
     upsert: false,
-    cacheControl: kind === 'image' ? '31536000' : '3600',
+    cacheControl: kind === 'image' ? '300' : '3600',
   })
   if (error) throw storageFailure(error, kind)
   return path

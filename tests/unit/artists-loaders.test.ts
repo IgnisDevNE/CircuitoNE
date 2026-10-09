@@ -111,7 +111,7 @@ describe('loadArtistList', () => {
     ])
     // A foto enviada vira URL pública do Storage; sem foto, a imagem neutra.
     expect(artistas.map((a) => a.foto)).toEqual([
-      `https://synthetic.supabase.test/storage/v1/object/public/public-images/${photoPath(1)}`,
+      `/img/${photoPath(1)}`,
       '/artist-photo-fallback.svg',
     ])
     expect(selects.map((s) => s.table)).toEqual(['profiles', 'artist_styles', 'profile_images'])
@@ -167,7 +167,7 @@ describe('loadArtistPage', () => {
   it('foto principal e galeria (em ordem) viram URLs públicas do Storage', async () => {
     vi.stubEnv('SUPABASE_URL', 'https://synthetic.supabase.test/')
     try {
-      const url = (name: string) => `https://synthetic.supabase.test/storage/v1/object/public/public-images/${photoPath(1, name)}`
+      const url = (name: string) => `/img/${photoPath(1, name)}`
       const { client } = fakeClient(rpc(), {
         ...tables,
         profile_images: ok([

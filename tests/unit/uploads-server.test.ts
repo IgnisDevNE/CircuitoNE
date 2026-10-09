@@ -69,22 +69,17 @@ describe('boundedMultipart / boundedBody', () => {
 // ---- Funções do Storage ----
 
 describe('publicImageUrl', () => {
-  beforeEach(() => vi.stubEnv('SUPABASE_URL', SUPABASE + '/'))
-  afterEach(() => vi.unstubAllEnvs())
-
-  it('monta a URL pública do bucket público, sem barra duplicada', () => {
-    expect(publicImageUrl(OLD(P, 'foto'))).toBe(`${SUPABASE}/storage/v1/object/public/public-images/${P}/foto.png`)
+  it('monta a URL relativa da rota /img (o bucket é privado), sem depender do Supabase', () => {
+    expect(publicImageUrl(OLD(P, 'foto'))).toBe(`/img/${P}/foto.png`)
     expect(publicImageUrl(OLD(P, 'foto', 'webp'))).toMatch(/foto\.webp$/)
   })
 
-  it('sem caminho, sem Supabase ou com caminho fora do formato das constraints: nulo', () => {
+  it('sem caminho ou com caminho fora do formato das constraints: nulo', () => {
     expect(publicImageUrl(null)).toBeNull()
     expect(publicImageUrl(undefined)).toBeNull()
     expect(publicImageUrl('')).toBeNull()
     for (const bad of [`${P}/sub/foto.png`, `${P}/foto.gif`, `${P}/foto.pdf`, '../etc/passwd', `${'0A000000-0000-4000-8000-000000000001'}/foto.png`, `${P}/foto.png?x=1`, `${P}/%2e%2e.png`])
       expect(publicImageUrl(bad)).toBeNull()
-    vi.stubEnv('SUPABASE_URL', '')
-    expect(publicImageUrl(OLD(P, 'foto'))).toBeNull()
   })
 })
 
@@ -136,7 +131,7 @@ describe('storeUpload / removeStored', () => {
     const second = await storeUpload(client, 'image', P, prepared)
     expect(first).toMatch(new RegExp(`^${P}/[0-9a-f-]{36}\\.png$`))
     expect(second).not.toBe(first)
-    expect(uploads[0]).toMatchObject({ bucket: 'public-images', path: first, size: PNG.length, options: { contentType: 'image/png', upsert: false, cacheControl: '31536000' } })
+    expect(uploads[0]).toMatchObject({ bucket: 'public-images', path: first, size: PNG.length, options: { contentType: 'image/png', upsert: false, cacheControl: '300' } })
     await storeUpload(client, 'document', P, { ...prepared, bytes: PDF, extension: 'pdf', contentType: 'application/pdf', size: PDF.length })
     expect(uploads[2]).toMatchObject({ bucket: 'private-documents', options: { contentType: 'application/pdf', upsert: false } })
     expect(uploads[2].path).toMatch(/\.pdf$/)

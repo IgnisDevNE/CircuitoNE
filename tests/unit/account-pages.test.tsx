@@ -257,7 +257,7 @@ describe('EditProfile: fotos e documentos (W11)', () => {
     inRouter(<EditProfile perfil={perfil({ images: [image(0), image(1), image(2), image(3, 5_000_000)] })} taxonomia={taxonomia} />)
     const panel = screen.getByRole('heading', { name: 'fotos' }).closest('section')!
     const main = within(panel).getByRole('img', { name: 'Foto principal de Artista sintético público' })
-    expect(main.getAttribute('src')).toBe(`https://synthetic.supabase.test/storage/v1/object/public/public-images/${ID}/img0.png`)
+    expect(main.getAttribute('src')).toBe(`/img/${ID}/img0.png`)
     expect(within(panel).getByText('galeria (3/10)')).toBeTruthy()
     const gallery = within(panel).getAllByRole('img').filter((img) => img.getAttribute('alt')?.includes('galeria'))
     expect(gallery.map((img) => img.getAttribute('src')!.split('/').pop())).toEqual(['img1.png', 'img2.png', 'img3.png'])

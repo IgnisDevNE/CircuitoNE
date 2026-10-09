@@ -19,6 +19,7 @@ const panelPaths = [
   '/painel/mensagens',
   `/painel/mensagens/nova?para=collective:${collective}`,
   '/painel/coletivos',
+  '/painel/coletivos/novo',
   '/painel/explorar/artistas',
   '/painel/explorar/servicos',
   '/painel/explorar/audiovisual',

@@ -15,7 +15,8 @@ const MANAGE_SPEC = /collective-manage\.spec\.ts/
 const EXPLORE_SPEC = /explore\.spec\.ts/
 const UPLOADS_SPEC = /uploads\.spec\.ts/
 const A11Y_WRITE_SPEC = /a11y-write\.spec\.ts/
-const WRITE_SPECS = [ACCOUNT_SPEC, MESSAGES_SPEC, CHAT_DOCK_SPEC, REGISTER_SPEC, MANAGE_SPEC, EXPLORE_SPEC, UPLOADS_SPEC, A11Y_WRITE_SPEC]
+const CREATE_SPEC = /collective-create\.spec\.ts/
+const WRITE_SPECS = [ACCOUNT_SPEC, MESSAGES_SPEC, CHAT_DOCK_SPEC, REGISTER_SPEC, MANAGE_SPEC, EXPLORE_SPEC, UPLOADS_SPEC, A11Y_WRITE_SPEC, CREATE_SPEC]
 const port = '5183'
 const origin = `http://127.0.0.1:${port}`
 
@@ -111,6 +112,14 @@ export default defineConfig({
       testMatch: A11Y_WRITE_SPEC,
       dependencies: ['a11y-write-desktop'],
       use: { browserName: 'chromium', viewport: { width: 390, height: 844 } },
+    },
+    // collective-create.spec.ts (W18) cria um coletivo em análise para a fixture-member, e nenhuma RPC apaga um coletivo que ainda não
+    // foi aprovado: roda depois de tudo o que afirma os coletivos dessa conta (leituras e a11y-write), uma tela só.
+    {
+      name: 'collective-create',
+      testMatch: CREATE_SPEC,
+      dependencies: ['a11y-write-mobile'],
+      use: { browserName: 'chromium', viewport: { width: 1366, height: 900 } },
     },
   ],
   webServer: {

@@ -234,6 +234,12 @@ test.describe('pedir, cancelar, aprovar e recusar entrada', () => {
     await page.goto('/painel/coletivos')
     await expect(page.getByRole('list', { name: 'Meus coletivos' })).toHaveCount(0)
     await expect(page.getByText('Você ainda não faz parte de nenhum coletivo/produtora.')).toBeVisible()
+    // Sem coletivo: criar um (formulário novo) ou pedir entrada em um existente (âncora para o formulário de solicitação).
+    await expect(page.getByRole('link', { name: '+ criar coletivo/produtora' })).toHaveAttribute('href', '/painel/coletivos/novo')
+    await expect(page.getByRole('link', { name: 'criar um coletivo ou produtora' })).toHaveAttribute('href', '/painel/coletivos/novo')
+    await page.getByRole('link', { name: 'pedir para entrar em um coletivo' }).click()
+    await expect(page).toHaveURL(/\/painel\/coletivos#solicitar-acesso$/)
+    await expect(panel(page, 'solicitar acesso')).toHaveAttribute('id', 'solicitar-acesso')
     const select = page.getByLabel(/Coletivo\/Produtora/)
     await expect(select.locator('option')).toHaveText(['— selecione —', `${collectiveName(1)} (coletivo)`, `${collectiveName(6)} (produtora)`])
 

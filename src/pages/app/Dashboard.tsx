@@ -79,7 +79,13 @@ export function Dashboard({ nome, perfis, coletivos, naoLidas, proximos }: Dashb
         <div className="space-y-6">
           <Panel title="meus coletivos" actions={<LinkButton to="/painel/coletivos" size="sm" variant="ghost">abrir<span className="sr-only"> meus coletivos</span></LinkButton>}>
             {coletivos.length === 0 ? (
-              <Empty>Você ainda não participa de coletivos.</Empty>
+              <Empty>
+                <p>Você ainda não participa de coletivos.</p>
+                <div className="mt-4 flex flex-wrap justify-center gap-2">
+                  <LinkButton to="/painel/coletivos/novo" variant="solid" size="sm">criar um coletivo</LinkButton>
+                  <LinkButton to="/painel/coletivos#solicitar-acesso" variant="outline" size="sm">pedir para entrar</LinkButton>
+                </div>
+              </Empty>
             ) : (
               <ul className="space-y-3">
                 {coletivos.map((c) => {

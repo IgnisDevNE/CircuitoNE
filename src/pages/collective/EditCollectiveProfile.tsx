@@ -16,7 +16,7 @@ export interface EditCollectiveProfileProps {
 }
 
 const DEFAULT_COLOR = '#ff2040'
-const SOCIAL_LABEL: Record<(typeof SOCIAL_FIELDS)[number], string> = {
+export const SOCIAL_LABEL: Record<(typeof SOCIAL_FIELDS)[number], string> = {
   instagram: 'Instagram',
   bandcamp: 'Bandcamp',
   soundcloud: 'SoundCloud',

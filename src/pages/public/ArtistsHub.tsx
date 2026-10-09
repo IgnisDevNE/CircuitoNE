@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { SectionHeading, Empty, Badge, PRESSED_BADGE as pressed } from '../../components/ui/primitives'
+import { UfFilter } from '../../components/ui/UfFilter'
 import { Input } from '../../components/ui/form'
 import { DuotoneImage } from '../../components/ui/DuotoneImage'
 import { estiloLabels } from '../../lib/artist'
-import { UFS_NORDESTE, type ArtistaResumo, type Estado } from '../../data/types'
+import type { ArtistaResumo, Estado } from '../../data/types'
 
 /** Hub: a lista vem do banco (ordem alfabética); busca e filtros de estilo e de UF são feitos no cliente, e se combinam. */
 export function ArtistsHub({ artistas }: { artistas: ArtistaResumo[] }) {
@@ -45,16 +46,7 @@ export function ArtistsHub({ artistas }: { artistas: ArtistaResumo[] }) {
         ))}
       </div>
 
-      <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Filtrar por estado">
-        <button onClick={() => setUf(null)} className="cursor-pointer" aria-pressed={uf === null}>
-          <Badge tone={uf === null ? 'accent' : 'neutral'} className={uf === null ? pressed : undefined}>todos</Badge>
-        </button>
-        {UFS_NORDESTE.map((s) => (
-          <button key={s} onClick={() => setUf(s === uf ? null : s)} className="cursor-pointer" aria-pressed={uf === s}>
-            <Badge tone={uf === s ? 'accent' : 'neutral'} className={uf === s ? pressed : undefined}>{s}</Badge>
-          </button>
-        ))}
-      </div>
+      <UfFilter value={uf} onChange={setUf} />
 
       {/* Os cartões são h3: o h2 oculto mantém a ordem dos títulos (h1, h2, h3) para quem navega por eles. */}
       <h2 className="sr-only">Artistas</h2>

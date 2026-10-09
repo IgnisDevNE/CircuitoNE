@@ -61,6 +61,7 @@ export const privateHeaders = () =>
     Vary: "Cookie",
     Pragma: "no-cache",
     Expires: "0",
+    "X-Content-Type-Options": "nosniff",
   });
 
 /** Failure with an HTTP meaning (403 forbidden, 404 not found, 503 data source unavailable) and a pt-BR message. */

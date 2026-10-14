@@ -34,7 +34,7 @@ jobs:
       # O e2e (Playwright) roda no job `e2e`, contra o Supabase local.
       - run: pnpm test:coverage
       - name: Preserve LCOV for Codecov
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: codecov-lcov
           path: coverage/lcov.info
@@ -42,7 +42,7 @@ jobs:
           if-no-files-found: error
       - name: Preserve test reports
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: quality-reports
           path: coverage/
@@ -68,7 +68,7 @@ jobs:
       # Em divergência dos tipos gerados, o conteúdo exato fica disponível para copiar para src/types/database.generated.ts.
       - name: Preserve generated types
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: database-generated-types
           path: temp/database.generated.ts
@@ -140,7 +140,7 @@ jobs:
           done
       - name: Preserve e2e reports
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: e2e-reports
           path: |
